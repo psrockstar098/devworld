@@ -1,0 +1,47 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: #0d1117; color: #e6edf3;
+  font-family: -apple-system, "Segoe UI", sans-serif;
+  display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+}
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; background: #010409; border-bottom: 1px solid #21262d;
+}
+.brand { font-weight: 800; letter-spacing: 2px; font-size: 15px; }
+.brand .tag {
+  font-size: 10px; font-weight: 600; letter-spacing: 1px;
+  background: #1f6feb; border-radius: 10px; padding: 2px 8px; margin-left: 8px;
+  vertical-align: 2px;
+}
+.controls { display: flex; gap: 10px; align-items: center; }
+select {
+  background: #0d1117; color: #e6edf3; border: 1px solid #30363d;
+  border-radius: 6px; padding: 7px 10px; font-size: 13px; max-width: 220px;
+}
+.badge { font-size: 11px; padding: 3px 9px; border-radius: 10px; font-weight: 700; }
+.badge.wasm { background: #1a7f37; }
+.badge.planned { background: #9e6a03; }
+.badge.server { background: #6e40c9; }
+.badge.highlight { background: #484f58; }
+#runBtn {
+  background: #238636; color: #fff; border: none; border-radius: 6px;
+  padding: 8px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+#runBtn:hover { background: #2ea043; }
+#runBtn:disabled { background: #484f58; cursor: wait; }
+main { flex: 1; display: flex; min-height: 0; }
+#editor { flex: 3; min-width: 0; }
+#console { flex: 2; display: flex; flex-direction: column; border-left: 1px solid #21262d; min-width: 0; }
+.console-head {
+  padding: 8px 12px; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  background: #010409; border-bottom: 1px solid #21262d;
+}
+#status { color: #d29922; margin-left: 8px; font-weight: 400; }
+#output {
+  flex: 1; overflow: auto; padding: 12px; font-family: ui-monospace, Consolas, monospace;
+  font-size: 13px; white-space: pre-wrap; word-break: break-word;
+}
+#output .err { color: #f85149; }
+#output .ok { color: #3fb950; }

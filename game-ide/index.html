@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEVWORLD — Game IDE</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="brand">DEVWORLD <span class="tag">game ide</span></div>
+  <div class="controls">
+    <select id="langSelect" title="Language"></select>
+    <span id="runBadge" class="badge"></span>
+    <button id="runBtn">▶ Run</button>
+  </div>
+</header>
+<main>
+  <div id="editor"></div>
+  <div id="console">
+    <div class="console-head">OUTPUT <span id="status"></span></div>
+    <pre id="output">Pick a language and hit Run.</pre>
+  </div>
+</main>
+<!-- fengari must load BEFORE monaco's AMD loader, or its UMD wrapper
+     registers as an AMD module instead of setting window.fengari -->
+<script src="https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.57.0/min/vs/loader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/typescript@5.9.3/lib/typescript.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sql.js@1.15.0/dist/sql-wasm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pyodide@314.0.7/pyodide.js"></script>
+<script>
+  require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.57.0/min/vs' } });
+  self.MonacoEnvironment = {
+    getWorkerUrl: function () {
+      return URL.createObjectURL(new Blob(
+        ["self.MonacoEnvironment={baseUrl:'https://cdn.jsdelivr.net/npm/monaco-editor@0.57.0/min/'};importScripts('https://cdn.jsdelivr.net/npm/monaco-editor@0.57.0/min/vs/base/worker/workerMain.js');"],
+        { type: 'text/javascript' }));
+    }
+  };
+</script>
+<script src="ide.js"></script>
+</body>
+</html>
