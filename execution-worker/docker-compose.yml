@@ -15,12 +15,17 @@ services:
       - "127.0.0.1:8090:8090"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${SUBMISSIONS_DIR:-/submissions}:/submissions
+      # The worker asks the host daemon to bind-mount scratch dirs from
+      # SUBMISSIONS_DIR, so that path must resolve identically on the host and
+      # in this container — hence the same variable on both sides.
+      # Default is /submissions (create it on the host: sudo mkdir -p
+      # /submissions). Without sudo, set SUBMISSIONS_DIR=$HOME/devworld-submissions.
+      - ${SUBMISSIONS_DIR:-/submissions}:${SUBMISSIONS_DIR:-/submissions}
     env_file:
       - path: .env
         required: false
     environment:
-      SUBMISSIONS_DIR: /submissions
+      SUBMISSIONS_DIR: ${SUBMISSIONS_DIR:-/submissions}
       # Store/event wiring. Hostnames resolve on the external `devworld` network.
       KV_URL: redis://:${KV_PASSWORD:-devworld_dev_pw}@kv:6666
       CLICKHOUSE_URL: http://clickhouse:8123

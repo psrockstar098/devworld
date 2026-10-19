@@ -24,8 +24,10 @@ services:
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-devworld_dev_pw}
       KV_URL: redis://:${KV_PASSWORD:-devworld_dev_pw}@kv:6666
       REDIS_URL: redis://:${REDIS_PASSWORD:-devworld_dev_pw}@redis:6379
-      # Grading goes to the sandbox worker; empty disables submission (503).
-      WORKER_URL: ${WORKER_URL:-http://devworld-execution-worker:8090}
+      # Grading goes to the sandbox worker. This is the IN-NETWORK address and
+      # is deliberately not read from .env (which holds host-oriented values
+      # for `bun server.ts`). Empty disables submission (503).
+      WORKER_URL: http://devworld-execution-worker:8090
       WORKER_API_KEY: ${WORKER_API_KEY:-}
       ADMIN_KEY: ${ADMIN_KEY:-dev_admin_key}
       CONTENT_DIR: /app/content
