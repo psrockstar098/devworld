@@ -54,14 +54,21 @@ the mechanic; building working software is.
 
 ### Phase 1 — Playable foundation (build now)
 
-- One starter town (Starter Town), one player profile.
+- All four cities (Starter Town, Startup City, Systems District, Innovation
+  Capital) with regional economies, hidden technology dungeons and decoratable
+  homes.
+- One player profile.
 - The embedded IDE as the in-game computer terminal (GameIDE API).
 - Safe code execution: in-browser WASM runners + sandbox backend
   (`POST /execute`, `POST /assess`).
 - Python fundamentals + beginner SQL learning paths.
-- ~10 carefully designed missions with public + hidden tests.
+- 17 carefully designed missions (m01–m17) with public + hidden tests,
+  including the Level 5 independent gate and three dungeon challenges.
 - XP, in-game money, inventory, unlockable equipment.
-- A small portfolio of player projects.
+- A derived project portfolio (Proof of Skill) and reputation tier.
+- **Local previews** of Phase 2 surfaces: contacts/teams/company dashboard and
+  housing — single-player, written NPC characters, no real players or free
+  chat, every path marked `[PHASE2]` for server authority.
 - **Success criterion:** a beginner learns useful programming skills, builds a
   working project, and can demonstrate understanding of it.
 

@@ -1,0 +1,34 @@
+{
+ "homes": [
+  {
+   "mapId": "apt_interior",
+   "name": "Your Apartment",
+   "slots": [
+    {
+     "id": "desk",
+     "kind": "workstation",
+     "x": 10,
+     "y": 3
+    },
+    {
+     "id": "shelf",
+     "kind": "decor",
+     "x": 4,
+     "y": 3
+    },
+    {
+     "id": "corner",
+     "kind": "decor",
+     "x": 12,
+     "y": 6
+    },
+    {
+     "id": "trophy_wall",
+     "kind": "trophy",
+     "x": 6,
+     "y": 2
+    }
+   ]
+  }
+ ]
+}

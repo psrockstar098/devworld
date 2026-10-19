@@ -19,9 +19,28 @@ static Color C(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) { return {r, g,
 
 bool World::load(const std::string& dir) {
   buildTown(parseJson(readFile(dir + "/town.json")));
+  // Phase 2 city preview: same data shape as town.json, three more exteriors.
+  JVal cities = parseJson(readFile(dir + "/cities.json"));
+  for (auto& m : cities.at("maps").arr) buildTown(m);
   JVal iv = parseJson(readFile(dir + "/interiors.json"));
   for (auto& m : iv.at("interiors").arr) buildInterior(m);
   return true;
+}
+
+void World::bindWorld(const WorldGraph& graph) {
+  for (auto& kv : maps_) {
+    const CityDef* c = graph.cityForMap(kv.first);
+    kv.second.cityId = c ? c->id : "";
+    kv.second.regionId = kv.second.isInterior ? (c ? c->region + "_solo" : "solo")
+                                              : (c ? c->region : "region_unknown");
+    kv.second.instanceType = kv.second.isInterior ? "solo" : "shared";
+  }
+}
+
+std::vector<std::string> World::mapIds() const {
+  std::vector<std::string> ids;
+  for (const auto& kv : maps_) ids.push_back(kv.first);
+  return ids;
 }
 
 const TileMap& World::map(const std::string& id) const {
@@ -33,6 +52,8 @@ const TileMap& World::map(const std::string& id) const {
 void World::buildTown(const JVal& j) {
   TileMap m;
   m.id = j.s("id"); m.name = j.s("name");
+  if (m.id.empty()) return;
+  m.ambient = j.s("ambient", "town");
   const JVal& sz = j.at("size");
   m.w = sz.arr.size() > 0 ? (int)sz.arr[0].num : 60;
   m.h = sz.arr.size() > 1 ? (int)sz.arr[1].num : 42;
@@ -75,7 +96,9 @@ void World::buildTown(const JVal& j) {
   for (auto& in : j.at("interactables").arr) {
     Interactable it;
     it.id = in.s("id"); it.kind = in.s("kind"); it.label = in.s("label");
-    it.mapId = "town";
+    it.mapId = m.id;
+    it.target = in.s("target");
+    it.text = in.s("text");
     int tx = in.i("x"), ty = in.i("y");
     it.rect = {(float)tx * m.tile, (float)ty * m.tile, (float)m.tile, (float)m.tile};
     m.interactables.push_back(it);
@@ -84,16 +107,17 @@ void World::buildTown(const JVal& j) {
   for (auto& bd : m.buildings) {
     Interactable it;
     it.id = "door_" + bd.id; it.kind = "door"; it.label = bd.name;
-    it.mapId = "town"; it.target = bd.target;
+    it.mapId = m.id; it.target = bd.target;
     it.rect = {(float)bd.doorX * m.tile, (float)bd.doorY * m.tile, (float)m.tile, (float)m.tile};
     m.interactables.push_back(it);
   }
-  maps_["town"] = m;
+  maps_[m.id] = m;
 }
 
 void World::buildInterior(const JVal& j) {
   TileMap m;
   m.id = j.s("id"); m.name = j.s("name");
+  if (m.id.empty()) return;
   m.w = j.i("w", 14); m.h = j.i("h", 10); m.tile = 32;
   m.isInterior = true;
   m.floor = j.s("floor", "wood");
@@ -213,6 +237,12 @@ void World::render(SDL_Renderer* ren, TTF_Font* font, const std::string& mapId,
       : C(86, 158, 94);
   Color grassB = m.isInterior ? C(grassA.r - 12, grassA.g - 12, grassA.b - 12)
                               : C(78, 148, 86);
+  // Each city reads a little different at a glance (art pass later, design OPEN-W1).
+  if (!m.isInterior) {
+    if (m.cityId == "startup_city") { grassA = C(94, 162, 118); grassB = C(84, 150, 108); }
+    else if (m.cityId == "systems_district") { grassA = C(98, 148, 136); grassB = C(86, 136, 126); }
+    else if (m.cityId == "innovation_capital") { grassA = C(108, 152, 122); grassB = C(96, 140, 112); }
+  }
 
   for (int ty = y0; ty <= y1; ty++) {
     for (int tx = x0; tx <= x1; tx++) {
@@ -313,6 +343,19 @@ void World::render(SDL_Renderer* ren, TTF_Font* font, const std::string& mapId,
     fillRect(ren, 0, 0, vw, vh, C(18, 22, 58, (uint8_t)(dark * 255)));
     if (dayT > 0.68f && dayT < 0.82f)
       fillRect(ren, 0, 0, vw, vh, C(255, 150, 80, 26));  // dusk warmth
+    SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_NONE);
+  }
+
+  // Night sky: stars over the outdoors (drawn on top of the tint so they read).
+  if (!m.isInterior && dark > 0.05f) {
+    SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_BLEND);
+    for (int i = 0; i < 70; i++) {
+      int sx = (i * 173 + 37) % vw;
+      int sy = (i * 91 + 13) % (vh / 3);
+      float tw = 0.5f + 0.5f * sinf((float)animT * 1.3f + i * 0.9f);
+      uint8_t a = (uint8_t)(dark * 255 * (0.35f + 0.65f * tw));
+      fillRect(ren, (float)sx, (float)sy, 2, 2, C(226, 232, 255, a));
+    }
     SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_NONE);
   }
 }

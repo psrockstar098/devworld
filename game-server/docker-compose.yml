@@ -1,0 +1,39 @@
+# DEVWORLD game API service.
+#
+# Joins the external `devworld` network created by infra/ so it can reach the
+# stores by hostname, and mounts the mission content read-only.
+#
+#   cd infra && ./scripts/up.sh          # stores first
+#   cd game-server && docker compose up -d --build
+#
+name: devworld
+
+services:
+  game-server:
+    build: .
+    image: devworld/game-server:latest
+    container_name: devworld-game-server
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${GAME_SERVER_PORT:-8091}:8091"
+    environment:
+      PORT: "8091"
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-devworld}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-devworld}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-devworld_dev_pw}
+      KV_URL: redis://:${KV_PASSWORD:-devworld_dev_pw}@kv:6666
+      REDIS_URL: redis://:${REDIS_PASSWORD:-devworld_dev_pw}@redis:6379
+      # Grading goes to the sandbox worker; empty disables submission (503).
+      WORKER_URL: ${WORKER_URL:-http://devworld-execution-worker:8090}
+      WORKER_API_KEY: ${WORKER_API_KEY:-}
+      ADMIN_KEY: ${ADMIN_KEY:-dev_admin_key}
+      CONTENT_DIR: /app/content
+    volumes:
+      - ../game-shell/content:/app/content:ro
+    networks: [devworld]
+
+networks:
+  devworld:
+    name: devworld
+    external: true

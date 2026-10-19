@@ -86,15 +86,35 @@ review (hints nudge, never solve). Same bar for assessments, scaled by stakes
 
 ## 5. Release gates
 
-- **Phase 1 alpha:** all unit/contract/integration green; 10 missions through
-  the content pipeline; sandbox isolation verified on a real Docker host;
-  perf budget met (time-to-first-mission <60s).
+- **Phase 1 alpha:** all unit/contract/integration green; 17 missions
+  (`m01`–`m17`, incl. the three dungeon challenges) through the content
+  pipeline; sandbox isolation verified on a real Docker host; perf budget met
+  (time-to-first-mission <60s).
 - **Public beta:** + red-team clean (no criticals), [PRD] OPEN-3 closed,
   appeal SLA demonstrated in drills, integrity dashboards live.
 - **Phase 2/3:** each new system ships behind its per-system test map
   (§2) — no system launches untested.
 
-## 6. What we do NOT test (explicitly)
+## 6. What ships tested today (maps to the pyramid)
+
+| Pyramid layer | Shipped proof |
+|---|---|
+| Unit | `game-shell/tests/` native suite — pure rules (XP, gating, world graph, ambience, regions, dungeons, housing, social, company, portfolio) + content validation |
+| Unit (WASM) | the same suite compiled by Emscripten, run under Node — proves the rules behave identically in the browser |
+| Content | `test_content.cpp` validates every JSON file and cross-file reference; `verify_missions.py` proves each starter fails and each reference solution passes all hidden tests (17/17) |
+| Sandbox | `execution-worker/` `bun test` — request validation, quotas, concurrency, output comparison, hidden-test secrecy via a Docker-free `FakeRunner`; real isolation runs on a Docker host |
+| Store | `execution-worker/tests/{kv,submissions-kv,history}.test.ts` — the RocksDB submission store (create/revision/verdict/compare/recency/eviction, parity with the in-memory store) and the ClickHouse event sink (column mapping, best-effort) against in-memory doubles |
+| API | `game-server/` `bun test` — every route (players, sessions, missions, ledger, progression, stats) against in-memory stores and a `FakeAssessClient`: XP/level equivalence with the C++ rules, double-entry validation, hidden-test secrecy, lock gates, reward-once |
+| Infra | `infra/scripts/smoke.sh` round-trips ClickHouse, Kvrocks and Redis and checks the ledger invariant; `infra/scripts/rocksdb-embedded-test.sh` builds and runs a real `librocksdb` C++ program |
+| Integration | `game-server/tests/integration.test.ts` (`DEVWORLD_IT=1`) drives the real stores end to end; a full manual pass runs game server → sandbox worker → Python container and reads back ClickHouse + Kvrocks |
+| Contract | worker tests pin `/execute`, `/assess`, `/dependencies`, `/submissions` and `/moderation/signals` response shapes; the GameIDE bridge is exercised through the game-shell mission loop |
+
+Commands: `game-shell/tests/run_tests.sh`, `game-shell/tests/run_wasm_tests.sh`,
+`python3 game-shell/tests/verify_missions.py`, `cd execution-worker && bun test`,
+`cd game-server && bun test`, `cd infra && ./scripts/up.sh`,
+`cd game-server && DEVWORLD_IT=1 bun test tests/integration.test.ts`.
+
+## 7. What we do NOT test (explicitly)
 
 - We do not A/B test gate difficulty against integrity (gates are not
   growth levers).

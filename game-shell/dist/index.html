@@ -26,10 +26,12 @@
   <div class="hud-mid">
     <span id="hud-map" class="dim"></span>
     <span id="hud-clock" class="dim"></span>
+    <span id="hud-track" class="hud-track"></span>
   </div>
   <div class="hud-right">
     <span id="hud-credits" class="credits"></span>
     <span id="hud-quests" class="dim"></span>
+    <button id="hud-profile" title="Profile (P)">Profile</button>
     <button id="hud-skill" title="Level and skills">Skills</button>
     <button id="hud-help" title="Controls">?</button>
   </div>
@@ -66,14 +68,14 @@
     onRuntimeInitialized: function () {
       document.getElementById('boot').style.display = 'none';
       DW.ui.updateHud();
+      document.getElementById('hud-profile').addEventListener('click', function () {
+        DW.ui.request('profile');
+      });
       document.getElementById('hud-skill').addEventListener('click', function () {
-        try {
-          var p = Module.ccall('dw_panel_json', 'number', ['string'], ['skilltree']);
-          DW.ui.show('skilltree', JSON.parse(Module.UTF8ToString(p)));
-        } catch (e) {}
+        DW.ui.request('skilltree');
       });
       document.getElementById('hud-help').addEventListener('click', function () {
-        DW.ui.notify('WASD / arrows: move · E: interact · M: map · J: quests · I: inventory · Esc: menu', 'info');
+        DW.ui.notify('WASD / arrows: move · E: interact · M: map · J: quests · I: inventory · P: profile · N: notices · Esc: menu', 'info');
       });
       // Size canvas to window (keep 16:10).
       function fit() {

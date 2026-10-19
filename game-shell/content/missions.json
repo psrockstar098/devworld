@@ -1,1 +1,554 @@
-{"missions":[{"briefing":"Junie says every dev starts with one line. Make the machine greet the town.","creditReward":10,"file":"missions/m01_first_boot.py","giver":"junie","id":"m01","language":"python","requires":[],"starter":"# Mission 1: First Boot\n# Print EXACTLY this line:\n# Hello, Starter Town!\n","tests":[{"expected":"Hello, Starter Town!","hidden":false,"name":"prints the greeting","stdin":""}],"title":"First Boot","xpReward":50},{"briefing":"Mara's till script adds wrong — a client's totals are off. Read the error, fix total(), prove it with the tests.","creditReward":15,"file":"missions/m02_broken_total.py","giver":"mara","id":"m02","language":"python","requires":["m01"],"starter":"# Mission 2: Mara's Broken Total\n# Fix total() so it sums the list. (Hint: read the loop out loud.)\nimport sys\n\ndef total(prices):\n    s = 0\n    for p in prices:\n        s = p  # BUG: this replaces instead of accumulating\n    return s\n\nprices = [int(x) for x in sys.stdin.read().split()]\nprint(total(prices))\n","tests":[{"expected":"60","hidden":false,"name":"sums 10 20 30","stdin":"10 20 30"},{"expected":"20","hidden":true,"name":"sums a second list","stdin":"5 5 5 5"}],"title":"Mara's Broken Total","xpReward":80},{"briefing":"The shop shelves need labels. Number them starting at 1: 'Shelf 1: nails'.","creditReward":15,"file":"missions/m03_label_shelves.py","giver":"mara","id":"m03","language":"python","requires":["m01"],"starter":"# Mission 3: Label the Shelves\n# Print one line per item: \"Shelf <n>: <item>\", numbering from 1.\nimport sys\n\nitems = sys.stdin.read().split()\nfor item in items:\n    print(item)  # BUG: no shelf numbers\n","tests":[{"expected":"Shelf 1: nails\nShelf 2: hammer","hidden":false,"name":"labels two items","stdin":"nails hammer"},{"expected":"Shelf 1: wrench","hidden":true,"name":"labels one item","stdin":"wrench"}],"title":"Label the Shelves","xpReward":80},{"briefing":"Old Ben's kiosk holds the town records. Pull every resident's name with a query.","creditReward":12,"file":"missions/m04_kiosk_query.sql","giver":"ben","id":"m04","language":"sql","requires":["m01"],"starter":"-- Mission 4: Kiosk Query One\n-- List every resident's name.\nCREATE TABLE residents(name TEXT, job TEXT);\nINSERT INTO residents VALUES ('Mara','mechanic'),('Ben','keeper'),('Junie','guide');\n\n-- Write your query below:\n","tests":[{"expected":"name\nMara\nBen\nJunie","hidden":false,"name":"lists all residents","stdin":""},{"expected":"name\nMara\nBen\nJunie","hidden":true,"name":"result is stable","stdin":""}],"title":"Kiosk Query One","xpReward":70},{"briefing":"Rafi's discount script is embarrassing — it prints the discount instead of the price. 20% off means the customer pays 80%.","creditReward":18,"file":"missions/m05_discount_day.py","giver":"rafi","id":"m05","language":"python","requires":["m02"],"starter":"# Mission 5: Discount Day\n# Fix discount() so it returns the price AFTER 20% off.\nimport sys\n\ndef discount(price):\n    return price * 0.2  # BUG: this is the discount, not the final price\n\nprices = [float(x) for x in sys.stdin.read().split()]\nfor p in prices:\n    print(discount(p))\n","tests":[{"expected":"80.0\n40.0","hidden":false,"name":"discounts 100 and 50","stdin":"100 50"},{"expected":"8.0","hidden":true,"name":"discounts 10","stdin":"10"}],"title":"Discount Day","xpReward":90},{"briefing":"Count the delivery crates. Print exactly: Count: <number>. Empty delivery means Count: 0.","creditReward":18,"file":"missions/m06_inventory_count.py","giver":"rafi","id":"m06","language":"python","requires":["m03"],"starter":"# Mission 6: Inventory Count\n# Count the items and print \"Count: <n>\".\nimport sys\n\nitems = sys.stdin.read().split()\nprint(f\"Count: {len(items) - 1}\")  # BUG: off by one\n","tests":[{"expected":"Count: 4","hidden":false,"name":"counts four crates","stdin":"a b c d"},{"expected":"Count: 0","hidden":true,"name":"empty delivery","stdin":""}],"title":"Inventory Count","xpReward":90},{"briefing":"Who are the regulars? List names with more than 10 visits, alphabetical.","creditReward":20,"file":"missions/m07_regulars.sql","giver":"ben","id":"m07","language":"sql","requires":["m04"],"starter":"-- Mission 7: Find the Regulars\n-- Names with visits > 10, alphabetical (ORDER BY name).\nCREATE TABLE residents(name TEXT, visits INTEGER);\nINSERT INTO residents VALUES ('Mara',42),('Ben',15),('Junie',8),('Theo',23);\n\n-- Write your query below:\n","tests":[{"expected":"name\nBen\nMara\nTheo","hidden":false,"name":"finds the regulars","stdin":""},{"expected":"name\nBen\nMara\nTheo","hidden":true,"name":"order is alphabetical","stdin":""}],"title":"Find the Regulars","xpReward":100},{"briefing":"Print a receipt: one line per item, exactly 'item: $price'.","creditReward":20,"file":"missions/m08_receipt_printer.py","giver":"mara","id":"m08","language":"python","requires":["m02"],"starter":"# Mission 8: Receipt Printer\n# Print \"<item>: $<price>\" per line. Input: pairs like \"nails 5\".\nimport sys\n\nparts = sys.stdin.read().split()\nfor i in range(0, len(parts), 2):\n    print(parts[i], parts[i+1])  # BUG: wrong format\n","tests":[{"expected":"nails: $5\nhammer: $12","hidden":false,"name":"prints two lines","stdin":"nails 5 hammer 12"},{"expected":"wrench: $7","hidden":true,"name":"prints one line","stdin":"wrench 7"}],"title":"Receipt Printer","xpReward":100},{"briefing":"If stock drops below 5, print RESTOCK, otherwise print OK. One number comes in.","creditReward":22,"file":"missions/m09_stock_alert.py","giver":"rafi","id":"m09","language":"python","requires":["m06"],"starter":"# Mission 9: Stock Alert\n# Print RESTOCK when qty < 5, else OK.\nimport sys\n\nqty = int(sys.stdin.read().strip() or 0)\nprint(\"OK\")  # BUG: never alerts\n","tests":[{"expected":"RESTOCK","hidden":false,"name":"alerts on low stock","stdin":"3"},{"expected":"OK","hidden":true,"name":"ok on healthy stock","stdin":"10"}],"title":"Stock Alert","xpReward":110},{"briefing":"The census: how many residents per job? Show job and count, alphabetical by job. This one proves you're ready for bigger towns.","creditReward":30,"file":"missions/m10_town_census.sql","giver":"junie","id":"m10","language":"sql","requires":["m07","m09"],"starter":"-- Mission 10: Town Census (capstone)\n-- Count residents per job. Columns: job, COUNT(*). Alphabetical by job.\nCREATE TABLE residents(name TEXT, job TEXT);\nINSERT INTO residents VALUES\n  ('Mara','mechanic'),('Ben','keeper'),('Junie','guide'),\n  ('Rafi','keeper'),('Theo','regular');\n\n-- Write your query below:\n","tests":[{"expected":"job | COUNT(*)\nkeeper | 2\nguide | 1\nmechanic | 1\nregular | 1","hidden":false,"name":"counts per job","stdin":""},{"expected":"job | COUNT(*)\nkeeper | 2\nguide | 1\nmechanic | 1\nregular | 1","hidden":true,"name":"census is stable","stdin":""}],"title":"Town Census","xpReward":150}]}
+{
+ "missions": [
+  {
+   "briefing": "Junie says every dev starts with one line. Make the machine greet the town.",
+   "creditReward": 10,
+   "file": "missions/m01_first_boot.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m01",
+   "language": "python",
+   "level": 1,
+   "requires": [],
+   "starter": "# Mission 1: First Boot\n# Print EXACTLY this line:\n# Hello, Starter Town!\n",
+   "tests": [
+    {
+     "expected": "Hello, Starter Town!",
+     "hidden": false,
+     "name": "prints the greeting",
+     "stdin": ""
+    }
+   ],
+   "title": "First Boot",
+   "xpReward": 150
+  },
+  {
+   "briefing": "Mara's till script adds wrong \u2014 a client's totals are off. Read the error, fix total(), prove it with the tests.",
+   "creditReward": 15,
+   "file": "missions/m02_broken_total.py",
+   "gate": false,
+   "giver": "mara",
+   "hints": true,
+   "id": "m02",
+   "language": "python",
+   "level": 2,
+   "requires": [
+    "m01"
+   ],
+   "starter": "# Mission 2: Mara's Broken Total\n# Fix total() so it sums the list. (Hint: read the loop out loud.)\nimport sys\n\ndef total(prices):\n    s = 0\n    for p in prices:\n        s = p  # BUG: this replaces instead of accumulating\n    return s\n\nprices = [int(x) for x in sys.stdin.read().split()]\nprint(total(prices))\n",
+   "tests": [
+    {
+     "expected": "60",
+     "hidden": false,
+     "name": "sums 10 20 30",
+     "stdin": "10 20 30"
+    },
+    {
+     "expected": "20",
+     "hidden": true,
+     "name": "sums a second list",
+     "stdin": "5 5 5 5"
+    }
+   ],
+   "title": "Mara's Broken Total",
+   "xpReward": 200
+  },
+  {
+   "briefing": "The shop shelves need labels. Number them starting at 1: 'Shelf 1: nails'.",
+   "creditReward": 15,
+   "file": "missions/m03_label_shelves.py",
+   "gate": false,
+   "giver": "mara",
+   "hints": true,
+   "id": "m03",
+   "language": "python",
+   "level": 2,
+   "requires": [
+    "m01"
+   ],
+   "starter": "# Mission 3: Label the Shelves\n# Print one line per item: \"Shelf <n>: <item>\", numbering from 1.\nimport sys\n\nitems = sys.stdin.read().split()\nfor item in items:\n    print(item)  # BUG: no shelf numbers\n",
+   "tests": [
+    {
+     "expected": "Shelf 1: nails\nShelf 2: hammer",
+     "hidden": false,
+     "name": "labels two items",
+     "stdin": "nails hammer"
+    },
+    {
+     "expected": "Shelf 1: wrench",
+     "hidden": true,
+     "name": "labels one item",
+     "stdin": "wrench"
+    }
+   ],
+   "title": "Label the Shelves",
+   "xpReward": 200
+  },
+  {
+   "briefing": "Old Ben's kiosk holds the town records. Pull every resident's name with a query.",
+   "creditReward": 12,
+   "file": "missions/m04_kiosk_query.sql",
+   "gate": false,
+   "giver": "ben",
+   "hints": true,
+   "id": "m04",
+   "language": "sql",
+   "level": 2,
+   "requires": [
+    "m01"
+   ],
+   "starter": "-- Mission 4: Kiosk Query One\n-- List every resident's name.\nCREATE TABLE residents(name TEXT, job TEXT);\nINSERT INTO residents VALUES ('Mara','mechanic'),('Ben','keeper'),('Junie','guide');\n\n-- Write your query below:\n",
+   "tests": [
+    {
+     "expected": "name\nMara\nBen\nJunie",
+     "hidden": false,
+     "name": "lists all residents",
+     "stdin": ""
+    },
+    {
+     "expected": "name\nMara\nBen\nJunie",
+     "hidden": true,
+     "name": "result is stable",
+     "stdin": ""
+    }
+   ],
+   "title": "Kiosk Query One",
+   "xpReward": 180
+  },
+  {
+   "briefing": "Rafi's discount script is embarrassing \u2014 it prints the discount instead of the price. 20% off means the customer pays 80%.",
+   "creditReward": 18,
+   "file": "missions/m05_discount_day.py",
+   "gate": false,
+   "giver": "rafi",
+   "hints": true,
+   "id": "m05",
+   "language": "python",
+   "level": 2,
+   "requires": [
+    "m02"
+   ],
+   "starter": "# Mission 5: Discount Day\n# Fix discount() so it returns the price AFTER 20% off.\nimport sys\n\ndef discount(price):\n    return price * 0.2  # BUG: this is the discount, not the final price\n\nprices = [float(x) for x in sys.stdin.read().split()]\nfor p in prices:\n    print(discount(p))\n",
+   "tests": [
+    {
+     "expected": "80.0\n40.0",
+     "hidden": false,
+     "name": "discounts 100 and 50",
+     "stdin": "100 50"
+    },
+    {
+     "expected": "8.0",
+     "hidden": true,
+     "name": "discounts 10",
+     "stdin": "10"
+    }
+   ],
+   "title": "Discount Day",
+   "xpReward": 220
+  },
+  {
+   "briefing": "Count the delivery crates. Print exactly: Count: <number>. Empty delivery means Count: 0.",
+   "creditReward": 18,
+   "file": "missions/m06_inventory_count.py",
+   "gate": false,
+   "giver": "rafi",
+   "hints": true,
+   "id": "m06",
+   "language": "python",
+   "level": 3,
+   "requires": [
+    "m03"
+   ],
+   "starter": "# Mission 6: Inventory Count\n# Count the items and print \"Count: <n>\".\nimport sys\n\nitems = sys.stdin.read().split()\nprint(f\"Count: {len(items) - 1}\")  # BUG: off by one\n",
+   "tests": [
+    {
+     "expected": "Count: 4",
+     "hidden": false,
+     "name": "counts four crates",
+     "stdin": "a b c d"
+    },
+    {
+     "expected": "Count: 0",
+     "hidden": true,
+     "name": "empty delivery",
+     "stdin": ""
+    }
+   ],
+   "title": "Inventory Count",
+   "xpReward": 220
+  },
+  {
+   "briefing": "Who are the regulars? List names with more than 10 visits, alphabetical.",
+   "creditReward": 20,
+   "file": "missions/m07_regulars.sql",
+   "gate": false,
+   "giver": "ben",
+   "hints": true,
+   "id": "m07",
+   "language": "sql",
+   "level": 3,
+   "requires": [
+    "m04"
+   ],
+   "starter": "-- Mission 7: Find the Regulars\n-- Names with visits > 10, alphabetical (ORDER BY name).\nCREATE TABLE residents(name TEXT, visits INTEGER);\nINSERT INTO residents VALUES ('Mara',42),('Ben',15),('Junie',8),('Theo',23);\n\n-- Write your query below:\n",
+   "tests": [
+    {
+     "expected": "name\nBen\nMara\nTheo",
+     "hidden": false,
+     "name": "finds the regulars",
+     "stdin": ""
+    },
+    {
+     "expected": "name\nBen\nMara\nTheo",
+     "hidden": true,
+     "name": "order is alphabetical",
+     "stdin": ""
+    }
+   ],
+   "title": "Find the Regulars",
+   "xpReward": 250
+  },
+  {
+   "briefing": "Print a receipt: one line per item, exactly 'item: $price'.",
+   "creditReward": 20,
+   "file": "missions/m08_receipt_printer.py",
+   "gate": false,
+   "giver": "mara",
+   "hints": true,
+   "id": "m08",
+   "language": "python",
+   "level": 3,
+   "requires": [
+    "m02"
+   ],
+   "starter": "# Mission 8: Receipt Printer\n# Print \"<item>: $<price>\" per line. Input: pairs like \"nails 5\".\nimport sys\n\nparts = sys.stdin.read().split()\nfor i in range(0, len(parts), 2):\n    print(parts[i], parts[i+1])  # BUG: wrong format\n",
+   "tests": [
+    {
+     "expected": "nails: $5\nhammer: $12",
+     "hidden": false,
+     "name": "prints two lines",
+     "stdin": "nails 5 hammer 12"
+    },
+    {
+     "expected": "wrench: $7",
+     "hidden": true,
+     "name": "prints one line",
+     "stdin": "wrench 7"
+    }
+   ],
+   "title": "Receipt Printer",
+   "xpReward": 250
+  },
+  {
+   "briefing": "If stock drops below 5, print RESTOCK, otherwise print OK. One number comes in.",
+   "creditReward": 22,
+   "file": "missions/m09_stock_alert.py",
+   "gate": false,
+   "giver": "rafi",
+   "hints": true,
+   "id": "m09",
+   "language": "python",
+   "level": 3,
+   "requires": [
+    "m06"
+   ],
+   "starter": "# Mission 9: Stock Alert\n# Print RESTOCK when qty < 5, else OK.\nimport sys\n\nqty = int(sys.stdin.read().strip() or 0)\nprint(\"OK\")  # BUG: never alerts\n",
+   "tests": [
+    {
+     "expected": "RESTOCK",
+     "hidden": false,
+     "name": "alerts on low stock",
+     "stdin": "3"
+    },
+    {
+     "expected": "OK",
+     "hidden": true,
+     "name": "ok on healthy stock",
+     "stdin": "10"
+    }
+   ],
+   "title": "Stock Alert",
+   "xpReward": 280
+  },
+  {
+   "briefing": "The census: how many residents per job? Show job and count, alphabetical by job. This one proves you're ready for bigger towns.",
+   "creditReward": 30,
+   "file": "missions/m10_town_census.sql",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m10",
+   "language": "sql",
+   "level": 4,
+   "requires": [
+    "m07",
+    "m09"
+   ],
+   "starter": "-- Mission 10: Town Census (capstone)\n-- Count residents per job. Columns: job, COUNT(*). Alphabetical by job.\nCREATE TABLE residents(name TEXT, job TEXT);\nINSERT INTO residents VALUES\n  ('Mara','mechanic'),('Ben','keeper'),('Junie','guide'),\n  ('Rafi','keeper'),('Theo','regular');\n\n-- Write your query below:\n",
+   "tests": [
+    {
+     "expected": "job | COUNT(*)\nguide | 1\nkeeper | 2\nmechanic | 1\nregular | 1",
+     "hidden": false,
+     "name": "counts per job",
+     "stdin": ""
+    },
+    {
+     "expected": "job | COUNT(*)\nguide | 1\nkeeper | 2\nmechanic | 1\nregular | 1",
+     "hidden": true,
+     "name": "census is stable",
+     "stdin": ""
+    }
+   ],
+   "title": "Town Census",
+   "xpReward": 400
+  },
+  {
+   "briefing": "Rafi is printing a price table by hand. Write square(n) and print each input squared \u2014 functions should do one job well.",
+   "creditReward": 22,
+   "file": "missions/m11_square_deal.py",
+   "gate": false,
+   "giver": "rafi",
+   "hints": true,
+   "id": "m11",
+   "language": "python",
+   "level": 4,
+   "requires": [
+    "m10"
+   ],
+   "starter": "# Mission 11: Square Deal\n# Read integers from stdin. Print n*n for each, one per line.\nimport sys\n\ndef square(n):\n    pass  # TODO: return n squared\n\nnums = sys.stdin.read().split()\nfor x in nums:\n    print(square(int(x)))\n",
+   "tests": [
+    {
+     "expected": "4\n9\n16",
+     "hidden": false,
+     "name": "squares three numbers",
+     "stdin": "2 3 4"
+    },
+    {
+     "expected": "25\n0",
+     "hidden": true,
+     "name": "handles negatives and zero",
+     "stdin": "-5 0"
+    },
+    {
+     "expected": "49",
+     "hidden": true,
+     "name": "squares a single number",
+     "stdin": "7"
+    }
+   ],
+   "title": "Square Deal",
+   "xpReward": 350
+  },
+  {
+   "briefing": "Mara's receipt printer grew into a mess. Split it: line_total(qty, cents) and money(cents). Print the receipt exactly; cents are whole numbers, so $11.98 is 1198.",
+   "creditReward": 35,
+   "file": "missions/m12_receipt_refactor.py",
+   "gate": false,
+   "giver": "mara",
+   "hints": true,
+   "id": "m12",
+   "language": "python",
+   "level": 5,
+   "requires": [
+    "m11"
+   ],
+   "starter": "# Mission 12: Receipt Refactor\n# One line per item: \"<qty> x <cents>: $<money>\"\n# Then: \"TOTAL: $<money>\"\n# Example: 1 250 -> 1 x 250: $2.50 / TOTAL: $2.50\nimport sys\n\ndef line_total(qty, cents):\n    return qty + cents  # BUG: should multiply\n\ndef money(cents):\n    return \"$\" + str(cents)  # BUG: cents -> dollars.cents\n\nrows = [line.split() for line in sys.stdin.read().strip().splitlines() if line.strip()]\ntotal = 0\nfor r in rows:\n    qty, cents = int(r[0]), int(r[1])\n    sub = line_total(qty, cents)\n    total += sub\n    print(f\"{qty} x {cents}: {money(sub)}\")\nprint(f\"TOTAL: {money(total)}\")\n",
+   "tests": [
+    {
+     "expected": "2 x 599: $11.98\n1 x 250: $2.50\nTOTAL: $14.48",
+     "hidden": false,
+     "name": "prints a two-item receipt",
+     "stdin": "2 599\n1 250\n"
+    },
+    {
+     "expected": "3 x 100: $3.00\nTOTAL: $3.00",
+     "hidden": true,
+     "name": "pads cents on one item",
+     "stdin": "3 100\n"
+    },
+    {
+     "expected": "1 x 5: $0.05\n2 x 0: $0.00\nTOTAL: $0.05",
+     "hidden": true,
+     "name": "handles five cents and free items",
+     "stdin": "1 5\n2 0\n"
+    }
+   ],
+   "title": "Receipt Refactor",
+   "xpReward": 600
+  },
+  {
+   "briefing": "The Level 5 gate: three functions, no hints, hidden tests you have never seen. Read the spec in the starter file. You get one hour of game time between attempts \u2014 make it count.",
+   "creditReward": 60,
+   "file": "missions/m13_function_forge.py",
+   "gate": true,
+   "giver": "junie",
+   "hints": false,
+   "id": "m13",
+   "language": "python",
+   "level": 5,
+   "requires": [
+    "m12"
+   ],
+   "starter": "# Mission 13: The Function Forge \u2014 LEVEL 5 GATE\n# Three functions. No hints. Hidden tests. Read the spec carefully.\n#\n# clamp(n, lo, hi)     -> n limited to the inclusive range [lo, hi]\n# initials(full_name)  -> uppercase first letter of each word, joined\n#                          \"Ada Lovelace\" -> \"AL\"\n# is_palindrome(text)  -> True if the letters and digits read the same\n#                          both ways, ignoring case, spaces and punctuation\n#\n# Input: three lines.\n#   line 1: three integers  n lo hi   -> print clamp(n, lo, hi)\n#   line 2: a full name               -> print initials(full_name)\n#   line 3: a phrase                  -> print YES if palindrome, else NO\n#\n# Examples (not the hidden tests):\n#   15 0 10 / Ada Lovelace / racecar      -> 10 / AL / YES\n#   -3 -2 8 / Grace Hopper / hello world  -> -2 / GH / NO\nimport sys\n\ndef clamp(n, lo, hi):\n    return n  # TODO\n\ndef initials(full_name):\n    return \"\"  # TODO\n\ndef is_palindrome(text):\n    return False  # TODO\n\nlines = sys.stdin.read().splitlines()\nn, lo, hi = [int(x) for x in lines[0].split()]\nprint(clamp(n, lo, hi))\nprint(initials(lines[1]))\nprint(\"YES\" if is_palindrome(lines[2]) else \"NO\")\n",
+   "tests": [
+    {
+     "expected": "10\nAL\nYES",
+     "hidden": true,
+     "name": "gate case 1",
+     "stdin": "15 0 10\nAda Lovelace\nracecar\n"
+    },
+    {
+     "expected": "-2\nGBMH\nYES",
+     "hidden": true,
+     "name": "gate case 2",
+     "stdin": "-3 -2 8\nGrace Brewster Murray Hopper\nA man, a plan, a canal: Panama\n"
+    },
+    {
+     "expected": "5\nLT\nNO",
+     "hidden": true,
+     "name": "gate case 3",
+     "stdin": "5 5 5\nlinus torvalds\nhello\n"
+    },
+    {
+     "expected": "10\nABL\nYES",
+     "hidden": true,
+     "name": "gate case 4",
+     "stdin": "100 -10 10\n  ada   byron  lovelace  \nNo 'x' in Nixon\n"
+    }
+   ],
+   "title": "The Function Forge \u2014 Level 5 Gate",
+   "xpReward": 800
+  },
+  {
+   "briefing": "You passed the gate. Before the bus leaves, Junie wants a tiny tool the town can actually use: summarize a day of shop sales. This is your first Proof of Skill artifact.",
+   "creditReward": 25,
+   "file": "missions/m14_first_proof.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m14",
+   "language": "python",
+   "level": 5,
+   "requires": [
+    "m13"
+   ],
+   "starter": "# Mission 14: First Proof\n# Input: one line of integers (sale amounts in credits).\n# Print exactly three lines:\n#   count: <n>\n#   total: <sum>\n#   best: <largest sale>\n# An empty day prints: count: 0 / total: 0 / best: 0\nimport sys\n\nsales = [int(x) for x in sys.stdin.read().split()]\nprint(f\"count: {len(sales)}\")\nprint(f\"total: {sum(sales)}\")\nprint(f\"best: {max(sales)}\")  # BUG: crashes on an empty day\n",
+   "tests": [
+    {
+     "expected": "count: 3\ntotal: 40\nbest: 25",
+     "hidden": false,
+     "name": "summarizes three sales",
+     "stdin": "10 25 5"
+    },
+    {
+     "expected": "count: 0\ntotal: 0\nbest: 0",
+     "hidden": true,
+     "name": "empty day is not a crash",
+     "stdin": ""
+    },
+    {
+     "expected": "count: 1\ntotal: 7\nbest: 7",
+     "hidden": true,
+     "name": "single sale",
+     "stdin": "7"
+    }
+   ],
+   "title": "Bus Ticket: First Proof",
+   "xpReward": 400
+  },
+  {
+   "briefing": "Commits nobody merged, still on disk. Read the change log and report what was touched more than once, alphabetically.",
+   "creditReward": 140,
+   "file": "missions/m15_forgotten_repo.py",
+   "gate": false,
+   "giver": "The Vault Machine",
+   "hints": true,
+   "id": "m15",
+   "language": "python",
+   "level": 3,
+   "requires": [
+    "m06"
+   ],
+   "starter": "# Mission 15: The Forgotten Repository\n# Read every line of the change log. A path is 'hot' if it was touched\n# more than once. Print how many distinct paths appear, then each hot path\n# in alphabetical order, one per line.\nimport sys\npaths = [line.strip() for line in sys.stdin if line.strip()]\n\n# Write your code below:\n",
+   "tests": [
+    {
+     "expected": "2\na.py",
+     "hidden": false,
+     "name": "finds the hot path",
+     "stdin": "a.py\na.py\nb.py\n"
+    },
+    {
+     "expected": "3\nsrc/x.c\nsrc/y.c",
+     "hidden": true,
+     "name": "stable on ties",
+     "stdin": "src/x.c\nsrc/y.c\nsrc/x.c\nsrc/y.c\nsrc/z.c\n"
+    }
+   ],
+   "title": "The Forgotten Repository",
+   "xpReward": 320
+  },
+  {
+   "briefing": "A hall that still logs traffic. Count requests per status code, then print the total, then each status with its count, statuses ascending.",
+   "creditReward": 320,
+   "file": "missions/m16_derelict_dc.py",
+   "gate": false,
+   "giver": "Kernel (remote)",
+   "hints": true,
+   "id": "m16",
+   "language": "python",
+   "level": 10,
+   "requires": [
+    "m12"
+   ],
+   "starter": "# Mission 16: Derelict Data Center\n# Log lines look like: HH:MM STATUS path\n# Print the total number of requests, then one line per status code,\n# 'STATUS count', sorted by status ascending.\nimport sys\nlines = [line.split() for line in sys.stdin if line.strip()]\n\n# Write your code below:\n",
+   "tests": [
+    {
+     "expected": "3\n200 2\n404 1",
+     "hidden": false,
+     "name": "counts by status",
+     "stdin": "10:00 200 /a\n10:01 404 /b\n10:02 200 /c\n"
+    },
+    {
+     "expected": "5\n200 1\n404 2\n500 2",
+     "hidden": true,
+     "name": "handles a quieter hour",
+     "stdin": "23:00 500 /x\n23:01 404 /y\n23:02 404 /z\n23:03 500 /w\n23:04 200 /q\n"
+    }
+   ],
+   "title": "Derelict Data Center",
+   "xpReward": 700
+  },
+  {
+   "briefing": "The machine logged every experiment and its runs. For each experiment with at least one successful run, show its name and success count, most successes first, ties by name.",
+   "creditReward": 800,
+   "file": "missions/m17_machine_floor.sql",
+   "gate": false,
+   "giver": "Ada (remote)",
+   "hints": true,
+   "id": "m17",
+   "language": "sql",
+   "level": 36,
+   "requires": [
+    "m14"
+   ],
+   "starter": "-- Mission 17: The Experimental Machine Floor\n-- Experiments with at least one success. Columns: name, successes.\n-- Order by successes descending, then name ascending.\nCREATE TABLE experiments(id INTEGER, name TEXT);\nCREATE TABLE runs(id INTEGER, experiment_id INTEGER, result TEXT);\nINSERT INTO experiments VALUES (1,'cold-start'),(2,'warm-cache'),(3,'orphan');\nINSERT INTO runs VALUES\n  (1,1,'ok'),(2,1,'fail'),(3,1,'ok'),\n  (4,2,'ok'),(5,3,'fail'),(6,3,'fail');\n\n-- Write your query below:\n",
+   "tests": [
+    {
+     "expected": "name | successes\ncold-start | 2\nwarm-cache | 1",
+     "hidden": false,
+     "name": "lists experiments with a success",
+     "stdin": ""
+    },
+    {
+     "expected": "name | successes\ncold-start | 2\nwarm-cache | 1",
+     "hidden": true,
+     "name": "the machine does not lie twice",
+     "stdin": ""
+    }
+   ],
+   "title": "The Experimental Machine Floor",
+   "xpReward": 1500
+  }
+ ]
+}

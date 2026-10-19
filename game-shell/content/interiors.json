@@ -1,1 +1,856 @@
-{"interiors":[{"computers":[{"x":10,"y":2}],"door":{"label":"Back to Home Row","target":"town","x":7,"y":8},"floor":"wood","furniture":[{"label":"Bed","tile":"bed","x":2,"y":2},{"label":"Shelf","tile":"shelf","x":4,"y":2}],"h":10,"id":"apt_interior","name":"Your Apartment","w":14},{"computers":[{"x":2,"y":2},{"x":5,"y":2},{"x":8,"y":2},{"x":11,"y":2}],"door":{"label":"Back to Starter Town","target":"town","x":7,"y":8},"floor":"lab","furniture":[{"label":"Whiteboard","tile":"board","x":6,"y":5}],"h":10,"id":"lab_interior","name":"Computer Lab","w":14},{"computers":[],"door":{"label":"Back to Plaza","target":"town","x":7,"y":8},"floor":"hall","furniture":[{"label":"Mission Board","tile":"bigboard","x":6,"y":2},{"label":"Notice Wall","tile":"notices","x":11,"y":2}],"h":10,"id":"hall_interior","name":"Mission Hall","npc_spots":{"junie":[7,5]},"w":14},{"computers":[],"door":{"label":"Back to Starter Town","target":"town","x":7,"y":8},"floor":"shop","furniture":[{"label":"Counter","tile":"counter","x":4,"y":3},{"label":"Workbench","tile":"bench","x":10,"y":3}],"h":10,"id":"fixit_interior","name":"Fix-It Shop","npc_spots":{"mara":[6,2]},"w":14},{"computers":[{"x":7,"y":2}],"door":{"label":"Back to Starter Town","target":"town","x":7,"y":8},"floor":"lab","furniture":[{"label":"Data Rack","tile":"rack","x":3,"y":2}],"h":10,"id":"kiosk_interior","name":"Data Kiosk","npc_spots":{"ben":[7,4]},"w":14},{"computers":[],"door":{"label":"Back to Market Street","target":"town","x":7,"y":8},"floor":"shop","furniture":[{"label":"Shelves","tile":"shelves","x":2,"y":2},{"label":"Shelves","tile":"shelves","x":10,"y":2},{"label":"Counter","tile":"counter","x":6,"y":5}],"h":10,"id":"market_interior","name":"Market","npc_spots":{"rafi":[7,4]},"w":14}]}
+{
+ "interiors": [
+  {
+   "computers": [
+    {
+     "x": 10,
+     "y": 2
+    }
+   ],
+   "door": {
+    "label": "Back to Home Row",
+    "target": "town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "wood",
+   "furniture": [
+    {
+     "label": "Bed",
+     "tile": "bed",
+     "x": 2,
+     "y": 2
+    },
+    {
+     "label": "Shelf",
+     "tile": "shelf",
+     "x": 4,
+     "y": 2
+    }
+   ],
+   "h": 10,
+   "id": "apt_interior",
+   "name": "Your Apartment",
+   "w": 14
+  },
+  {
+   "computers": [
+    {
+     "x": 2,
+     "y": 2
+    },
+    {
+     "x": 5,
+     "y": 2
+    },
+    {
+     "x": 8,
+     "y": 2
+    },
+    {
+     "x": 11,
+     "y": 2
+    }
+   ],
+   "door": {
+    "label": "Back to Starter Town",
+    "target": "town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "lab",
+   "furniture": [
+    {
+     "label": "Whiteboard",
+     "tile": "board",
+     "x": 6,
+     "y": 5
+    }
+   ],
+   "h": 10,
+   "id": "lab_interior",
+   "name": "Computer Lab",
+   "w": 14
+  },
+  {
+   "computers": [],
+   "door": {
+    "label": "Back to Plaza",
+    "target": "town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "hall",
+   "furniture": [
+    {
+     "label": "Mission Board",
+     "tile": "bigboard",
+     "x": 6,
+     "y": 2
+    },
+    {
+     "label": "Notice Wall",
+     "tile": "notices",
+     "x": 11,
+     "y": 2
+    }
+   ],
+   "h": 10,
+   "id": "hall_interior",
+   "name": "Mission Hall",
+   "npc_spots": {
+    "junie": [
+     7,
+     5
+    ]
+   },
+   "w": 14
+  },
+  {
+   "computers": [],
+   "door": {
+    "label": "Back to Starter Town",
+    "target": "town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "shop",
+   "furniture": [
+    {
+     "label": "Counter",
+     "tile": "counter",
+     "x": 4,
+     "y": 3
+    },
+    {
+     "label": "Workbench",
+     "tile": "bench",
+     "x": 10,
+     "y": 3
+    }
+   ],
+   "h": 10,
+   "id": "fixit_interior",
+   "name": "Fix-It Shop",
+   "npc_spots": {
+    "mara": [
+     6,
+     2
+    ]
+   },
+   "w": 14
+  },
+  {
+   "computers": [
+    {
+     "x": 7,
+     "y": 2
+    }
+   ],
+   "door": {
+    "label": "Back to Starter Town",
+    "target": "town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "lab",
+   "furniture": [
+    {
+     "label": "Data Rack",
+     "tile": "rack",
+     "x": 3,
+     "y": 2
+    }
+   ],
+   "h": 10,
+   "id": "kiosk_interior",
+   "name": "Data Kiosk",
+   "npc_spots": {
+    "ben": [
+     7,
+     4
+    ]
+   },
+   "w": 14
+  },
+  {
+   "computers": [],
+   "door": {
+    "label": "Back to Market Street",
+    "target": "town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "shop",
+   "furniture": [
+    {
+     "label": "Shelves",
+     "tile": "shelves",
+     "x": 2,
+     "y": 2
+    },
+    {
+     "label": "Shelves",
+     "tile": "shelves",
+     "x": 10,
+     "y": 2
+    },
+    {
+     "label": "Counter",
+     "tile": "counter",
+     "x": 6,
+     "y": 5
+    }
+   ],
+   "h": 10,
+   "id": "market_interior",
+   "name": "Market",
+   "npc_spots": {
+    "rafi": [
+     7,
+     4
+    ]
+   },
+   "w": 14
+  },
+  {
+   "computers": [
+    {
+     "x": 3,
+     "y": 2
+    },
+    {
+     "x": 7,
+     "y": 2
+    },
+    {
+     "x": 10,
+     "y": 2
+    }
+   ],
+   "door": {
+    "label": "Back to Startup Hub",
+    "target": "startup_city_town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "lab",
+   "furniture": [
+    {
+     "label": "Pitch board",
+     "tile": "board",
+     "x": 2,
+     "y": 6
+    },
+    {
+     "label": "Whiteboard",
+     "tile": "board",
+     "x": 5,
+     "y": 6
+    }
+   ],
+   "h": 10,
+   "id": "startup_hub",
+   "name": "Startup Hub",
+   "w": 14
+  },
+  {
+   "computers": [
+    {
+     "x": 3,
+     "y": 2
+    },
+    {
+     "x": 7,
+     "y": 2
+    },
+    {
+     "x": 10,
+     "y": 2
+    }
+   ],
+   "door": {
+    "label": "Back to Co-working Loft",
+    "target": "startup_city_town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "wood",
+   "furniture": [
+    {
+     "label": "Hot desks",
+     "tile": "counter",
+     "x": 2,
+     "y": 6
+    },
+    {
+     "label": "Shelf",
+     "tile": "counter",
+     "x": 5,
+     "y": 6
+    }
+   ],
+   "h": 10,
+   "id": "startup_cowork",
+   "name": "Co-working Loft",
+   "w": 14
+  },
+  {
+   "computers": [
+    {
+     "x": 3,
+     "y": 2
+    },
+    {
+     "x": 7,
+     "y": 2
+    },
+    {
+     "x": 10,
+     "y": 2
+    }
+   ],
+   "door": {
+    "label": "Back to Contract Office",
+    "target": "startup_city_town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "lab",
+   "furniture": [
+    {
+     "label": "Contract board",
+     "tile": "board",
+     "x": 2,
+     "y": 6
+    },
+    {
+     "label": "Shelf",
+     "tile": "counter",
+     "x": 5,
+     "y": 6
+    }
+   ],
+   "h": 10,
+   "id": "startup_office",
+   "name": "Contract Office",
+   "w": 14
+  },
+  {
+   "computers": [
+    {
+     "x": 3,
+     "y": 2
+    },
+    {
+     "x": 7,
+     "y": 2
+    },
+    {
+     "x": 10,
+     "y": 2
+    }
+   ],
+   "door": {
+    "label": "Back to All-Night Cafe",
+    "target": "startup_city_town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "wood",
+   "furniture": [
+    {
+     "label": "Counter",
+     "tile": "counter",
+     "x": 2,
+     "y": 6
+    },
+    {
+     "label": "Shelf",
+     "tile": "counter",
+     "x": 5,
+     "y": 6
+    }
+   ],
+   "h": 10,
+   "id": "startup_cafe",
+   "name": "All-Night Cafe",
+   "w": 14
+  },
+  {
+   "computers": [
+    {
+     "x": 3,
+     "y": 2
+    },
+    {
+     "x": 7,
+     "y": 2
+    },
+    {
+     "x": 10,
+     "y": 2
+    }
+   ],
+   "door": {
+    "label": "Back to Data Center",
+    "target": "systems_district_town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "lab",
+   "furniture": [
+    {
+     "label": "Server rack",
+     "tile": "counter",
+     "x": 2,
+     "y": 6
+    },
+    {
+     "label": "Server rack",
+     "tile": "counter",
+     "x": 5,
+     "y": 6
+    },
+    {
+     "label": "Server rack",
+     "tile": "counter",
+     "x": 8,
+     "y": 6
+    }
+   ],
+   "h": 10,
+   "id": "systems_datacenter",
+   "name": "Data Center",
+   "w": 14
+  },
+  {
+   "computers": [
+    {
+     "x": 3,
+     "y": 2
+    },
+    {
+     "x": 7,
+     "y": 2
+    },
+    {
+     "x": 10,
+     "y": 2
+    }
+   ],
+   "door": {
+    "label": "Back to Network Ops",
+    "target": "systems_district_town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "lab",
+   "furniture": [
+    {
+     "label": "NOC board",
+     "tile": "board",
+     "x": 2,
+     "y": 6
+    },
+    {
+     "label": "Console",
+     "tile": "counter",
+     "x": 5,
+     "y": 6
+    }
+   ],
+   "h": 10,
+   "id": "systems_netops",
+   "name": "Network Ops",
+   "w": 14
+  },
+  {
+   "computers": [
+    {
+     "x": 3,
+     "y": 2
+    },
+    {
+     "x": 7,
+     "y": 2
+    },
+    {
+     "x": 10,
+     "y": 2
+    }
+   ],
+   "door": {
+    "label": "Back to Hardware Lab",
+    "target": "systems_district_town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "wood",
+   "furniture": [
+    {
+     "label": "Workbench",
+     "tile": "counter",
+     "x": 2,
+     "y": 6
+    },
+    {
+     "label": "Parts shelf",
+     "tile": "counter",
+     "x": 5,
+     "y": 6
+    }
+   ],
+   "h": 10,
+   "id": "systems_hardware",
+   "name": "Hardware Lab",
+   "w": 14
+  },
+  {
+   "computers": [
+    {
+     "x": 3,
+     "y": 2
+    },
+    {
+     "x": 7,
+     "y": 2
+    },
+    {
+     "x": 10,
+     "y": 2
+    }
+   ],
+   "door": {
+    "label": "Back to Systems Guild",
+    "target": "systems_district_town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "wood",
+   "furniture": [
+    {
+     "label": "Guild board",
+     "tile": "board",
+     "x": 2,
+     "y": 6
+    },
+    {
+     "label": "Shelf",
+     "tile": "counter",
+     "x": 5,
+     "y": 6
+    }
+   ],
+   "h": 10,
+   "id": "systems_guild",
+   "name": "Systems Guild",
+   "w": 14
+  },
+  {
+   "computers": [
+    {
+     "x": 3,
+     "y": 2
+    },
+    {
+     "x": 7,
+     "y": 2
+    },
+    {
+     "x": 10,
+     "y": 2
+    }
+   ],
+   "door": {
+    "label": "Back to Research Campus",
+    "target": "innovation_capital_town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "lab",
+   "furniture": [
+    {
+     "label": "Research board",
+     "tile": "board",
+     "x": 2,
+     "y": 6
+    },
+    {
+     "label": "Lab bench",
+     "tile": "counter",
+     "x": 5,
+     "y": 6
+    }
+   ],
+   "h": 10,
+   "id": "capital_research",
+   "name": "Research Campus",
+   "w": 14
+  },
+  {
+   "computers": [
+    {
+     "x": 3,
+     "y": 2
+    },
+    {
+     "x": 7,
+     "y": 2
+    },
+    {
+     "x": 10,
+     "y": 2
+    }
+   ],
+   "door": {
+    "label": "Back to The Foundry",
+    "target": "innovation_capital_town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "wood",
+   "furniture": [
+    {
+     "label": "Fabricator",
+     "tile": "counter",
+     "x": 2,
+     "y": 6
+    },
+    {
+     "label": "Parts shelf",
+     "tile": "counter",
+     "x": 5,
+     "y": 6
+    }
+   ],
+   "h": 10,
+   "id": "capital_foundry",
+   "name": "The Foundry",
+   "w": 14
+  },
+  {
+   "computers": [
+    {
+     "x": 3,
+     "y": 2
+    },
+    {
+     "x": 7,
+     "y": 2
+    },
+    {
+     "x": 10,
+     "y": 2
+    }
+   ],
+   "door": {
+    "label": "Back to Enterprise Tower",
+    "target": "innovation_capital_town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "lab",
+   "furniture": [
+    {
+     "label": "Executive board",
+     "tile": "board",
+     "x": 2,
+     "y": 6
+    },
+    {
+     "label": "Shelf",
+     "tile": "counter",
+     "x": 5,
+     "y": 6
+    }
+   ],
+   "h": 10,
+   "id": "capital_tower",
+   "name": "Enterprise Tower",
+   "w": 14
+  },
+  {
+   "computers": [
+    {
+     "x": 3,
+     "y": 2
+    },
+    {
+     "x": 7,
+     "y": 2
+    },
+    {
+     "x": 10,
+     "y": 2
+    }
+   ],
+   "door": {
+    "label": "Back to Creator Studio",
+    "target": "innovation_capital_town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "wood",
+   "furniture": [
+    {
+     "label": "Studio board",
+     "tile": "board",
+     "x": 2,
+     "y": 6
+    },
+    {
+     "label": "Shelf",
+     "tile": "counter",
+     "x": 5,
+     "y": 6
+    }
+   ],
+   "h": 10,
+   "id": "capital_studio",
+   "name": "Creator Studio",
+   "w": 14
+  },
+  {
+   "computers": [
+    {
+     "x": 3,
+     "y": 2
+    },
+    {
+     "x": 7,
+     "y": 2
+    },
+    {
+     "x": 10,
+     "y": 2
+    }
+   ],
+   "door": {
+    "label": "Back to the surface",
+    "target": "town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "lab",
+   "furniture": [
+    {
+     "label": "Server rack",
+     "tile": "rack",
+     "x": 2,
+     "y": 5
+    },
+    {
+     "label": "Server rack",
+     "tile": "rack",
+     "x": 5,
+     "y": 5
+    },
+    {
+     "label": "Server rack",
+     "tile": "rack",
+     "x": 8,
+     "y": 5
+    }
+   ],
+   "h": 10,
+   "id": "dungeon_repo",
+   "name": "The Forgotten Repository",
+   "w": 14
+  },
+  {
+   "computers": [
+    {
+     "x": 3,
+     "y": 2
+    },
+    {
+     "x": 7,
+     "y": 2
+    },
+    {
+     "x": 10,
+     "y": 2
+    }
+   ],
+   "door": {
+    "label": "Back to the surface",
+    "target": "startup_city_town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "lab",
+   "furniture": [
+    {
+     "label": "Server rack",
+     "tile": "rack",
+     "x": 2,
+     "y": 5
+    },
+    {
+     "label": "Server rack",
+     "tile": "rack",
+     "x": 5,
+     "y": 5
+    },
+    {
+     "label": "Server rack",
+     "tile": "rack",
+     "x": 8,
+     "y": 5
+    }
+   ],
+   "h": 10,
+   "id": "dungeon_datacenter",
+   "name": "Derelict Data Center",
+   "w": 14
+  },
+  {
+   "computers": [
+    {
+     "x": 3,
+     "y": 2
+    },
+    {
+     "x": 7,
+     "y": 2
+    },
+    {
+     "x": 10,
+     "y": 2
+    }
+   ],
+   "door": {
+    "label": "Back to the surface",
+    "target": "innovation_capital_town",
+    "x": 7,
+    "y": 8
+   },
+   "floor": "lab",
+   "furniture": [
+    {
+     "label": "Server rack",
+     "tile": "rack",
+     "x": 2,
+     "y": 5
+    },
+    {
+     "label": "Server rack",
+     "tile": "rack",
+     "x": 5,
+     "y": 5
+    },
+    {
+     "label": "Server rack",
+     "tile": "rack",
+     "x": 8,
+     "y": 5
+    }
+   ],
+   "h": 10,
+   "id": "dungeon_machine",
+   "name": "Experimental Machine Floor",
+   "w": 14
+  }
+ ]
+}

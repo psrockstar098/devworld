@@ -1,1 +1,526 @@
-{"npcs":[{"id":"mara","job":"Fix-It Shop owner","name":"Mara","nodes":{"bye":{"options":[],"speaker":"Mara","text":"Soldering iron's hot — come back when you've got code to fix."},"root":{"options":[{"next":"work","text":"Got any work for me?"},{"next":"bye","text":"Just browsing."}],"speaker":"Mara","text":"Hey, new dev. This shop runs on repaired code and strong coffee. You here to earn?"},"work":{"options":[{"next":"@mission:m02","text":"I'll take the repair job."},{"next":"root","text":"Maybe later."}],"speaker":"Mara","text":"A client's till script adds wrong. Classic off-by-something. The mission's on the board too, but I'll vouch you straight in."}},"rootNode":"root","schedule":[{"fromHour":8,"mapId":"fixit_interior","toHour":18,"x":6,"y":4},{"fromHour":18,"mapId":"town","toHour":22,"x":44,"y":13}],"shirt":[200,80,80],"skin":[232,190,150]},{"id":"ben","job":"Data Kiosk keeper","name":"Old Ben","nodes":{"bye":{"options":[],"speaker":"Old Ben","text":"Data never lies. People do, but data never."},"root":{"options":[{"next":"work","text":"Teach me data work."},{"next":"bye","text":"Just looking."}],"speaker":"Old Ben","text":"Thirty years of town records in this kiosk, kid. Every answer's a query away."},"work":{"options":[{"next":"@mission:m04","text":"Give me a query job."},{"next":"root","text":"Not yet."}],"speaker":"Old Ben","text":"Start small: pull a list from the residents table. Mind your semicolons."}},"rootNode":"root","schedule":[{"fromHour":0,"mapId":"kiosk_interior","toHour":24,"x":7,"y":5}],"shirt":[90,140,110],"skin":[210,170,130]},{"id":"junie","job":"Mission Hall guide","name":"Junie","nodes":{"bye":{"options":[],"speaker":"Junie","text":"Board's always there. So am I."},"root":{"options":[{"next":"start","text":"I'm new. Where do I begin?"},{"next":"bye","text":"Just passing through."}],"speaker":"Junie","text":"Welcome to Starter Town, dev. First rule: the board pays, the lab teaches, the town remembers."},"start":{"options":[{"next":"@mission:m01","sets":"met_junie","text":"Sign me up."},{"next":"root","text":"Tell me more first."}],"speaker":"Junie","text":"Every dev starts with one line. Print a greeting, prove the machine listens. That's mission one."}},"rootNode":"root","schedule":[{"fromHour":8,"mapId":"hall_interior","toHour":18,"x":7,"y":6},{"fromHour":18,"mapId":"town","toHour":23,"x":30,"y":22}],"shirt":[80,160,200],"skin":[240,200,160]},{"id":"rafi","job":"Market shopkeeper","name":"Rafi","nodes":{"bye":{"options":[],"speaker":"Rafi","text":"Coins clink, code ships. See you."},"root":{"options":[{"next":"@shop","text":"Show me your wares."},{"next":"work","text":"Any paid work?"},{"next":"bye","text":"Just browsing."}],"speaker":"Rafi","text":"Best gear in Starter Town, fair prices. A dev is only as good as their machine."},"work":{"options":[{"next":"@mission:m05","text":"I'll do the discount job."},{"next":"root","text":"Another time."}],"speaker":"Rafi","text":"My discount script's embarrassing. Fix it and there's coin in it for you."}},"rootNode":"root","schedule":[{"fromHour":0,"mapId":"market_interior","toHour":24,"x":7,"y":6}],"shirt":[200,170,60],"skin":[200,150,110]},{"id":"theo","job":"Plaza regular","name":"Theo","nodes":{"bye":{"options":[],"speaker":"Theo","text":"Catch you at the board."},"root":{"options":[{"next":"tip","text":"Any advice?"},{"next":"bye","text":"See you."}],"speaker":"Theo","text":"Theo. I've watched a hundred devs start here. Most quit at the second bug."},"tip":{"options":[{"next":"root","text":"Thanks."}],"speaker":"Theo","text":"Read the error. All of it. Out loud if you have to. The machine is always telling you exactly what's wrong."}},"rootNode":"root","schedule":[{"fromHour":9,"mapId":"town","toHour":21,"x":33,"y":21}],"shirt":[140,120,200],"skin":[232,190,150]}]}
+{
+ "npcs": [
+  {
+   "id": "mara",
+   "job": "Fix-It Shop owner",
+   "name": "Mara",
+   "nodes": {
+    "bye": {
+     "options": [],
+     "speaker": "Mara",
+     "text": "Soldering iron's hot \u2014 come back when you've got code to fix."
+    },
+    "root": {
+     "options": [
+      {
+       "next": "work",
+       "text": "Got any work for me?"
+      },
+      {
+       "next": "bye",
+       "text": "Just browsing."
+      }
+     ],
+     "speaker": "Mara",
+     "text": "Hey, new dev. This shop runs on repaired code and strong coffee. You here to earn?"
+    },
+    "work": {
+     "options": [
+      {
+       "next": "@mission:m02",
+       "text": "I'll take the repair job."
+      },
+      {
+       "next": "root",
+       "text": "Maybe later."
+      }
+     ],
+     "speaker": "Mara",
+     "text": "A client's till script adds wrong. Classic off-by-something. The mission's on the board too, but I'll vouch you straight in."
+    }
+   },
+   "rootNode": "root",
+   "schedule": [
+    {
+     "fromHour": 8,
+     "mapId": "fixit_interior",
+     "toHour": 18,
+     "x": 6,
+     "y": 4
+    },
+    {
+     "fromHour": 18,
+     "mapId": "town",
+     "toHour": 22,
+     "x": 44,
+     "y": 13
+    }
+   ],
+   "shirt": [
+    200,
+    80,
+    80
+   ],
+   "skin": [
+    232,
+    190,
+    150
+   ]
+  },
+  {
+   "id": "ben",
+   "job": "Data Kiosk keeper",
+   "name": "Old Ben",
+   "nodes": {
+    "bye": {
+     "options": [],
+     "speaker": "Old Ben",
+     "text": "Data never lies. People do, but data never."
+    },
+    "root": {
+     "options": [
+      {
+       "next": "work",
+       "text": "Teach me data work."
+      },
+      {
+       "next": "bye",
+       "text": "Just looking."
+      }
+     ],
+     "speaker": "Old Ben",
+     "text": "Thirty years of town records in this kiosk, kid. Every answer's a query away."
+    },
+    "work": {
+     "options": [
+      {
+       "next": "@mission:m04",
+       "text": "Give me a query job."
+      },
+      {
+       "next": "root",
+       "text": "Not yet."
+      }
+     ],
+     "speaker": "Old Ben",
+     "text": "Start small: pull a list from the residents table. Mind your semicolons."
+    }
+   },
+   "rootNode": "root",
+   "schedule": [
+    {
+     "fromHour": 0,
+     "mapId": "kiosk_interior",
+     "toHour": 24,
+     "x": 7,
+     "y": 5
+    }
+   ],
+   "shirt": [
+    90,
+    140,
+    110
+   ],
+   "skin": [
+    210,
+    170,
+    130
+   ]
+  },
+  {
+   "id": "junie",
+   "job": "Mission Hall guide",
+   "name": "Junie",
+   "nodes": {
+    "bye": {
+     "options": [],
+     "speaker": "Junie",
+     "text": "Board's always there. So am I."
+    },
+    "root": {
+     "options": [
+      {
+       "next": "start",
+       "text": "I'm new. Where do I begin?"
+      },
+      {
+       "next": "bye",
+       "text": "Just passing through."
+      }
+     ],
+     "speaker": "Junie",
+     "text": "Welcome to Starter Town, dev. First rule: the board pays, the lab teaches, the town remembers."
+    },
+    "start": {
+     "options": [
+      {
+       "next": "@mission:m01",
+       "sets": "met_junie",
+       "text": "Sign me up."
+      },
+      {
+       "next": "root",
+       "text": "Tell me more first."
+      }
+     ],
+     "speaker": "Junie",
+     "text": "Every dev starts with one line. Print a greeting, prove the machine listens. That's mission one."
+    }
+   },
+   "rootNode": "root",
+   "schedule": [
+    {
+     "fromHour": 8,
+     "mapId": "hall_interior",
+     "toHour": 18,
+     "x": 7,
+     "y": 6
+    },
+    {
+     "fromHour": 18,
+     "mapId": "town",
+     "toHour": 23,
+     "x": 30,
+     "y": 22
+    }
+   ],
+   "shirt": [
+    80,
+    160,
+    200
+   ],
+   "skin": [
+    240,
+    200,
+    160
+   ]
+  },
+  {
+   "id": "rafi",
+   "job": "Market shopkeeper",
+   "name": "Rafi",
+   "nodes": {
+    "bye": {
+     "options": [],
+     "speaker": "Rafi",
+     "text": "Coins clink, code ships. See you."
+    },
+    "root": {
+     "options": [
+      {
+       "next": "@shop",
+       "text": "Show me your wares."
+      },
+      {
+       "next": "work",
+       "text": "Any paid work?"
+      },
+      {
+       "next": "bye",
+       "text": "Just browsing."
+      }
+     ],
+     "speaker": "Rafi",
+     "text": "Best gear in Starter Town, fair prices. A dev is only as good as their machine."
+    },
+    "work": {
+     "options": [
+      {
+       "next": "@mission:m05",
+       "text": "I'll do the discount job."
+      },
+      {
+       "next": "root",
+       "text": "Another time."
+      }
+     ],
+     "speaker": "Rafi",
+     "text": "My discount script's embarrassing. Fix it and there's coin in it for you."
+    }
+   },
+   "rootNode": "root",
+   "schedule": [
+    {
+     "fromHour": 0,
+     "mapId": "market_interior",
+     "toHour": 24,
+     "x": 7,
+     "y": 6
+    }
+   ],
+   "shirt": [
+    200,
+    170,
+    60
+   ],
+   "skin": [
+    200,
+    150,
+    110
+   ]
+  },
+  {
+   "id": "theo",
+   "job": "Plaza regular",
+   "name": "Theo",
+   "nodes": {
+    "bye": {
+     "options": [],
+     "speaker": "Theo",
+     "text": "Catch you at the board."
+    },
+    "root": {
+     "options": [
+      {
+       "next": "rumour_repo",
+       "text": "Heard any secrets?"
+      },
+      {
+       "next": "tip",
+       "text": "Any advice?"
+      },
+      {
+       "next": "bye",
+       "text": "See you."
+      }
+     ],
+     "speaker": "Theo",
+     "text": "Theo. I've watched a hundred devs start here. Most quit at the second bug."
+    },
+    "rumour_repo": {
+     "options": [
+      {
+       "next": "@close",
+       "sets": "dungeon_forgotten_repo",
+       "text": "I'll go look."
+      },
+      {
+       "next": "root",
+       "text": "Spooky. Later."
+      }
+     ],
+     "text": "You didn't hear it from me, but the plaza fountain drains somewhere. Old commits, sealed. Someone left a hatch under the flowerbed south of the market."
+    },
+    "tip": {
+     "options": [
+      {
+       "next": "root",
+       "text": "Thanks."
+      }
+     ],
+     "speaker": "Theo",
+     "text": "Read the error. All of it. Out loud if you have to. The machine is always telling you exactly what's wrong."
+    }
+   },
+   "rootNode": "root",
+   "schedule": [
+    {
+     "fromHour": 9,
+     "mapId": "town",
+     "toHour": 21,
+     "x": 33,
+     "y": 21
+    }
+   ],
+   "shirt": [
+    140,
+    120,
+    200
+   ],
+   "skin": [
+    232,
+    190,
+    150
+   ]
+  },
+  {
+   "id": "nova",
+   "job": "Startup Hub founder",
+   "name": "Nova",
+   "nodes": {
+    "advice": {
+     "options": [
+      {
+       "next": "root",
+       "text": "Thanks."
+      }
+     ],
+     "speaker": "Nova",
+     "text": "Read the tests before you write code. Half of shipping is knowing what done means."
+    },
+    "root": {
+     "options": [
+      {
+       "next": "rumour_dc",
+       "text": "Anything strange around here?"
+      },
+      {
+       "next": "advice",
+       "text": "Any advice?"
+      },
+      {
+       "next": "@bye",
+       "text": "See you."
+      }
+     ],
+     "speaker": "Nova",
+     "text": "Welcome to Startup City. Teams ship fast here, but nobody ships alone. Contracts open as your proof grows."
+    },
+    "rumour_dc": {
+     "options": [
+      {
+       "next": "@close",
+       "sets": "dungeon_derelict_dc",
+       "text": "I'll go look."
+      },
+      {
+       "next": "root",
+       "text": "Spooky. Later."
+      }
+     ],
+     "text": "There's a data center across town that nobody staffs. Still bills for power. The hatch is behind the co-working lot, west side."
+    }
+   },
+   "rootNode": "root",
+   "schedule": [
+    {
+     "fromHour": 8,
+     "mapId": "startup_city_town",
+     "toHour": 22,
+     "x": 10,
+     "y": 11
+    }
+   ],
+   "shirt": [
+    80,
+    160,
+    200
+   ],
+   "skin": [
+    232,
+    190,
+    150
+   ]
+  },
+  {
+   "id": "kernel",
+   "job": "Data center operator",
+   "name": "Kernel",
+   "nodes": {
+    "answer": {
+     "options": [
+      {
+       "next": "root",
+       "text": "Noted."
+      }
+     ],
+     "speaker": "Kernel",
+     "text": "The clock. Always the clock."
+    },
+    "root": {
+     "options": [
+      {
+       "next": "answer",
+       "text": "Which one lies most?"
+      },
+      {
+       "next": "@bye",
+       "text": "Later."
+      }
+     ],
+     "speaker": "Kernel",
+     "text": "Everything in this district is a queue, a cache or a clock. Learn which one is lying."
+    }
+   },
+   "rootNode": "root",
+   "schedule": [
+    {
+     "fromHour": 0,
+     "mapId": "systems_district_town",
+     "toHour": 24,
+     "x": 11,
+     "y": 13
+    }
+   ],
+   "shirt": [
+    70,
+    180,
+    170
+   ],
+   "skin": [
+    210,
+    170,
+    130
+   ]
+  },
+  {
+   "id": "ada",
+   "job": "Research director",
+   "name": "Ada",
+   "nodes": {
+    "answer": {
+     "options": [
+      {
+       "next": "root",
+       "text": "I will."
+      }
+     ],
+     "speaker": "Ada",
+     "text": "Start with a tool that fixes one annoyance. Then let other people try it."
+    },
+    "root": {
+     "options": [
+      {
+       "next": "rumour_machine",
+       "text": "What about the old machine floor?"
+      },
+      {
+       "next": "answer",
+       "text": "What should I build?"
+      },
+      {
+       "next": "@bye",
+       "text": "Goodbye."
+      }
+     ],
+     "speaker": "Ada",
+     "text": "Capital rewards original work, not busywork. Build something you would use yourself."
+    },
+    "rumour_machine": {
+     "options": [
+      {
+       "next": "@close",
+       "sets": "dungeon_machine_floor",
+       "text": "I'll go look."
+      },
+      {
+       "next": "root",
+       "text": "Spooky. Later."
+      }
+     ],
+     "text": "The Foundry's machine floor was sealed after an experiment nobody logged. The hatch is on the south edge of the campus. Bring evidence, not opinions."
+    }
+   },
+   "rootNode": "root",
+   "schedule": [
+    {
+     "fromHour": 7,
+     "mapId": "innovation_capital_town",
+     "toHour": 21,
+     "x": 10,
+     "y": 13
+    }
+   ],
+   "shirt": [
+    150,
+    120,
+    200
+   ],
+   "skin": [
+    232,
+    190,
+    150
+   ]
+  }
+ ]
+}

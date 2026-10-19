@@ -6,6 +6,17 @@ hidden-test assessment API. The browser IDE calls this service for every
 language that cannot run locally (C, C++, Java, C#, Go, Rust, Swift, Kotlin,
 Dart, Julia, Scala, Haskell, Zig, x86-64 Assembly, TypeScript, SQL).
 
+Beyond single runs it stores **submissions** (projects across revisions, each
+with a content hash and verdict, diffable revision-to-revision), enforces an
+**approved-dependency allowlist** (player code has no network), and exposes
+advisory **abuse signals** for moderation.
+
+Submission documents persist to the shared **RocksDB** store (Kvrocks, `KV_URL`)
+behind the `SubmissionStore` interface — the default stays in-memory. Grading
+outcomes and moderation signals are written to **ClickHouse** (`CLICKHOUSE_URL`)
+best-effort, so a slow or down analytics store can never fail a grade. Both are
+optional; the worker runs standalone without them.
+
 ## One-command local run
 
 ```bash
@@ -30,7 +41,7 @@ Without Docker (dev loop):
 ```bash
 bun install
 EXEC_API_KEY=dev bun server.ts     # serves the API; /execute needs Docker
-bun test                           # 42 tests, no Docker required
+bun test                           # 93 tests, no Docker required
 ```
 
 ## How the game frontend connects
@@ -47,6 +58,12 @@ Flow:
    code execution; render `stdout`/`stderr`/`exitCode`/`timedOut`.
 3. `POST /assess` with `{ runtime, files, tests }` to grade a mission;
    `tests[].hidden` marks hidden tests whose data is never echoed back.
+4. `POST /submissions` once per project, then pass its `id` as `submissionId`
+   to `/assess` to save each attempt as a revision; `GET
+   /submissions/:id/compare?from=&to=` shows what changed and whether it
+   helped.
+5. `GET /dependencies` before offering a package install; request names in the
+   `dependencies` field — anything off the allowlist is refused.
 
 Full request/response shapes, the runtime table, and error codes:
 [docs/api.md](docs/api.md). Threat model and isolation details:
@@ -57,6 +74,7 @@ Full request/response shapes, the runtime table, and error codes:
 ```
 server.ts            # entrypoint: env config + Bun.serve
 runtimes.json        # runtime registry (18 languages)
+dependencies.json    # approved-dependency allowlist
 src/
   app.ts             # routes, auth, quota, assessment orchestration
   runner.ts          # ContainerRunner interface + Docker CLI backend + FakeRunner
@@ -65,6 +83,13 @@ src/
   compare.ts         # output normalization/comparison
   quota.ts           # per-key token bucket
   semaphore.ts       # concurrency bound
+  deps.ts            # approved-dependency policy (allowlist + bake state)
+  submissions.ts     # revision store interface + line-level diff
+  submissions.kv.ts  # RocksDB (Kvrocks) submission store
+  kv.ts              # minimal KV client (RedisKv + MemoryKv)
+  clickhouse.ts      # minimal ClickHouse HTTP client
+  history.ts         # ClickHouse event sink (assessments + moderation signals)
+  abuse.ts           # advisory abuse-signal detector
 tests/               # bun test, Docker-free via FakeRunner
 images/              # Dockerfiles for the 7 custom runtime images
 scripts/pull-runtimes.ts  # provision all runtime images on a host
@@ -82,3 +107,6 @@ Dockerfile docker-compose.yml .env.example
 | `EXEC_QUOTA_PER_HOUR` | 60 | Executions per key per hour |
 | `EXEC_MAX_CONCURRENT` | 4 | Max simultaneous containers |
 | `EXEC_MAX_REQUEST_BYTES` | 1048576 | Max submission bytes per request |
+| `KV_URL` | (unset) | RocksDB (Kvrocks) URL; unset keeps submissions in memory |
+| `CLICKHOUSE_URL` | (unset) | ClickHouse URL for the event sink; unset disables it |
+| `CLICKHOUSE_DB` / `CLICKHOUSE_USER` / `CLICKHOUSE_PASSWORD` | devworld / devworld / devworld_dev_pw | ClickHouse auth |

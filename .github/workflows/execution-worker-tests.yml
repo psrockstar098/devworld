@@ -1,0 +1,27 @@
+name: Execution worker tests
+
+on:
+  push:
+    paths: ['execution-worker/**', '.github/workflows/execution-worker-tests.yml']
+  pull_request:
+    paths: ['execution-worker/**']
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Bun test (Docker-free)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install
+        working-directory: execution-worker
+        run: bun install --frozen-lockfile || bun install
+      - name: Typecheck
+        working-directory: execution-worker
+        run: bunx tsc --noEmit
+      - name: Test
+        working-directory: execution-worker
+        run: bun test

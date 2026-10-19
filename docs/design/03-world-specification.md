@@ -1,6 +1,6 @@
 # DEVWORLD — World Specification
 
-**Version:** 0.1 (2026-10-19)
+**Version:** 0.2 (2026-10-19)
 **Map philosophy:** cozy 2D, colorful, readable at a glance. The world is a
 chapter book: each city is a chapter, each district a section. You can *see*
 a locked city across the water long before you can reach it — aspiration is
@@ -32,14 +32,24 @@ part of the design.
         └────────────────────┘
 ```
 
-Phase 1 builds **Starter Town only**. Other cities are defined here so Phase 1
-systems (gating, travel, services) are built against the real shape.
+**Build status:** the design below is the north star. What actually ships in
+Phase 1 is all four cities playable (Starter Town, Startup City, Systems
+District, Innovation Capital — see §10), gated by **level + a proven mission**
+rather than the skill-tree nodes and independent assessments described here.
+Node-based and assessment-based gating arrives with the full progression
+service in Phase 2; `world_model.h` implements the gate shape so swapping the
+predicate is a one-function change.
 
 ## 2. Competency gating (how unlocking works)
 
 A city or district unlocks on **demonstrated competency, not level number
 alone**. Each gate lists required skill-tree nodes ([GDD] §3) and/or an
 independent assessment. Level is a *necessary but not sufficient* condition.
+
+*Phase 1 build:* gates are evaluated as level + a required proven mission
+(e.g. Startup City = L6 + `m14`). The competency-node predicate is specified
+here and lands with the full skill-tree service; the evaluation point is pure
+and unit-tested (`world_model.h`).
 
 - Gate evaluation is server-side ([ARCH] §5).
 - When a gate is one node away, the map shows a "nearly there" hint naming
@@ -65,7 +75,7 @@ walking distance; the whole town is the tutorial without feeling like one.
 Starter Town rules: no rent (safety net), no PvP-adjacent systems, all
 missions completable with the starter computer.
 
-## 4. STARTUP CITY (L6–20, Phase 2)
+## 4. STARTUP CITY (L6–20 · Phase 2 target, playable preview now)
 
 Vibe: bright morning, glass and murals, busy. The "get a real job" city.
 
@@ -80,7 +90,7 @@ Vibe: bright morning, glass and murals, busy. The "get a real job" city.
 Districts inside unlock progressively (Founders' Row at entry; Hackathon Hall
 at L11 + "testing" node).
 
-## 5. SYSTEMS DISTRICT (L16–35, Phase 2–3)
+## 5. SYSTEMS DISTRICT (L16–35 · Phase 2–3 target, playable preview now)
 
 Vibe: night, neon on dark steel, hum of servers. For builders of deep things.
 
@@ -94,7 +104,7 @@ Vibe: night, neon on dark steel, hum of servers. For builders of deep things.
 capstone. This is the first gate most players will *feel* — it must be hard
 but fair, with a visible preparation track.
 
-## 6. INNOVATION CAPITAL (L36+, Phase 3)
+## 6. INNOVATION CAPITAL (L36+ · Phase 3 target, playable preview now)
 
 Vibe: dawn over white towers. Research partnerships, elite contracts,
 company headquarters, the creator marketplace. Defined at low detail until
@@ -134,6 +144,36 @@ independent assessment.
 - Persistence: player-visible world state (shop stock, notice boards) is
   per-player instanced in Phase 1; shared world state arrives with
   multiplayer (Phase 2).
+
+## 10. Regional economy, hidden technology, homes (2.3 — built)
+
+Every city carries a region profile (`world.json` → `economy`):
+
+| City | Community | Job focus | Living cost | Technology market |
+|---|---|---|---|---|
+| Starter Town | Weekend Hackers | Fundamentals | 0 cr/day | baseline |
+| Startup City | Ship-It Club | Product and contracts | 25 cr/day | +20% |
+| Systems District | Latency Guild | Infrastructure and reliability | 60 cr/day | −15% |
+| Innovation Capital | Frontier Circle | Research and long bets | 150 cr/day | +35% |
+
+Shop prices read the region bias; bus fares and (Phase 2) rent read the living
+cost. The world map shows the whole directory side by side.
+
+**Hidden technology dungeons** sit behind hatches on the city exteriors. A
+rumour from an NPC reveals a hatch; a minimum level opens it; the mechanic is a
+real programming challenge (missions `m15`–`m17`) and the payoff is a rare,
+convenience-only item:
+
+| Dungeon | City | Gate | Challenge | Reward |
+|---|---|---|---|---|
+| The Forgotten Repository | Starter Town | L3 | change-log triage (`m15`) | Version Control Relic |
+| Derelict Data Center | Startup City | L10 | log aggregation (`m16`) | Salvaged Rack Unit |
+| Experimental Machine Floor | Innovation Capital | L36 | SQL experiment census (`m17`) | Neural Accelerator |
+
+**Developer homes** are typed, decoratable spaces (`housing.json`): workstation,
+decor and trophy slots, with home-lab benefits derived from what you place.
+Achievements can be hung as trophies; teams can be invited in. Private studios
+are more `housing.json` entries, not new code.
 
 ## OPEN
 

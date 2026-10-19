@@ -1,0 +1,114 @@
+{
+ "cities": [
+  {
+   "blurb": "One plaza, one lab, one board, and every dev's first bug.",
+   "economy": {
+    "community": "Weekend Hackers",
+    "jobFocus": "Fundamentals",
+    "livingCost": 0,
+    "marketBias": 0
+   },
+   "id": "starter_town",
+   "maps": [
+    "town",
+    "apt_interior",
+    "lab_interior",
+    "hall_interior",
+    "fixit_interior",
+    "kiosk_interior",
+    "market_interior",
+    "dungeon_repo"
+   ],
+   "minLevel": 1,
+   "name": "Starter Town",
+   "region": "region_starter",
+   "requiresMission": "",
+   "spawnMap": "town"
+  },
+  {
+   "blurb": "Co-working lofts, contract offices and a coffee shop that never closes. Teams ship here.",
+   "economy": {
+    "community": "Ship-It Club",
+    "jobFocus": "Product and contracts",
+    "livingCost": 25,
+    "marketBias": 20
+   },
+   "id": "startup_city",
+   "maps": [
+    "startup_city_town",
+    "startup_hub",
+    "startup_cowork",
+    "startup_office",
+    "startup_cafe",
+    "dungeon_datacenter"
+   ],
+   "minLevel": 6,
+   "name": "Startup City",
+   "region": "region_startup",
+   "requiresMission": "m14",
+   "spawnMap": "startup_city_town"
+  },
+  {
+   "blurb": "Data halls, network operations and a hardware lab. The air hums at 50 hertz.",
+   "economy": {
+    "community": "Latency Guild",
+    "jobFocus": "Infrastructure and reliability",
+    "livingCost": 60,
+    "marketBias": -15
+   },
+   "id": "systems_district",
+   "maps": [
+    "systems_district_town",
+    "systems_datacenter",
+    "systems_netops",
+    "systems_hardware",
+    "systems_guild"
+   ],
+   "minLevel": 16,
+   "name": "Systems District",
+   "region": "region_systems",
+   "requiresMission": "",
+   "spawnMap": "systems_district_town"
+  },
+  {
+   "blurb": "Research campuses and enterprise towers. Long bets, bigger contracts.",
+   "economy": {
+    "community": "Frontier Circle",
+    "jobFocus": "Research and long bets",
+    "livingCost": 150,
+    "marketBias": 35
+   },
+   "id": "innovation_capital",
+   "maps": [
+    "innovation_capital_town",
+    "capital_research",
+    "capital_foundry",
+    "capital_tower",
+    "capital_studio",
+    "dungeon_machine"
+   ],
+   "minLevel": 36,
+   "name": "Innovation Capital",
+   "region": "region_capital",
+   "requiresMission": "",
+   "spawnMap": "innovation_capital_town"
+  }
+ ],
+ "links": [
+  {
+   "fare": 80,
+   "from": "starter_town",
+   "to": "startup_city"
+  },
+  {
+   "fare": 200,
+   "from": "startup_city",
+   "to": "systems_district"
+  },
+  {
+   "fare": 500,
+   "from": "systems_district",
+   "to": "innovation_capital"
+  }
+ ]
+}

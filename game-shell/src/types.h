@@ -8,6 +8,7 @@
 #include <vector>
 #include <map>
 #include <cstdint>
+#include "settings.h"
 
 namespace dw {
 
@@ -49,18 +50,27 @@ struct LedgerRow {
   int64_t delta = 0;     // +credit / -debit, in credits
 };
 
+// Convenience-only item effects. The content validator pins this list:
+// an item may never carry an effect that changes a test verdict.
+struct ItemEffects {
+  int xpPercent = 0;
+  int concurrentMissions = 0;
+  int buildSpeedPercent = 0;
+  int comfort = 0;
+};
+
 struct ItemDef {
   std::string id, name, desc;
   int64_t price = 0;
   std::string slot;      // "computer" | "tool" | "consumable" | "decor"
+  ItemEffects effects;   // convenience only (see equipment.h)
 };
 
 // ---- progression ----
 struct LevelState {
   int level = 1;
   int64_t xp = 0;
-  // XP curve: illustrative for Phase 1 (design: 04-progression, gates are real).
-  static int64_t xpForLevel(int lvl) { return (int64_t)lvl * lvl * 100; }
+  // XP math lives in progression.h (pure, unit-tested; gates are the real check).
 };
 
 // ---- quests ----
@@ -78,6 +88,11 @@ struct MissionDef {
   std::vector<std::string> requires;  // mission ids that must complete first
   int64_t xpReward = 0;
   int64_t creditReward = 0;
+  // Campaign metadata (Phase 1 = levels 1-5). Gates are independent
+  // assessments: no hints, hidden tests only (design: 04-progression).
+  int level = 1;
+  bool gate = false;
+  bool hints = true;
 };
 enum class MissionState { Locked, Available, Active, Submitted, Complete };
 struct MissionProgress {
@@ -85,11 +100,35 @@ struct MissionProgress {
   int attempts = 0;
 };
 
+struct Notice {
+  std::string type;  // "info" | "success" | "quest" | "error" | "levelup"
+  std::string text;
+  std::string at;    // ISO time
+};
+
+// ---- social ----
+struct Message {
+  std::string contactId;
+  bool fromThem = false;  // true = received, false = sent
+  std::string text;
+  std::string at;
+};
+
+// ---- company ----
+struct CompanyState {
+  bool founded = false;
+  std::string name, focus;
+  int reputation = 0;
+  int contracts = 0;
+  std::vector<std::string> members;  // contact ids on the roster
+};
+
 // ---- player ----
 struct Player {
   std::string name = "Dev";
   std::string displayName = "Dev";
   Color skin{232, 190, 150}, shirt{45, 212, 191}, pants{51, 65, 85};
+  Color hair{45, 35, 28};       // character customization
   Vec2 pos{0, 0};          // world px
   std::string mapId = "town";  // "town" | interior id
   Location loc;
@@ -97,9 +136,20 @@ struct Player {
   int64_t reputation = 0;
   std::vector<std::string> achievements;
   std::map<std::string, int> inventory;  // itemId -> qty
+  std::map<std::string, std::string> equipped;  // slot -> itemId
   std::vector<LedgerRow> ledger;
   std::map<std::string, MissionProgress> missions;  // missionId -> progress
   std::map<std::string, std::string> flags;         // npc/quest flags
+  std::string trackedMission;                       // objective tracker
+  std::vector<Notice> notices;                      // newest last, capped
+  std::map<std::string, std::string> homeLayout;    // home slot id -> item id
+  std::vector<std::string> homeTrophies;            // achievements on display
+  std::vector<Message> messages;                    // newest last
+  std::map<std::string, int> unread;                // contactId -> unread count
+  std::vector<std::string> team;                    // contact ids in your party
+  CompanyState company;
+  AccessibilitySettings a11y;
+  double playSeconds = 0;                           // session-persisted playtime
   int64_t balance() const {
     int64_t b = 0;
     for (auto& r : ledger) b += r.delta;
@@ -133,10 +183,12 @@ struct NpcDef {
 
 // ---- interaction ----
 struct Interactable {
-  std::string id, label, kind;  // "door" | "computer" | "board" | "npc" | "shop" | "bank" | "bus"
+  std::string id, label, kind;  // "door" | "computer" | "board" | "npc" | "shop"
+                                // | "bank" | "bus" | "mail" | "inspect"
   std::string mapId;
   Rect rect;                    // world px
   std::string target;           // door target mapId, or npc id, etc.
+  std::string text;             // lore for "inspect" objects
 };
 
 }  // namespace dw

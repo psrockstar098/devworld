@@ -2,6 +2,7 @@
 #include "game.h"
 #include "bridge.h"
 #include "util.h"
+#include <algorithm>
 #include <cmath>
 #include <emscripten.h>
 
@@ -24,9 +25,12 @@ void Game::frame() {
 
   if (!uiOpen_) update(dt);
   animT_ += dt;
+  player_.playSeconds += dt;
   // Day cycle: full day ~ 10 minutes.
   dayT_ += dt / 600.0f;
   if (dayT_ >= 1.0f) dayT_ -= 1.0f;
+  // Environment audio follows the same clock and the current map.
+  audio_.setScene(currentCityId(), world_.map(curMap_).isInterior, dayT_);
 
   render();
 }
@@ -51,6 +55,8 @@ void Game::onKeyDown(SDL_Keycode k) {
   } else if (k == keys_["map"]) { ui_show("worldmap", panelJson("worldmap")); uiOpen_ = true; sfx("open"); }
   else if (k == keys_["quests"]) { ui_show("quests", questJson()); uiOpen_ = true; sfx("open"); }
   else if (k == keys_["inventory"]) { ui_show("inventory", panelJson("inventory")); uiOpen_ = true; sfx("open"); }
+  else if (k == keys_["profile"]) { ui_show("profile", panelJson("profile")); uiOpen_ = true; sfx("open"); }
+  else if (k == keys_["notifications"]) { ui_show("notifications", notificationsJson()); uiOpen_ = true; sfx("open"); }
 }
 
 void Game::onKeyUp(SDL_Keycode k) {
@@ -134,7 +140,10 @@ bool Game::findInteract(Hit& out) {
     float d = hypotf(player_.pos.x - cx, player_.pos.y - cy);
     if (d < best) { best = d; found = true; out = {kind, id, label, target, {cx, cy}}; }
   };
-  for (auto& it : m.interactables) consider(it.kind, it.id, it.label, it.target, it.rect);
+  for (auto& it : m.interactables) {
+    if (it.kind == "hatch" && !hatchRevealed(it)) continue;  // secrets stay secret
+    consider(it.kind, it.id, it.label, it.target, it.rect);
+  }
   for (auto& n : npcs_) {
     Vec2 p = npcPos(n);
     if (p.x < -500) continue;
@@ -145,18 +154,15 @@ bool Game::findInteract(Hit& out) {
 }
 
 void Game::enterMap(const std::string& mapId, int tx, int ty) {
+  if (!world_.has(mapId)) return;
   curMap_ = mapId;
   const TileMap& m = world_.map(mapId);
-  // Find the door/exit mat on this map to spawn next to it.
-  float sx = tx * m.tile + m.tile / 2, sy = ty * m.tile + m.tile / 2;
-  if (mapId == "town") {
-    // Spawn at the building door that leads to the interior we left.
-    for (auto& b : m.buildings) {
-      // (matched by caller passing the door tile)
-    }
-  }
-  player_.pos = {sx, sy};
-  player_.loc.regionId = mapId;
+  if (tx < 0 || ty < 0) { tx = (int)m.spawn.x; ty = (int)m.spawn.y; }
+  player_.pos = {(float)tx * m.tile + m.tile / 2, (float)ty * m.tile + m.tile / 2};
+  // [PHASE2] the world-sim service assigns region/instance on entry; interiors
+  // are instanced per player, exteriors are shared regions.
+  player_.loc.regionId = m.regionId;
+  player_.loc.instanceId = m.instanceType;
   updateCamera();
   saveNow();
   sfx("open");
@@ -165,20 +171,24 @@ void Game::enterMap(const std::string& mapId, int tx, int ty) {
 void Game::doInteract(const Hit& h) {
   sfx("interact");
   if (h.kind == "door") {
-    // target is "interiorId" or "town". Find a sensible spawn on arrival.
+    if (!world_.has(h.target)) { notice("That door is under construction.", "error"); return; }
     const TileMap& tm = world_.map(h.target);
     int sx = 7, sy = 7;
-    if (h.target == "town") {
-      // Spawn at the door mat of the building we came from.
-      for (auto& b : tm.buildings) {
+    if (tm.isInterior) {
+      // Stand just inside the door we came through.
+      sx = tm.door.x;
+      sy = tm.door.y - 1;
+      if (sy < 1) sy = 1;
+    } else {
+      // Leaving a room: arrive at the door mat of the building we came from.
+      sx = (int)tm.spawn.x;
+      sy = (int)tm.spawn.y;
+      for (const auto& b : tm.buildings) {
         if (b.target == curMap_) { sx = b.doorX; sy = b.doorY + 1; break; }
       }
-    } else {
-      sx = tm.door.x; sy = tm.door.y - 1;
-      if (sy < 1) sy = 1;
     }
     enterMap(h.target, sx, sy);
-    notify(tm.name, "info");
+    notice(tm.name, "info");
   } else if (h.kind == "npc") {
     ui_show("dialogue", npcDialogueJson(h.id, ""));
     uiOpen_ = true;
@@ -206,13 +216,29 @@ void Game::doInteract(const Hit& h) {
     ui_show("bank", panelJson("bank"));
     uiOpen_ = true;
   } else if (h.kind == "bus") {
-    notify("The bus to Startup City is locked. Finish the town's work first — level 6 and proven skill open that road.", "info");
+    ui_show("fasttravel", travelJson());
+    uiOpen_ = true;
+    sfx("open");
   } else if (h.kind == "mail") {
     // Mailbox: mission notices.
     int avail = 0;
     for (auto& kv : player_.missions)
       if (kv.second.state == MissionState::Available) avail++;
-    notify(avail ? std::to_string(avail) + " mission(s) on the board. The town is hiring." : "No new notices. Check the mission board at the plaza.", "info");
+    notice(avail ? std::to_string(avail) + " mission(s) on the board. The town is hiring." : "No new notices. Check the mission board at the plaza.", "info");
+  } else if (h.kind == "inspect") {
+    ui_show("examine", examineJson(h.id));
+    uiOpen_ = true;
+  } else if (h.kind == "hatch") {
+    if (!world_.has(h.target)) { notice("The hatch is sealed shut.", "error"); return; }
+    const TileMap& tm = world_.map(h.target);
+    int sx = 7, sy = 7;
+    if (tm.isInterior) {
+      sx = tm.door.x;
+      sy = tm.door.y - 1;
+      if (sy < 1) sy = 1;
+    }
+    enterMap(h.target, sx, sy);
+    notice("You descend into " + tm.name + ".", "quest");
   }
 }
 
@@ -261,8 +287,8 @@ void Game::render() {
   {
     float sx = player_.pos.x - cam_.x, sy = player_.pos.y - cam_.y;
     bool moving = moveUp_ || moveDown_ || moveLeft_ || moveRight_;
-    float bob = moving ? (float)animT_ : 0;
-    float by = sy + (moving ? -2.0f * fabsf(sinf(bob * 8.0f)) : 0);
+    float bob = (moving && !player_.a11y.reducedMotion) ? (float)animT_ : 0;
+    float by = sy + (moving && !player_.a11y.reducedMotion ? -2.0f * fabsf(sinf(bob * 8.0f)) : 0);
     SDL_SetRenderDrawColor(ren_, 0, 0, 0, 60);
     SDL_Rect sh{(int)(sx - 9), (int)(sy + 22), 18, 6};
     SDL_RenderFillRect(ren_, &sh);
@@ -279,18 +305,67 @@ void Game::render() {
         float dx = 8 - w, dy = 8 - hh;
         if (dx * dx + dy * dy <= 64) SDL_RenderDrawPoint(ren_, (int)(sx - 8 + w), (int)(by - 18 + hh));
       }
-    SDL_SetRenderDrawColor(ren_, 45, 35, 28, 255);
+    SDL_SetRenderDrawColor(ren_, P.hair.r, P.hair.g, P.hair.b, 255);
     SDL_Rect hair{(int)(sx - 8), (int)(by - 19), 16, 5};
     SDL_RenderFillRect(ren_, &hair);
   }
 
   // Interaction prompt.
   if (!uiOpen_) {
+    drawMinimap();
     Hit h;
     if (findInteract(h)) drawPrompt("[E] " + h.label);
   }
 
   SDL_RenderPresent(ren_);
+}
+
+void Game::drawMinimap() {
+  const TileMap& m = world_.map(curMap_);
+  if (m.w == 0 || m.h == 0) return;
+  const int mw = 150, mh = 108;
+  const int mx = vw_ - mw - 14, my = 14;
+  float sc = std::min((float)(mw - 8) / (m.w * m.tile), (float)(mh - 8) / (m.h * m.tile));
+
+  SDL_SetRenderDrawBlendMode(ren_, SDL_BLENDMODE_BLEND);
+  SDL_SetRenderDrawColor(ren_, 8, 12, 18, 190);
+  SDL_Rect bg{mx, my, mw, mh};
+  SDL_RenderFillRect(ren_, &bg);
+  SDL_SetRenderDrawColor(ren_, 45, 212, 191, 200);
+  SDL_RenderDrawRect(ren_, &bg);
+
+  auto mark = [&](float wx, float wy, int gw, int gh, Color c) {
+    SDL_SetRenderDrawColor(ren_, c.r, c.g, c.b, c.a);
+    SDL_Rect r{mx + 4 + (int)(wx * sc), my + 4 + (int)(wy * sc),
+               std::max(2, gw), std::max(2, gh)};
+    SDL_RenderFillRect(ren_, &r);
+  };
+
+  for (const auto& b : m.buildings)
+    mark(b.rect.x * m.tile, b.rect.y * m.tile,
+         (int)(b.rect.w * m.tile * sc), (int)(b.rect.h * m.tile * sc), {150, 170, 200, 220});
+
+  for (const auto& it : m.interactables) {
+    if (it.kind == "door" || it.kind == "computer") continue;
+    if (it.kind == "hatch" && !hatchRevealed(it)) continue;
+    Color c = it.kind == "bus" ? Color{255, 210, 130, 255}
+            : it.kind == "board" ? Color{45, 212, 191, 255}
+            : it.kind == "bank" ? Color{160, 220, 160, 255}
+            : it.kind == "hatch" ? Color{220, 160, 255, 255}
+            : Color{210, 210, 220, 255};
+    mark(it.rect.x, it.rect.y, 3, 3, c);
+  }
+
+  for (const auto& n : npcs_) {
+    Vec2 p = npcPos(n);
+    if (p.x < -500) continue;
+    // npcPos is px already; convert back to map space for the scaled mark.
+    mark(p.x, p.y, 3, 3, {240, 240, 245, 230});
+  }
+
+  float blink = player_.a11y.reducedMotion ? 1.0f : 0.6f + 0.4f * sinf((float)animT_ * 4);
+  mark(player_.pos.x, player_.pos.y, 4, 4, {45, 212, 191, (uint8_t)(160 + 95 * blink)});
+  SDL_SetRenderDrawBlendMode(ren_, SDL_BLENDMODE_NONE);
 }
 
 void Game::drawPrompt(const std::string& text) {
@@ -313,6 +388,7 @@ void Game::drawPrompt(const std::string& text) {
 
 void Game::shutdown() {
   saveNow();
+  audio_.close();
   if (font_) TTF_CloseFont(font_);
   if (ren_) SDL_DestroyRenderer(ren_);
   if (win_) SDL_DestroyWindow(win_);

@@ -1,0 +1,27 @@
+name: Game server tests
+
+on:
+  push:
+    paths: ['game-server/**', '.github/workflows/game-server-tests.yml']
+  pull_request:
+    paths: ['game-server/**']
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Bun test (Docker-free)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install
+        working-directory: game-server
+        run: bun install --frozen-lockfile || bun install
+      - name: Typecheck
+        working-directory: game-server
+        run: bunx tsc --noEmit
+      - name: Test
+        working-directory: game-server
+        run: bun test

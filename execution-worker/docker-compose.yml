@@ -12,12 +12,25 @@ services:
     image: devworld/execution-worker:latest
     container_name: devworld-execution-worker
     ports:
-      - "8090:8090"
+      - "127.0.0.1:8090:8090"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${SUBMISSIONS_DIR:-/submissions}:/submissions
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       SUBMISSIONS_DIR: /submissions
+      # Store/event wiring. Hostnames resolve on the external `devworld` network.
+      KV_URL: redis://:${KV_PASSWORD:-devworld_dev_pw}@kv:6666
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-devworld}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-devworld}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-devworld_dev_pw}
     restart: unless-stopped
+    networks: [devworld]
+
+networks:
+  devworld:
+    name: devworld
+    external: true

@@ -1,0 +1,52 @@
+{
+ "contacts": [
+  {
+   "blurb": "Knows every board in town.",
+   "cityId": "starter_town",
+   "id": "junie",
+   "name": "Junie",
+   "role": "Mission guide",
+   "skill": "Python fundamentals"
+  },
+  {
+   "blurb": "Fixes code for a living.",
+   "cityId": "starter_town",
+   "id": "mara",
+   "name": "Mara",
+   "role": "Shop owner",
+   "skill": "Debugging"
+  },
+  {
+   "blurb": "Thirty years of records.",
+   "cityId": "starter_town",
+   "id": "ben",
+   "name": "Ben",
+   "role": "Data keeper",
+   "skill": "SQL and data"
+  },
+  {
+   "blurb": "Believes teams beat talent.",
+   "cityId": "startup_city",
+   "id": "nova",
+   "name": "Nova",
+   "role": "Founder",
+   "skill": "Shipping"
+  },
+  {
+   "blurb": "Lives between a queue and a clock.",
+   "cityId": "systems_district",
+   "id": "kernel",
+   "name": "Kernel",
+   "role": "Infra operator",
+   "skill": "Systems"
+  },
+  {
+   "blurb": "Only interested in original work.",
+   "cityId": "innovation_capital",
+   "id": "ada",
+   "name": "Ada",
+   "role": "Research director",
+   "skill": "Research"
+  }
+ ]
+}

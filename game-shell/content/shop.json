@@ -1,1 +1,106 @@
-{"items":[{"desc":"A sturdy dev machine. Cuts simulated build times; unlocks 2 concurrent missions. (Stat: convenience only — never affects test outcomes.)","id":"laptop_pro","name":"Pro Laptop","price":120,"slot":"computer"},{"desc":"Reference cards for Python and SQL. +10% XP from missions while equipped. (Convenience only.)","id":"cheatsheets","name":"Cheat Sheets","price":40,"slot":"tool"},{"desc":"Noodles. Restores nothing, tastes like victory.","id":"noodles","name":"Midnight Noodles","price":5,"slot":"consumable"},{"desc":"A nicer bunk. Pure comfort — the town respects a dev with a good chair.","id":"chair","name":"Ergo Chair","price":60,"slot":"decor"}]}
+{
+ "items": [
+  {
+   "desc": "A sturdy dev machine. Adds 2 concurrent mission slots and speeds up simulated builds. (Convenience only \u2014 never affects test outcomes.)",
+   "effects": {
+    "buildSpeedPercent": 25,
+    "concurrentMissions": 2
+   },
+   "id": "laptop_pro",
+   "name": "Pro Laptop",
+   "price": 120,
+   "slot": "computer"
+  },
+  {
+   "desc": "Reference cards for Python and SQL. +10% mission XP while equipped. (Convenience only.)",
+   "effects": {
+    "xpPercent": 10
+   },
+   "id": "cheatsheets",
+   "name": "Cheat Sheets",
+   "price": 40,
+   "slot": "tool"
+  },
+  {
+   "desc": "Clicky switches, honest feedback. Faster simulated builds, a little comfort. (Convenience only.)",
+   "effects": {
+    "buildSpeedPercent": 10,
+    "comfort": 5
+   },
+   "id": "mech_keyboard",
+   "name": "Mechanical Keyboard",
+   "price": 70,
+   "slot": "tool"
+  },
+  {
+   "desc": "Your own rack. Adds 1 concurrent mission slot and cuts simulated build time in half. (Convenience only.)",
+   "effects": {
+    "buildSpeedPercent": 50,
+    "concurrentMissions": 1
+   },
+   "id": "server_rack",
+   "name": "Home Server Rack",
+   "price": 300,
+   "slot": "computer"
+  },
+  {
+   "desc": "A nicer chair. Pure comfort \u2014 the town respects a dev who sits well.",
+   "effects": {
+    "comfort": 10
+   },
+   "id": "chair",
+   "name": "Ergo Chair",
+   "price": 60,
+   "slot": "decor"
+  },
+  {
+   "desc": "Warm light for late sessions. Small comfort boost.",
+   "effects": {
+    "comfort": 4
+   },
+   "id": "fog_lamp",
+   "name": "Fog Lamp",
+   "price": 30,
+   "slot": "decor"
+  },
+  {
+   "desc": "Noodles. Restores nothing, tastes like victory.",
+   "effects": {},
+   "id": "noodles",
+   "name": "Midnight Noodles",
+   "price": 5,
+   "slot": "consumable"
+  },
+  {
+   "desc": "Recovered from the forgotten repository. +5% mission XP. (Convenience only.)",
+   "effects": {
+    "xpPercent": 5
+   },
+   "id": "git_relic",
+   "name": "Version Control Relic",
+   "price": 400,
+   "slot": "tool"
+  },
+  {
+   "desc": "Pulled from a derelict data center. +15% simulated build speed. (Convenience only.)",
+   "effects": {
+    "buildSpeedPercent": 15
+   },
+   "id": "rack_unit",
+   "name": "Salvaged Rack Unit",
+   "price": 600,
+   "slot": "computer"
+  },
+  {
+   "desc": "From the experimental machine floor. +1 mission slot, +20% build speed. (Convenience only \u2014 never affects test outcomes.)",
+   "effects": {
+    "buildSpeedPercent": 20,
+    "concurrentMissions": 1
+   },
+   "id": "neural_accelerator",
+   "name": "Neural Accelerator",
+   "price": 1500,
+   "slot": "computer"
+  }
+ ]
+}

@@ -1,0 +1,120 @@
+# DEVWORLD data infrastructure.
+#
+# Three stores, one network:
+#   clickhouse  — the main (columnar, append-only) database: events, telemetry,
+#                 the double-entry ledger, XP, attempts, assessments, moderation.
+#   kv (kvrocks)— the RocksDB-backed key-value store: durable operational state
+#                 (players, inventory, submissions, job/company records). Speaks
+#                 the Redis protocol, so one client shape covers both.
+#   redis       — the cache / realtime tier: sessions, hot reads, rate limits,
+#                 pub/sub for presence and chat.
+#
+# Ports are published on 127.0.0.1 only. Defaults below are DEV credentials;
+# override every one of them with a real .env before any non-local deployment.
+#
+#   cd infra && docker compose up -d && ./scripts/healthcheck.sh
+#
+name: devworld
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.8
+    container_name: devworld-clickhouse
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${CLICKHOUSE_HTTP_PORT:-8123}:8123"   # HTTP interface (clients)
+      - "127.0.0.1:${CLICKHOUSE_NATIVE_PORT:-9000}:9000" # native protocol
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-devworld}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-devworld}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-devworld_dev_pw}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - ./clickhouse/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "clickhouse-client --user \"$$CLICKHOUSE_USER\" --password \"$$CLICKHOUSE_PASSWORD\" --query 'SELECT 1' >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+    networks: [devworld]
+
+  kv:
+    image: apache/kvrocks:latest
+    container_name: devworld-kv
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${KV_PORT:-6666}:6666"
+    # The image entrypoint already runs
+    #   kvrocks -c /var/lib/kvrocks/kvrocks.conf --dir /var/lib/kvrocks --bind 0.0.0.0
+    # so we only append the password override.
+    command: ["--requirepass", "${KV_PASSWORD:-devworld_dev_pw}"]
+    volumes:
+      # Mounting over the image's own state dir seeds the volume with the
+      # shipped kvrocks.conf and correct ownership (uid 999), then persists data.
+      - kvrocks-data:/var/lib/kvrocks
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -h 127.0.0.1 -p 6666 -a \"$$KV_PASSWORD\" --no-auth-warning ping 2>/dev/null | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+    environment:
+      KV_PASSWORD: ${KV_PASSWORD:-devworld_dev_pw}
+    networks: [devworld]
+
+  redis:
+    image: redis:7-alpine
+    container_name: devworld-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --requirepass
+      - ${REDIS_PASSWORD:-devworld_dev_pw}
+      - --maxmemory
+      - ${REDIS_MAXMEMORY:-512mb}
+      - --maxmemory-policy
+      - allkeys-lru
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping 2>/dev/null | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 3s
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-devworld_dev_pw}
+    networks: [devworld]
+
+  # One-shot proof that embedded RocksDB (the library, not the Kvrocks server)
+  # actually works in this environment. Runs `rocksdb_smoke`, prints JSON, and
+  # exits; gate real embedded use on this passing. Enable with:
+  #   docker compose --profile tools up --build rocksdb-embedded
+  rocksdb-embedded:
+    profiles: ["tools"]
+    build:
+      context: ./rocksdb-embedded
+    image: devworld/rocksdb-embedded:latest
+    container_name: devworld-rocksdb-embedded
+    network_mode: none
+    restart: "no"
+
+networks:
+  devworld:
+    name: devworld
+    driver: bridge
+
+volumes:
+  clickhouse-data:
+  kvrocks-data:
+  redis-data:

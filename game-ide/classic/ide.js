@@ -87,6 +87,10 @@ function backendHeaders(b) {
     b.apiKey ? { 'x-api-key': b.apiKey } : {});
 }
 
+// Approved-dependency selections per backend runtime and the tracked submission
+// id live in classic/deps-store.js (window.DWDeps), so both the IDE and its
+// Node unit tests share one implementation.
+
 function workspaceFiles(firstPath, overrideContent) {
   const files = VFS.list().map((p) => ({
     path: p,
@@ -294,6 +298,7 @@ async function runViaBackend(path, lang) {
         runtime: BACKEND_RUNTIME[lang.id],
         files: workspaceFiles(path),
         timeout: 30,
+        dependencies: DWDeps.get(BACKEND_RUNTIME[lang.id]),
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -544,6 +549,72 @@ function createEditor() {
     getBackend: () => {
       try { return JSON.parse(localStorage.getItem('devworld.backend.v1') || 'null'); }
       catch (e) { return null; }
+    },
+
+    // --- backend project history (execution-worker submissions/revisions) ---
+    backendDependencies: (runtime) => DWDeps.get(runtime),
+    setBackendDependency: (runtime, name, on) => {
+      const list = DWDeps.get(runtime).filter((n) => n !== name);
+      if (on) list.push(name);
+      DWDeps.set(runtime, list);
+      if (typeof PackagesUI !== 'undefined') PackagesUI.render();
+      return DWDeps.get(runtime);
+    },
+    saveRevision: async () => {
+      const b = backendCfg();
+      if (!b) { print('// set the backend URL + API key first', 'err'); return null; }
+      const path = Tabs.active() || VFS.list()[0];
+      if (!path) { print('// no file to save', 'err'); return null; }
+      const lang = langForPath(path);
+      const runtime = BACKEND_RUNTIME[lang.id];
+      if (!runtime) { print(`// ${lang.name}: not a sandbox runtime`, 'err'); return null; }
+      const deps = DWDeps.get(runtime);
+      const id = DWDeps.submission();
+      const url = b.url.replace(/\/$/, '') + (id ? '/execute' : '/submissions');
+      const body = id
+        ? { runtime, files: workspaceFiles(path), dependencies: deps, submissionId: id }
+        : { runtime, files: workspaceFiles(path), dependencies: deps };
+      try {
+        const res = await fetch(url, { method: 'POST', headers: backendHeaders(b), body: JSON.stringify(body) });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { print(`revision error ${res.status}: ${data.error || 'request failed'}`, 'err'); return null; }
+        if (!id && data.id) DWDeps.setSubmission(data.id);
+        const n = id ? data.revision : 1;
+        print(`// saved revision ${n}${id ? '' : ' (new submission)'}`, 'ok');
+        return { id: DWDeps.submission(), revision: n };
+      } catch (e) {
+        print('backend unreachable: ' + ((e && e.message) || e), 'err');
+        return null;
+      }
+    },
+    compareRevisions: async (from, to) => {
+      const b = backendCfg();
+      const id = DWDeps.submission();
+      if (!b || !id) { print('// no saved submission to compare', 'err'); return null; }
+      try {
+        const res = await fetch(`${b.url.replace(/\/$/, '')}/submissions/${id}/compare?from=${from}&to=${to}`, {
+          headers: backendHeaders(b),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { print(`compare error ${res.status}: ${data.error || 'request failed'}`, 'err'); return null; }
+        if (typeof showBottom === 'function') showBottom('output');
+        print(`— revision ${from} → ${to} (${data.added} added, ${data.removed} removed)`, 'ok');
+        (data.files || []).forEach((f) => {
+          if (f.status === 'unchanged') return;
+          print(`${f.status}: ${f.path}`, 'ok');
+          (f.lines || []).forEach((l) => {
+            const cls = l.kind === 'add' ? 'ok' : l.kind === 'del' ? 'err' : undefined;
+            print((l.kind === 'add' ? '+ ' : l.kind === 'del' ? '- ' : '  ') + l.text, cls);
+          });
+        });
+        if (data.verdict && data.verdict.after) {
+          print(`// verdict: ${data.verdict.after.passed}/${data.verdict.after.total} (delta ${data.verdict.deltaPassed})`, 'ok');
+        }
+        return data;
+      } catch (e) {
+        print('backend unreachable: ' + ((e && e.message) || e), 'err');
+        return null;
+      }
     },
     version: '0.2.0',
   };

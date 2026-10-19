@@ -1,1 +1,12 @@
-{"compilerOptions":{"module":"ESNext","moduleResolution":"Bundler","skipLibCheck":true,"strict":true,"target":"ES2022","types":["bun"]},"include":["server.ts","src/**/*","tests/**/*","scripts/**/*"]}
+// tsconfig for editor/CI typechecking (`bun test` does not need it).
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
+    "types": ["bun"]
+  },
+  "include": ["server.ts", "src/**/*", "tests/**/*"]
+}

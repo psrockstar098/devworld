@@ -61,6 +61,69 @@ const PackagesUI = {
       list.appendChild(li);
     });
     if (!Object.keys(this.map()).length) list.innerHTML = '<li class="subtle">No entries yet.</li>';
+
+    // ---- Server runtimes (approved dependencies) ----
+    const sv = document.createElement('div');
+    sv.innerHTML = `<div class="shead" style="margin-top:10px">SANDBOX RUNTIMES (approved dependencies)</div>
+      <p class="subtle">Compiled/runtime-sandboxed languages have no network. Pick only from the packages the backend approves; versions are pinned.</p>
+      <div class="pkg-list" id="srvList"></div>`;
+    host.appendChild(sv);
+    const srvList = sv.querySelector('#srvList');
+    if (typeof backendCfg !== 'function' || !backendCfg()) {
+      srvList.innerHTML = '<p class="subtle">Set the backend URL + API key in Settings to see approved packages.</p>';
+    } else {
+      this.loadServerDeps(srvList);
+    }
+  },
+
+  async loadServerDeps(el) {
+    const b = backendCfg();
+    let approved = [];
+    try {
+      const res = await fetch(b.url.replace(/\/$/, '') + '/dependencies', { headers: backendHeaders(b) });
+      const data = await res.json().catch(() => ({}));
+      approved = Array.isArray(data.approved) ? data.approved : [];
+    } catch (e) {
+      el.innerHTML = '<p class="subtle">Backend unreachable: ' + ((e && e.message) || e) + '</p>';
+      return;
+    }
+    const byRuntime = {};
+    approved.forEach((d) => { (byRuntime[d.runtime] = byRuntime[d.runtime] || []).push(d); });
+    const rids = Object.values(BACKEND_RUNTIME).filter((v, i, a) => a.indexOf(v) === i);
+    el.innerHTML = '';
+    for (const rid of rids) {
+      const deps = byRuntime[rid] || [];
+      const selected = window.DWDeps ? window.DWDeps.get(rid) : [];
+      const label = (registry.find((l) => BACKEND_RUNTIME[l.id] === rid) || {}).name || rid;
+      const row = document.createElement('div');
+      row.className = 'pkg-row';
+      row.style.justifyContent = 'space-between';
+      row.innerHTML = `<span>${label}</span><span class="subtle">${deps.length ? deps.length + ' approved' : 'none'}</span>`;
+      el.appendChild(row);
+      for (const d of deps) {
+        const wrap = document.createElement('label');
+        wrap.className = 'pkg-row';
+        wrap.style.gap = '6px';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = selected.includes(d.name);
+        cb.disabled = !d.baked;
+        cb.addEventListener('change', () => {
+          if (window.GameIDE) window.GameIDE.setBackendDependency(rid, d.name, cb.checked);
+        });
+        wrap.appendChild(cb);
+        const span = document.createElement('span');
+        span.textContent = `${d.name}@${d.version}` + (d.baked ? '' : ' — needs a package mirror');
+        wrap.appendChild(span);
+        el.appendChild(wrap);
+      }
+      if (!deps.length) {
+        const none = document.createElement('p');
+        none.className = 'subtle';
+        none.textContent = 'No approved packages for this runtime yet.';
+        el.appendChild(none);
+      }
+    }
   },
 
   async installPython(name) {

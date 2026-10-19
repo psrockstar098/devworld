@@ -10,6 +10,7 @@
 #include <map>
 #include "types.h"
 #include "json.h"
+#include "world_model.h"
 
 namespace dw {
 
@@ -30,6 +31,11 @@ struct TileMap {
   std::vector<Building> buildings;
   std::vector<Interactable> interactables;
   Vec2 spawn{0, 0};          // tiles
+  // world ownership (multiplayer-ready metadata; see docs design §5)
+  std::string cityId;        // "starter_town" | "startup_city" | ...
+  std::string regionId;      // server shard/region id
+  std::string instanceType = "shared";  // "shared" exterior | "solo" interior
+  std::string ambient = "town";         // sound/light mood
   // interior extras
   std::string floor = "grass";
   struct Furn { std::string label, tile; int x = 0, y = 0; };
@@ -54,7 +60,11 @@ struct TileMap {
 class World {
  public:
   bool load(const std::string& contentDir);
+  // Attach city/region/instance metadata after the graph is loaded.
+  void bindWorld(const WorldGraph& graph);
   const TileMap& map(const std::string& id) const;
+  bool has(const std::string& id) const { return maps_.count(id) == 1; }
+  std::vector<std::string> mapIds() const;
 
   // Render the given map centered on camera (world px), with day/night tint.
   void render(SDL_Renderer* ren, TTF_Font* font, const std::string& mapId,
@@ -66,8 +76,7 @@ class World {
  private:
   std::map<std::string, TileMap> maps_;
   void buildTown(const JVal& j);
-  void buildInterior(const JVal& j);
-  void drawPlayerNpc(SDL_Renderer* ren, float x, float y, const Color& skin,
+  void buildInterior(const JVal& j);  void drawPlayerNpc(SDL_Renderer* ren, float x, float y, const Color& skin,
                      const Color& shirt, const Color& pants, const std::string& name,
                      TTF_Font* font, bool facingLeft, float bob);
   void drawText(SDL_Renderer* ren, TTF_Font* font, const std::string& text,

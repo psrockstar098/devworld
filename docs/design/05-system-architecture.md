@@ -4,9 +4,10 @@
 **Scope:** backend services for the full game (Phase 1 builds: auth, player,
 progression, execution/assessment; the rest are specified now, built later).
 Must be consistent with what already exists: the embedded IDE (`window.GameIDE`
-API), the execution worker (`POST /execute`, `POST /assess`, 18 runtimes, API
-key + quotas — see `execution-worker/docs/api.md`), and the C++ → WASM game
-shell (future).
+API), the execution worker (`POST /execute`, `POST /assess`, `GET /runtimes`,
+`GET /dependencies`, `POST /submissions` + revisions/compare, 18 runtimes, API
+key + quotas + approved-dependency allowlist — see
+`execution-worker/docs/api.md`), and the C++ → WASM game shell.
 
 ---
 
@@ -32,18 +33,36 @@ shell (future).
               │         │      │     │     │      │     │        │         │
               └─────────┴──────┴─────┴─────┴──────┴─────┴────────┴─────────┘
                                         │
-                              ┌─────────▼─────────┐
-                              │  Postgres (system │
-                              │  of record) +     │
-                              │  Redis (cache/RT) │
-                              │  + object storage │
-                              └───────────────────┘
+                              ┌─────────────▼─────────────┐
+                              │  ClickHouse (history,     │
+                              │  ledger, telemetry)       │
+                              │  RocksDB/Kvrocks (durable │
+                              │  current state)           │
+                              │  Redis (cache/RT)         │
+                              │  + object storage         │
+                              └───────────────────────────┘
 ```
 
 Service boundaries are hard: no service executes player code except §3, and
 §3 never touches player PII. Cross-service calls go through the gateway with
 service credentials; the client never calls §3–§9 directly except via
 gateway-pathed routes.
+
+### Data tier (implemented in `infra/`)
+
+Three stores, three jobs:
+
+| Store | Engine | Holds | Rule |
+|---|---|---|---|
+| **ClickHouse** | `clickhouse-server` | **History.** Event stream, the double-entry ledger, XP grants, mission attempts, assessment results, moderation signals. | Append-only. Never UPDATE/DELETE. Balances and levels are derived from it. |
+| **RocksDB** | Kvrocks (RocksDB engine, Redis protocol) | **Durable current state.** Player records, sessions that must survive a restart, submission/revision documents, job/company records. | One JSON document (or hash) per entity. Read-modify-write is fine per key; a key has one writer. |
+| **Redis** | `redis:7` | **Disposable.** Session tokens, hot-read caches, rate-limit counters, pub/sub for presence and chat. | Anything here must be recomputable or re-fetchable. |
+
+Why this split: ClickHouse is excellent at "what happened" (wide scans,
+aggregates, retention) and poor at hot single-key updates; RocksDB is the
+opposite. Redis is fast and volatile, so it only holds things we can rebuild.
+The physical schemas live in `infra/clickhouse/init/`; the running stack and
+health checks are documented in `infra/README.md`.
 
 ---
 
@@ -73,12 +92,21 @@ Owns: XP/levels, skill trees, missions, assessments, paths ([GDD] §2, §3, §4,
 
 Owns: running untrusted code ([GDD] §4 platform, §9, §11).
 - **Already built:** `execution-worker/` — `POST /execute`, `POST /assess`,
-  `GET /runtimes`; 18 Docker-sandboxed runtimes; API-key auth; per-key quotas;
-  threat model in `execution-worker/docs/threat-model.md`. This service IS that
-  worker, promoted to a first-class service.
+  `GET /runtimes`, `GET /dependencies`, `POST /submissions` + revision
+  read/compare, `GET /moderation/signals`; 18 Docker-sandboxed runtimes;
+  API-key auth; per-key quotas; approved-dependency allowlist; threat model in
+  `execution-worker/docs/threat-model.md`. This service IS that worker, promoted
+  to a first-class service.
 - Additions for the game: mission-scoped execution policies (per-mission
   timeout/memory overrides), deterministic image pins (reproducible grading),
-  forensics hooks (timing/plagiarism signals → §9 moderation feed).
+  forensics hooks (timing/plagiarism signals → §9 moderation feed). The
+  **submission store** backs player project history; it now has two
+  implementations behind one interface: in-memory (default) and
+  RocksDB/Kvrocks (`KV_URL`), with a sorted-set recency index and a bounded
+  cap. Assessment outcomes are written to the ClickHouse event sink
+  (`CLICKHOUSE_URL`) — append-only, best-effort, and never allowed to fail a
+  grade. Object storage behind the same interface is the Phase-3 move for
+  large revision blobs.
 - Security boundary: the ONLY service that runs player code. No network
   egress, no PII ingress, no access to other services' databases. Runs on
   dedicated hosts (docker.sock = host root — never co-located with §1/§2).
@@ -111,7 +139,10 @@ Owns: player projects, content-addressed file storage, marketplace listings
 ([GDD] §10).
 - `POST /projects`, `PUT /projects/{id}/files` (content-addressed),
   `POST /projects/{id}/publish`, `POST /listings/{id}/buy`.
-- Object storage (S3-compatible) for blobs; Postgres for metadata.
+- RocksDB (Kvrocks) holds project metadata and revision documents
+  (content-addressed by file hash); object storage (S3-compatible) takes the
+  large blobs as projects grow; ClickHouse keeps the append-only attempt and
+  assessment history.
 - Pre-publish scan pipeline (malware/secret scan) as an async job queue.
 - Security boundary: uploads are untrusted until scanned; published code is
   source-only (no executable downloads); demo runs go through §3 read-only.
@@ -194,12 +225,20 @@ require a schema entry before emission.
 
 ## §13 — Database conventions
 
-- Postgres is the system of record for all services except §3 (stateless)
-  and §4 (Redis-backed ephemeral).
-- Naming: `snake_case` tables, `<domain>_<entity>`; every table has
-  `id ULID PK`, `created_at`, `updated_at`.
+- **ClickHouse** is the system of record for *history*: it is append-only, and
+  every service writes its events, ledger rows, XP grants and attempts there.
+  §3 (stateless except for these append-only writes) and §4 (Redis-backed
+  ephemeral) are the exceptions.
+- **RocksDB (Kvrocks)** is the system of record for *durable current state*
+  that must not be recomputed from history (player records, submission
+  documents, contract records).
+- **Redis** holds only disposable data (§4 realtime, caches, rate limits).
+- Naming: `snake_case` tables, `<domain>_<entity>`; every table has an `id`,
+  `created_at`, `updated_at` where it is mutable.
 - Money tables are append-only (no UPDATE/DELETE on ledger rows).
-- Migrations are forward-only, reviewed, and reversible in staging first.
+- Migrations are forward-only, reviewed, and reversible in staging first. The
+  ClickHouse schema is applied via numbered files in `infra/clickhouse/init/`
+  on a fresh data volume.
 - Per-service schemas (no cross-service table reads; cross-service needs go
   through APIs).
 
@@ -231,6 +270,22 @@ ai_sessions(id, player_id, mode, mission_id), ai_events(id, session_id, hash, at
 reports(id, reporter_id, target_kind, target_id, reason, state)
 moderation_actions(id, target_id, kind, reason, actor_id, at, reversible)
 ```
+
+These are the logical tables. Physically, mutable current-state entities land in
+RocksDB (one document per entity) and append-only rows land in ClickHouse. The
+entities implemented so far:
+
+- **ClickHouse** (`infra/clickhouse/init/`): `events`, `ledger_entries`,
+  `xp_events`, `mission_attempts`, `assessment_events`, `moderation_signals`,
+  plus the views `mv_player_balance` (keyed by player **and** account, so a
+  wallet credit and its `system` counter-entry do not cancel out),
+  `mv_player_xp` and `mv_mission_pass`.
+- **RocksDB (Kvrocks)**: `player:<id>`, `handle:<handle>` → id,
+  `submission:<id>` (worker revisions, indexed by `submissions:created`).
+- **Redis**: `session:<token>` and the `balance:<id>:<currency>` read cache.
+
+`wallets` is not a stored table: the ledger is the truth and balances are
+derived.
 
 ## OPEN
 

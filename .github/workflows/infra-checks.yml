@@ -1,0 +1,28 @@
+name: Infra + compose checks
+
+on:
+  push:
+    paths: ['infra/**', 'game-server/**', 'execution-worker/**', '.github/workflows/infra-checks.yml']
+  pull_request:
+    paths: ['infra/**', 'game-server/**', 'execution-worker/**']
+  workflow_dispatch:
+
+jobs:
+  config:
+    name: Compose config + script syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate compose files
+        run: |
+          docker compose -f infra/docker-compose.yml config >/dev/null
+          docker compose -f execution-worker/docker-compose.yml config >/dev/null
+          docker compose -f game-server/docker-compose.yml config >/dev/null
+
+      - name: Shell syntax
+        run: |
+          for f in infra/scripts/*.sh setup-ubuntu.sh; do bash -n "$f"; done
+
+      - name: Build the embedded RocksDB proof image
+        run: docker build -t devworld-rocksdb-proof infra/rocksdb-embedded

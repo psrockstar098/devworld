@@ -17,6 +17,8 @@ export interface ValidatedExecute {
   files: FileInput[];
   stdin: string;
   timeoutSec: number;
+  dependencies: string[];
+  submissionId?: string;
 }
 
 export interface ValidatedAssess extends ValidatedExecute {
@@ -158,6 +160,34 @@ export function pickEntry(files: FileInput[], entryFile: string): string {
   return files.find((f) => f.path === entryFile)?.path ?? files[0].path;
 }
 
+const MAX_DEPENDENCIES = 10;
+
+/** Shape-only validation of the optional `dependencies` field (allow-list is enforced later). */
+export function validateDependencyNames(v: unknown): string[] {
+  if (v === undefined || v === null) return [];
+  if (!Array.isArray(v)) throw new ValidationError(400, "dependencies must be an array of names");
+  if (v.length > MAX_DEPENDENCIES) {
+    throw new ValidationError(400, `at most ${MAX_DEPENDENCIES} dependencies per submission`);
+  }
+  const out: string[] = [];
+  for (const name of v) {
+    if (typeof name !== "string" || name.length === 0 || name.length > 100) {
+      throw new ValidationError(400, "each dependency name must be a 1-100 character string");
+    }
+    out.push(name);
+  }
+  return out;
+}
+
+/** Optional `submissionId` used to attach a revision + verdict to a stored project. */
+export function validateSubmissionId(v: unknown): string | undefined {
+  if (v === undefined || v === null) return undefined;
+  if (typeof v !== "string" || !/^[a-f0-9-]{16,64}$/i.test(v)) {
+    throw new ValidationError(400, "submissionId must be a hex uuid-ish string");
+  }
+  return v;
+}
+
 export function validateExecuteBody(body: unknown, maxTotalBytes: number): ValidatedExecute {
   if (!isRecord(body)) throw new ValidationError(400, "body must be a JSON object");
   return {
@@ -165,6 +195,8 @@ export function validateExecuteBody(body: unknown, maxTotalBytes: number): Valid
     files: validateFiles(body.files, maxTotalBytes),
     stdin: validateStdin(body.stdin),
     timeoutSec: validateTimeout(body.timeout) ?? 0, // 0 = use runtime default
+    dependencies: validateDependencyNames(body.dependencies),
+    submissionId: validateSubmissionId(body.submissionId),
   };
 }
 

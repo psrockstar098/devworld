@@ -1,0 +1,49 @@
+{
+ "dungeons": [
+  {
+   "blurb": "Beneath the plaza: a sealed vault of commits nobody merged. The history is corrupt and a machine still asks for a repair.",
+   "cityId": "starter_town",
+   "entranceMap": "town",
+   "entranceX": 12,
+   "entranceY": 36,
+   "id": "forgotten_repo",
+   "interiorMap": "dungeon_repo",
+   "minLevel": 3,
+   "missionId": "m15",
+   "name": "The Forgotten Repository",
+   "revealBy": "dungeon_forgotten_repo",
+   "rewardItem": "git_relic",
+   "rewardText": "Version Control Relic"
+  },
+  {
+   "blurb": "A decommissioned hall that still serves traffic to nobody. The logs will tell you what happened if you ask the right questions.",
+   "cityId": "startup_city",
+   "entranceMap": "startup_city_town",
+   "entranceX": 12,
+   "entranceY": 34,
+   "id": "derelict_dc",
+   "interiorMap": "dungeon_datacenter",
+   "minLevel": 10,
+   "missionId": "m16",
+   "name": "Derelict Data Center",
+   "revealBy": "dungeon_derelict_dc",
+   "rewardItem": "rack_unit",
+   "rewardText": "Salvaged Rack Unit"
+  },
+  {
+   "blurb": "The Foundry's abandoned floor. An experimental machine ran a thousand experiments and recorded every one. Recover the ones that mattered.",
+   "cityId": "innovation_capital",
+   "entranceMap": "innovation_capital_town",
+   "entranceX": 50,
+   "entranceY": 34,
+   "id": "machine_floor",
+   "interiorMap": "dungeon_machine",
+   "minLevel": 36,
+   "missionId": "m17",
+   "name": "The Experimental Machine Floor",
+   "revealBy": "dungeon_machine_floor",
+   "rewardItem": "neural_accelerator",
+   "rewardText": "Neural Accelerator"
+  }
+ ]
+}

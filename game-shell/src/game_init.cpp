@@ -1,6 +1,13 @@
 // game.cpp (part 1) — init, content loading, save/load.
 #include "game.h"
 #include "bridge.h"
+#include "progression.h"
+#include "equipment.h"
+#include "profile.h"
+#include "regions.h"
+#include "dungeons.h"
+#include "housing.h"
+#include "social.h"
 #include "util.h"
 #include <fstream>
 #include <sstream>
@@ -22,6 +29,7 @@ bool Game::init(int vw, int vh) {
   vw_ = vw; vh_ = vh;
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) return false;
   if (TTF_Init() < 0) return false;
+  audio_.open();  // optional: the game runs silently if the browser blocks it
   win_ = SDL_CreateWindow("DEVWORLD", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                           vw_, vh_, SDL_WINDOW_SHOWN);
   if (!win_) return false;
@@ -33,7 +41,8 @@ bool Game::init(int vw, int vh) {
   // Default keybinds (remappable in settings).
   keys_ = {{"up", SDLK_w}, {"down", SDLK_s}, {"left", SDLK_a}, {"right", SDLK_d},
            {"interact", SDLK_e}, {"map", SDLK_m}, {"quests", SDLK_j},
-           {"inventory", SDLK_i}, {"close", SDLK_ESCAPE}};
+           {"inventory", SDLK_i}, {"profile", SDLK_p}, {"notifications", SDLK_n},
+           {"close", SDLK_ESCAPE}};
 
   loadContent();
   loadOrCreate();
@@ -50,9 +59,16 @@ bool Game::init(int vw, int vh) {
 
 void Game::loadContent() {
   world_.load("content");
+  JVal worldJson = parseJson(readFile("content/world.json"));
+  graph_.load(worldJson);
+  regions_.load(worldJson);
+  world_.bindWorld(graph_);
   loadNpcs(parseJson(readFile("content/npcs.json")));
   loadMissions(parseJson(readFile("content/missions.json")));
   loadShop(parseJson(readFile("content/shop.json")));
+  dungeons_.load(parseJson(readFile("content/dungeons.json")));
+  housing_.load(parseJson(readFile("content/housing.json")));
+  social_.load(parseJson(readFile("content/contacts.json")));
 }
 
 void Game::loadNpcs(const JVal& j) {
@@ -94,6 +110,9 @@ void Game::loadMissions(const JVal& j) {
     d.briefing = m.s("briefing"); d.language = m.s("language");
     d.file = m.s("file"); d.starter = m.s("starter");
     d.xpReward = m.n("xpReward"); d.creditReward = m.n("creditReward");
+    d.level = m.i("level", 1);
+    d.gate = m.boolean("gate", false);
+    d.hints = m.boolean("hints", true);
     for (auto& r : m.at("requires").arr) d.requires.push_back(r.str);
     for (auto& t : m.at("tests").arr) {
       TestCase tc;
@@ -114,7 +133,13 @@ void Game::loadShop(const JVal& j) {
     ItemDef d;
     d.id = it.s("id"); d.name = it.s("name"); d.desc = it.s("desc");
     d.price = it.n("price"); d.slot = it.s("slot");
+    const JVal& fx = it.at("effects");
+    d.effects.xpPercent = fx.i("xpPercent", 0);
+    d.effects.concurrentMissions = fx.i("concurrentMissions", 0);
+    d.effects.buildSpeedPercent = fx.i("buildSpeedPercent", 0);
+    d.effects.comfort = fx.i("comfort", 0);
     shopItems_.push_back(d);
+    catalog_[d.id] = d;
   }
 }
 
@@ -139,8 +164,12 @@ void Game::saveNow() {
        std::to_string(player_.shirt.b) + "],";
   s += "\"pants\":[" + std::to_string(player_.pants.r) + "," + std::to_string(player_.pants.g) + "," +
        std::to_string(player_.pants.b) + "],";
+  s += "\"hair\":[" + std::to_string(player_.hair.r) + "," + std::to_string(player_.hair.g) + "," +
+       std::to_string(player_.hair.b) + "],";
   s += "\"x\":" + std::to_string(player_.pos.x) + ",\"y\":" + std::to_string(player_.pos.y) + ",";
   s += "\"map\":" + json_escape(curMap_) + ",";
+  s += "\"region\":" + json_escape(player_.loc.regionId) + ",";
+  s += "\"instance\":" + json_escape(player_.loc.instanceId) + ",";
   s += "\"level\":" + std::to_string(player_.levels.level) + ",";
   s += "\"xp\":" + std::to_string(player_.levels.xp) + ",";
   s += "\"reputation\":" + std::to_string(player_.reputation) + ",";
@@ -184,7 +213,82 @@ void Game::saveNow() {
     first = false;
     s += json_escape(kv.first) + ":" + json_escape(kv.second);
   }
-  s += "}}";
+  s += "},\"equipped\":{";
+  first = true;
+  for (auto& kv : player_.equipped) {
+    if (!first) s += ",";
+    first = false;
+    s += json_escape(kv.first) + ":" + json_escape(kv.second);
+  }
+  s += "},\"tracked\":" + json_escape(player_.trackedMission) + ",";
+  s += "\"a11y\":" + player_.a11y.toJson() + ",";
+  s += "\"playSeconds\":" + std::to_string(player_.playSeconds) + ",";
+  s += "\"notices\":[";
+  first = true;
+  for (auto& n : player_.notices) {
+    if (!first) s += ",";
+    first = false;
+    s += "{\"type\":" + json_escape(n.type) + ",\"text\":" + json_escape(n.text) +
+         ",\"at\":" + json_escape(n.at) + "}";
+  }
+  s += "],\"keybinds\":{";
+  first = true;
+  for (auto& kv : keys_) {
+    if (!first) s += ",";
+    first = false;
+    s += json_escape(kv.first) + ":" + std::to_string((int)kv.second);
+  }
+  s += "},\"homeLayout\":{";
+  first = true;
+  for (auto& kv : player_.homeLayout) {
+    if (kv.second.empty()) continue;
+    if (!first) s += ",";
+    first = false;
+    s += json_escape(kv.first) + ":" + json_escape(kv.second);
+  }
+  s += "},\"homeTrophies\":[";
+  first = true;
+  for (auto& a : player_.homeTrophies) {
+    if (!first) s += ",";
+    first = false;
+    s += json_escape(a);
+  }
+  s += "],\"messages\":[";
+  first = true;
+  for (auto& m : player_.messages) {
+    if (!first) s += ",";
+    first = false;
+    s += "{\"c\":" + json_escape(m.contactId) + ",\"them\":" +
+         std::string(m.fromThem ? "true" : "false") + ",\"text\":" + json_escape(m.text) +
+         ",\"at\":" + json_escape(m.at) + "}";
+  }
+  s += "],\"unread\":{";
+  first = true;
+  for (auto& kv : player_.unread) {
+    if (!first) s += ",";
+    first = false;
+    s += json_escape(kv.first) + ":" + std::to_string(kv.second);
+  }
+  s += "},\"team\":[";
+  first = true;
+  for (auto& t : player_.team) {
+    if (!first) s += ",";
+    first = false;
+    s += json_escape(t);
+  }
+  s += "],\"company\":{\"founded\":" + std::string(player_.company.founded ? "true" : "false") +
+       ",\"name\":" + json_escape(player_.company.name) +
+       ",\"focus\":" + json_escape(player_.company.focus) +
+       ",\"reputation\":" + std::to_string(player_.company.reputation) +
+       ",\"contracts\":" + std::to_string(player_.company.contracts) + ",\"members\":[";
+  first = true;
+  for (auto& m : player_.company.members) {
+    if (!first) s += ",";
+    first = false;
+    s += json_escape(m);
+  }
+  s += "]}";
+  s += "}";
   dw_save(s.c_str());
 }
 
@@ -211,8 +315,12 @@ void Game::loadOrCreate() {
     player_.skin = col("skin", player_.skin);
     player_.shirt = col("shirt", player_.shirt);
     player_.pants = col("pants", player_.pants);
+    player_.hair = col("hair", player_.hair);
     player_.pos = {(float)j.n("x"), (float)j.n("y")};
     curMap_ = j.s("map", "town");
+    if (!world_.has(curMap_)) curMap_ = "town";  // map removed in a content update
+    player_.loc.regionId = j.s("region", world_.map(curMap_).regionId);
+    player_.loc.instanceId = j.s("instance", world_.map(curMap_).instanceType);
     player_.levels.level = j.i("level", 1);
     player_.levels.xp = (int64_t)j.n("xp", 0);
     player_.reputation = (int64_t)j.n("reputation", 0);
@@ -233,6 +341,53 @@ void Game::loadOrCreate() {
     for (auto& a : j.at("achievements").arr)
       if (a.type == JVal::STR) player_.achievements.push_back(a.str);
     for (auto& kv : j.at("flags").obj) player_.flags[kv.first] = kv.second.str;
+    for (auto& kv : j.at("equipped").obj) {
+      // Only keep equipped items that still exist and are equippable.
+      auto ci = catalog_.find(kv.second.str);
+      if (ci != catalog_.end() && Equipment::isSlot(kv.first)) player_.equipped[kv.first] = kv.second.str;
+    }
+    player_.trackedMission = j.s("tracked");
+    player_.a11y = AccessibilitySettings::parse(j.at("a11y"));
+    player_.playSeconds = j.n("playSeconds", 0);
+    for (auto& n : j.at("notices").arr) {
+      Notice nt;
+      nt.type = n.s("type", "info");
+      nt.text = n.s("text");
+      nt.at = n.s("at");
+      if (!nt.text.empty()) pushNotice(player_.notices, nt);
+    }
+    for (auto& kv : j.at("keybinds").obj) {
+      auto ki = keys_.find(kv.first);
+      if (ki != keys_.end() && kv.second.num > 0) ki->second = (SDL_Keycode)(int)kv.second.num;
+    }
+    for (auto& kv : j.at("homeLayout").obj)
+      if (!kv.second.str.empty()) player_.homeLayout[kv.first] = kv.second.str;
+    for (auto& a : j.at("homeTrophies").arr)
+      if (a.type == JVal::STR) player_.homeTrophies.push_back(a.str);
+    for (auto& m : j.at("messages").arr) {
+      Message msg;
+      msg.contactId = m.s("c");
+      msg.fromThem = m.boolean("them");
+      msg.text = m.s("text");
+      msg.at = m.s("at");
+      if (!msg.text.empty()) player_.messages.push_back(msg);
+    }
+    for (auto& kv : j.at("unread").obj) player_.unread[kv.first] = (int)kv.second.num;
+    for (auto& a : j.at("team").arr)
+      if (a.type == JVal::STR) player_.team.push_back(a.str);
+    const JVal& co = j.at("company");
+    player_.company.founded = co.boolean("founded");
+    player_.company.name = co.s("name");
+    player_.company.focus = co.s("focus");
+    player_.company.reputation = co.i("reputation");
+    player_.company.contracts = co.i("contracts");
+    for (auto& a : co.at("members").arr)
+      if (a.type == JVal::STR) player_.company.members.push_back(a.str);
+
+    // Content upgrades: missions added after a save was written start Locked.
+    // If the save already satisfies their requirements, unlock them now.
+    for (const auto& mid : eligibleUnlocks(missions_, player_.missions))
+      player_.missions[mid].state = MissionState::Available;
   } catch (...) {
     // Corrupt save -> fresh start (never crash on bad data).
     hasSave_ = false;

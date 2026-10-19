@@ -1,0 +1,40 @@
+name: Game shell tests
+
+on:
+  push:
+    paths: ['game-shell/**', '.github/workflows/game-shell-tests.yml']
+  pull_request:
+    paths: ['game-shell/**']
+  workflow_dispatch:
+
+jobs:
+  native:
+    name: C++ + content (native)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build and run tests
+        working-directory: game-shell
+        run: |
+          chmod +x tests/run_tests.sh
+          ./tests/run_tests.sh
+
+  wasm:
+    name: C++ (WebAssembly)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: latest
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build and run tests as WASM
+        working-directory: game-shell
+        run: |
+          chmod +x tests/run_wasm_tests.sh
+          ./tests/run_wasm_tests.sh

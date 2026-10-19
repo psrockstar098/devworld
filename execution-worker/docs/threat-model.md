@@ -60,6 +60,15 @@ Per-runtime resource limits:
   queueing unboundedly.
 - **Request size caps**: 200 KB per file, 1 MB total submission, 64 KB stdin,
   20 files / 20 tests max; oversized bodies get 413 before parsing.
+- **Approved-dependency allowlist** (`dependencies.json`): the containers have
+  no network, so a submission cannot fetch packages. Requested dependencies are
+  resolved against a pinned allowlist; anything else is refused (403), and
+  approved-but-not-baked packages are refused (400) until a controlled mirror
+  supplies them. Versions are pinned by construction.
+- **Advisory abuse signals** (`GET /moderation/signals`): request bursts,
+  oversized payloads, identical resubmissions and "fails only hidden tests"
+  patterns are recorded for moderation. Signals never block on their own —
+  quotas and the concurrency limit do that.
 - Quotas and semaphores are per worker process (in-memory); run one worker
   replica or put a shared rate limiter in front for multi-replica setups.
 
@@ -87,11 +96,25 @@ Per-runtime resource limits:
 
 ## Separation of assessment infrastructure from production
 
-- The worker is **stateless**: no player data, scores, or submissions persist
-  past a run (scratch dirs are deleted; quotas live in memory).
+- **Execution is stateless**: scratch dirs are deleted after every run and
+  quotas/abuse signals live in memory. Two things persist, both by design:
+  - the **submission store** (`src/submissions.ts`, `src/submissions.kv.ts`)
+    keeps project revisions so players can compare attempts. Two
+    implementations share one interface: in-memory (bounded to 500, the dev
+    default) and **RocksDB/Kvrocks** (`KV_URL`), durable and shared. A future
+    object-storage implementation drops in behind the same interface.
+    Submission content is player code, so treat it with the same care as
+    untrusted input — store it, never execute it outside a sandbox, and apply
+    the same retention/erasure policy as other player data.
+  - the **event sink** (`src/history.ts` → ClickHouse, `CLICKHOUSE_URL`) records
+    assessment outcomes and moderation signals, append-only. It is best-effort:
+    writes are fire-and-forget and a failure never affects a grade. Without
+    `CLICKHOUSE_URL` it is a no-op.
 - Run the worker on **dedicated host(s)**, not on the host serving the game
   API, database, or player accounts. A separate Docker context / project
-  keeps assessment containers away from production containers.
+  keeps assessment containers away from production containers. The worker
+  never connects to the game server's player database — it only writes its own
+  append-only assessment events.
 - Hidden test data lives in the **game server**, never in the worker: the
   worker only sees the stdin/expected output it is asked to check, and its
   assess responses provably exclude hidden data (covered by tests).

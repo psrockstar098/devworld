@@ -4,3 +4,14 @@ node_modules/
 .DS_Store
 game-shell/dist/ide/
 vscode-ide/dist/
+
+# local-only secrets and data
+infra/.env
+infra/data/
+game-server/.env
+execution-worker/.env
+
+# generated test binaries and caches
+game-shell/tests/build/
+__pycache__/
+*.pyc

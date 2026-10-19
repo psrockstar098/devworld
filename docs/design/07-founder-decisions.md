@@ -26,6 +26,28 @@ their stated gate.
 | OPEN-T1 | Load-test targets (concurrent players, submissions/sec) | After OPEN-A1 hosting decision |
 | OPEN-T2 | Accessibility audit scope (WCAG target, audit vendor) | Before public beta |
 
+## Decided
+
+| # | Decision | Call | Where it landed |
+|---|----------|------|-----------------|
+| D-STORAGE | **Primary data stores** | a) Postgres everywhere b) **ClickHouse (history) + RocksDB/Kvrocks (durable current state) + Redis (cache/RT)** | `infra/`, [ARCH] §0 data tier and §13 conventions |
+
+The store split is a founder call, recorded here because it replaces the earlier
+Postgres assumption:
+
+- **ClickHouse** is the system of record for history — events, the double-entry
+  ledger, XP grants, attempts, assessments, moderation signals. Append-only.
+- **RocksDB** (via Kvrocks, which speaks the Redis protocol) is the system of
+  record for durable current state — player records, submission/revision
+  documents, contract records.
+- **Redis** holds only disposable data — session tokens, read caches,
+  rate-limit counters, pub/sub.
+
+Consequences already paid for: balances and levels are derived (never mutated);
+the worker's submission store is durable behind its existing interface; the
+worker writes grading outcomes to ClickHouse best-effort so storage can never
+fail a grade.
+
 ## Notes
 
 - OPEN-1 leaning cosmetic-only or grant-funded keeps the Phase 1 build clean of

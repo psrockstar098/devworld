@@ -81,6 +81,9 @@ echo ">> game shell (C++ -> WebAssembly)"
 ( cd game-shell && ./build.sh )
 echo "game shell built -> game-shell/dist/"
 
+echo ">> game shell tests (native + content)"
+( cd game-shell && ./tests/run_tests.sh )
+
 echo ""
 echo "=== DONE ==="
 echo "Serve locally:"
@@ -88,5 +91,13 @@ echo "  IDE:        cd game-ide  && python3 -m http.server 8000   (deployed copy
 echo "              (or rebuild:  cd vscode-ide && npm run build, then copy dist/* to game-ide/)"
 echo "  Game shell: cd game-shell/dist && python3 -m http.server 8001"
 echo ""
+echo "Data tier (ClickHouse + RocksDB/Kvrocks + Redis, needs Docker running):"
+echo "  cd infra && cp .env.example .env && ./scripts/up.sh"
+echo "  (optional) ./scripts/rocksdb-embedded-test.sh   # prove real librocksdb works"
+echo ""
+echo "Game server (needs the data tier up):"
+echo "  cd game-server && bun install && cp .env.example .env && bun server.ts   # :8091"
+echo ""
 echo "Execution worker (needs Docker running):"
 echo "  cd execution-worker && bun install && bun run pull-runtimes && docker compose up"
+echo "  (set KV_URL + CLICKHOUSE_URL to persist submissions and grading events)"

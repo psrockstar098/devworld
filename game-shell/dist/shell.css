@@ -12,10 +12,29 @@
   --accent-dim: #1a8f83;
   --danger: #e26d6d;
   --gold: #e8c468;
+  --text-scale: 1;
 }
+
+/* Accessibility modes are toggled as classes on <html> from the C++ prefs. */
+html.reduced-motion * { animation: none !important; transition: none !important; }
+html.a11y-contrast { --dim: #cdd5de; --line: #566070; --surface2: #2c3138; }
+html.a11y-contrast .panel { border-width: 2px; }
+html.a11y-contrast .tag { border-width: 2px; }
+html.a11y-colorblind { --accent: #4aa8ff; --accent-dim: #2f6fae; --gold: #ffd166; }
+html.a11y-colorblind .tag.done, html.a11y-colorblind .crow, html.a11y-colorblind .pos { color: #6fb4ff; }
 
 body { font-family: "Segoe UI", system-ui, sans-serif; color: var(--text); }
 .dim { color: var(--dim); font-size: 0.85em; }
+.panel { font-size: calc(1em * var(--text-scale)); }
+.hud-track { color: var(--accent); font-size: 0.85em; max-width: 260px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
+.toggle { display: block; margin: 6px 0; }
+.toggle input { margin-right: 6px; }
+.tag.info { color: var(--dim); }
+.tag.success { color: #7ee2a8; border-color: #7ee2a8; }
+.tag.error { color: var(--danger); border-color: var(--danger); }
+.tag.quest { color: var(--gold); border-color: var(--gold); }
+.tag.levelup { color: var(--accent); border-color: var(--accent); }
 
 /* HUD */
 #hud {
@@ -68,6 +87,7 @@ body { font-family: "Segoe UI", system-ui, sans-serif; color: var(--text); }
   border: 1px solid var(--line); color: var(--dim); white-space: nowrap; }
 .tag.active { color: var(--accent); border-color: var(--accent); }
 .tag.done { color: #7ee2a8; border-color: #7ee2a8; }
+.tag.gate { color: #f0b35e; border-color: #f0b35e; margin-left: 6px; }
 .crow { padding: 5px 0; color: #7ee2a8; }
 .lrow { display: flex; justify-content: space-between; gap: 10px; padding: 7px 4px;
   border-bottom: 1px solid var(--line); font-size: 0.92em; }
@@ -111,3 +131,18 @@ button.opt { text-align: left; }
 
 #boot { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center;
   justify-content: center; background: var(--bg); color: var(--accent); font-size: 18px; }
+
+/* Contacts / messaging (2.3) */
+.social { display: grid; grid-template-columns: minmax(150px, 1fr) 2fr; gap: 12px; margin-top: 10px; }
+.clist { display: flex; flex-direction: column; gap: 6px; }
+.clist button.opt.active { border-color: var(--accent); background: var(--surface2); }
+.cthread { background: var(--surface2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px; min-height: 180px; display: flex; flex-direction: column; gap: 6px; }
+.msg { display: flex; justify-content: space-between; gap: 10px; align-items: baseline;
+  padding: 7px 10px; border-radius: 8px; background: var(--surface); max-width: 90%; }
+.msg.mine { align-self: flex-end; border-right: 3px solid var(--accent); }
+.msg.theirs { align-self: flex-start; border-left: 3px solid var(--gold); }
+.msginput { display: flex; gap: 8px; margin-top: 8px; }
+.msginput input { flex: 1; }
+.rowbtns { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+@media (max-width: 640px) { .social { grid-template-columns: 1fr; } }

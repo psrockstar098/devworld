@@ -12,8 +12,8 @@ RUN apt-get update \
  && apt-get autoremove -y \
  && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY package.json ./
-RUN bun install
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile --production
 COPY . .
 ENV PORT=8090
 EXPOSE 8090

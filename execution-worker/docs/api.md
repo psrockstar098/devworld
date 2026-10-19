@@ -37,10 +37,12 @@ Request fields:
 
 | Field     | Type               | Required | Notes                                                        |
 |-----------|--------------------|----------|--------------------------------------------------------------|
-| `runtime` | string             | yes      | Runtime id from `GET /runtimes`                              |
-| `files`   | [{path, content}]  | yes      | 1-20 files, relative paths, 200 KB max each, 1 MB total max  |
-| `stdin`   | string             | no       | Piped to the program's stdin, 64 KB max                      |
-| `timeout` | number (seconds)   | no       | 1-120; defaults to the runtime's `timeoutSec`                |
+| `runtime`      | string             | yes      | Runtime id from `GET /runtimes`                          |
+| `files`        | [{path, content}]  | yes      | 1-20 files, relative paths, 200 KB max each, 1 MB total max |
+| `stdin`        | string             | no       | Piped to the program's stdin, 64 KB max                  |
+| `timeout`      | number (seconds)   | no       | 1-120; defaults to the runtime's `timeoutSec`            |
+| `dependencies` | [string]           | no       | Approved package names (see *Dependency policy*), max 10  |
+| `submissionId` | string             | no       | Attach this run as a new revision of a stored submission |
 
 Entry file: the file matching the runtime's `entryFile` (e.g. `main.py`,
 `Main.java`) is used as the program entry; otherwise the first file in
@@ -57,13 +59,15 @@ Response (200):
   "timedOut": false,
   "truncated": false,
   "durationMs": 231,
-  "artifacts": [{ "path": "chart.png", "base64": "..." }]
+  "artifacts": [{ "path": "chart.png", "base64": "..." }],
+  "revision": 3
 }
 ```
 
 `artifacts` are files the program wrote to `/work/output`, base64-encoded
 (5 MB total cap). `truncated` is true when stdout/stderr exceeded the
-256 KB cap each.
+256 KB cap each. `revision` is present only when `submissionId` was sent, and
+is the number of the revision the run was saved as.
 
 ### POST /assess
 
@@ -85,6 +89,9 @@ curl -s http://localhost:8090/assess \
 
 Test fields: `name` (1-100 chars), `stdin` (64 KB max), `expected_stdout`
 (64 KB max), `hidden` (boolean, default false). Max 20 tests per request.
+`/assess` also accepts the optional `dependencies` and `submissionId` fields
+from `/execute`; when `submissionId` is set, the files are stored as a new
+revision and its verdict is recorded (see *Submissions*).
 
 Output comparison trims trailing whitespace per line, normalizes line
 endings, and ignores leading/trailing blank lines; anything else must match
@@ -97,12 +104,15 @@ Response (200):
   "runtime": "python",
   "passed": 1,
   "total": 2,
+  "revision": 3,
   "results": [
     { "name": "adds positives", "passed": true, "hidden": false, "actual": "5" },
     { "name": "handles zero", "passed": false, "hidden": true, "errorKind": "wrong-output" }
   ]
 }
 ```
+
+`revision` is present only when `submissionId` was sent.
 
 Per-test result fields:
 
@@ -119,13 +129,119 @@ Per-test result fields:
 anything containing the hidden stdin/expected output — only `passed` and a
 data-free `errorKind`.
 
+## Dependency policy
+
+Player code never reaches the network, so a submission cannot `pip install` or
+`npm install`. A submission may instead **request** dependencies by name; the
+worker resolves each against the allowlist in `dependencies.json`:
+
+- not on the allowlist → `403 dependency not approved`
+- on the allowlist but not baked into the image yet → `400 ... needs a
+  controlled mirror`
+- on the allowlist and baked in → allowed; the runtime image already has it
+
+Versions are always pinned (`.env`-style ranges are rejected at load time) so
+grading is reproducible. `GET /dependencies` returns the list.
+
+### GET /dependencies
+
+Optional `?runtime=<id>` filters to one runtime.
+
+```json
+{ "approved": [ { "runtime": "typescript", "name": "typescript", "version": "5.9", "baked": true } ] }
+```
+
+## Submissions
+
+A **submission** is a project that survives across revisions. Each revision is
+content-hashed and can carry the verdict of the assessment that produced it, so
+a player (and moderation) can see exactly what changed between two attempts and
+whether it helped.
+
+Revisions are stored in memory by default (bounded to the 500 most recent), or
+durably in **RocksDB/Kvrocks** when `KV_URL` is set — both behind the
+`SubmissionStore` interface, so an object-storage implementation drops in
+without touching the HTTP layer. The KV store keeps a recency index
+(`submissions:created`) and evicts the oldest document when it exceeds the cap.
+
+Assessment outcomes and moderation signals are appended to **ClickHouse** when
+`CLICKHOUSE_URL` is set (`assessment_events`, `moderation_signals`). This is
+best-effort telemetry and never affects a response.
+
+### POST /submissions
+
+Store a project's first revision. Same body as `/execute` (no `tests`, no run).
+
+```bash
+curl -s http://localhost:8090/submissions \
+  -H "x-api-key: $EXEC_API_KEY" -H "Content-Type: application/json" \
+  -d '{ "runtime": "python",
+        "files": [{ "path": "main.py", "content": "print(1)" }],
+        "dependencies": [] }'
+```
+
+```json
+{
+  "id": "3f0c…",
+  "runtime": "python",
+  "dependencies": [],
+  "created": "2026-10-19T10:00:00.000Z",
+  "revisions": [ { "n": 1, "at": "…", "hash": "9a1c…", "files": ["main.py"], "verdict": null } ]
+}
+```
+
+### GET /submissions/:id
+
+The same metadata with every revision's number, timestamp, content hash, file
+list and verdict.
+
+### GET /submissions/:id/revisions/:n
+
+One revision in full: `{ n, at, hash, files: [{ path, content }], verdict }`.
+
+### GET /submissions/:id/compare?from=1&to=2
+
+Line-level diff between two revisions plus the verdict delta.
+
+```json
+{
+  "from": 1, "to": 2,
+  "files": [ { "path": "main.py", "status": "changed", "added": 1, "removed": 1,
+               "lines": [ { "kind": "del", "text": "print(1)" },
+                          { "kind": "add", "text": "print(2)" } ] } ],
+  "added": 1, "removed": 1,
+  "verdict": { "before": { "passed": 1, "total": 2 },
+               "after":  { "passed": 2, "total": 2 }, "deltaPassed": 1 }
+}
+```
+
+`status` is `added`, `removed`, `changed` or `unchanged`. Files are matched by
+path, not order. Diffs over 1,200 lines per file fall back to a coarse
+whole-file replace.
+
+## Moderation
+
+### GET /moderation/signals
+
+Advisory abuse signals for a moderation feed. Quotas and the concurrency limit
+keep the service up; these signals flag patterns without blocking on their own.
+Kinds: `request-burst`, `payload-fixture`, `duplicate-submission`,
+`hidden-tail` (repeatedly failing **only** the hidden tests — possible
+brute-forcing). Thresholds live in `src/abuse.ts` and are injectable for tests.
+
+```json
+{ "signals": [ { "key": "…", "kind": "duplicate-submission",
+                 "detail": "6 identical submissions (9a1c…)", "at": "…", "count": 6 } ] }
+```
+
 ## Error codes
 
 | Status | Meaning                                                        |
 |--------|----------------------------------------------------------------|
-| 400    | Bad request: unknown runtime, invalid files/tests/timeout      |
+| 400    | Bad request: unknown runtime, invalid files/tests/timeout, or a dependency that is approved but not baked in yet |
 | 401    | Missing or invalid `x-api-key`                                 |
-| 404    | Unknown route                                                  |
+| 403    | Dependency not on the allowlist                                |
+| 404    | Unknown route, submission or revision                          |
 | 413    | Payload too large (file, stdin, or total submission cap)       |
 | 429    | Hourly quota exceeded; `retryAfterSec` in body, `Retry-After` header |
 | 502    | Execution backend unavailable (Docker daemon error)            |

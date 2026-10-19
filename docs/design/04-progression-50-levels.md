@@ -10,6 +10,12 @@ real, specified hurdle.
 Jobs/contracts · Equipment/property · New tech · Rewards/progression ·
 Assessment.
 
+**Phase 1 build status:** the slice that ships is Levels 1–5 plus the early
+Tier-2 arrival content — 17 missions (`m01`–`m17`, including the three hidden
+dungeon challenges in `dungeons.json`), all four cities, regional economies,
+decoratable homes and a local contacts/company/portfolio layer. Levels 6–50
+describe the target curve; XP values are illustrative until playtest tuning.
+
 ---
 
 ## TIER 1 — THE BEGINNER (Levels 1–5)
@@ -62,7 +68,7 @@ Assessment.
 - **Jobs/contracts:** "Automate Mara's receipts" (multi-function job), 80 coins.
 - **Equipment/property:** Laptop upgrade II; room decoration unlocks.
 - **New tech:** Functions, scope, intro to testing mindset.
-- **Rewards/progression:** 1,400 XP; title "Beginner"; **bus ticket earned** (not yet usable).
+- **Rewards/progression:** 1,400 XP; title "Beginner"; **bus ticket earned** (usable at the Bus Stop to reach Startup City).
 - **Assessment:** **GATE — Independent:** write 3 functions from a spec, no AI, no hints, hidden tests. Fail → targeted practice, retry in 1h.
 
 ---

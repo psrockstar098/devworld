@@ -13,8 +13,12 @@ mkdir -p dist
 
 echo "== compiling =="
 em++ src/main.cpp src/game_init.cpp src/game_loop.cpp src/game_logic.cpp \
-     src/world.cpp src/bridge.cpp \
+     src/world.cpp src/world_model.cpp src/bridge.cpp src/progression.cpp \
+     src/ambience.cpp src/audio.cpp src/equipment.cpp src/profile.cpp src/settings.cpp \
+     src/regions.cpp src/dungeons.cpp src/housing.cpp \
+     src/social.cpp src/company.cpp src/portfolio.cpp \
   -std=c++17 -O2 \
+  -fexceptions \
   -s USE_SDL=2 -s USE_SDL_TTF=2 \
   -s WASM=1 \
   -s ALLOW_MEMORY_GROWTH=1 \

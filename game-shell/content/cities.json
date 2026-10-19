@@ -1,0 +1,1082 @@
+{
+ "maps": [
+  {
+   "ambient": "city",
+   "buildings": [
+    {
+     "door": {
+      "target": "startup_hub",
+      "x": 10,
+      "y": 12
+     },
+     "h": 5,
+     "id": "startup_hub",
+     "name": "Startup Hub",
+     "roof": [
+      58,
+      86,
+      120
+     ],
+     "w": 9,
+     "wall": [
+      92,
+      122,
+      156
+     ],
+     "x": 6,
+     "y": 7
+    },
+    {
+     "door": {
+      "target": "startup_cowork",
+      "x": 27,
+      "y": 11
+     },
+     "h": 5,
+     "id": "startup_cowork",
+     "name": "Co-working Loft",
+     "roof": [
+      58,
+      86,
+      120
+     ],
+     "w": 10,
+     "wall": [
+      92,
+      122,
+      156
+     ],
+     "x": 22,
+     "y": 6
+    },
+    {
+     "door": {
+      "target": "startup_office",
+      "x": 44,
+      "y": 13
+     },
+     "h": 5,
+     "id": "startup_office",
+     "name": "Contract Office",
+     "roof": [
+      58,
+      86,
+      120
+     ],
+     "w": 9,
+     "wall": [
+      92,
+      122,
+      156
+     ],
+     "x": 40,
+     "y": 8
+    },
+    {
+     "door": {
+      "target": "startup_cafe",
+      "x": 28,
+      "y": 32
+     },
+     "h": 5,
+     "id": "startup_cafe",
+     "name": "All-Night Cafe",
+     "roof": [
+      58,
+      86,
+      120
+     ],
+     "w": 9,
+     "wall": [
+      92,
+      122,
+      156
+     ],
+     "x": 24,
+     "y": 27
+    }
+   ],
+   "flowers": [
+    [
+     12,
+     19
+    ],
+    [
+     15,
+     19
+    ],
+    [
+     33,
+     19
+    ],
+    [
+     36,
+     19
+    ],
+    [
+     12,
+     30
+    ],
+    [
+     35,
+     30
+    ],
+    [
+     47,
+     19
+    ],
+    [
+     7,
+     19
+    ],
+    [
+     50,
+     19
+    ]
+   ],
+   "id": "startup_city_town",
+   "interactables": [
+    {
+     "id": "bus_startup",
+     "kind": "bus",
+     "label": "Bus Station",
+     "x": 55,
+     "y": 38
+    },
+    {
+     "id": "board_startup",
+     "kind": "board",
+     "label": "Contract Board",
+     "x": 20,
+     "y": 19
+    },
+    {
+     "id": "atm_startup",
+     "kind": "bank",
+     "label": "Bank ATM",
+     "x": 38,
+     "y": 19
+    },
+    {
+     "id": "mail_startup",
+     "kind": "mail",
+     "label": "Mailbox",
+     "x": 10,
+     "y": 20
+    },
+    {
+     "id": "pitch_board",
+     "kind": "inspect",
+     "label": "Pitch Board",
+     "text": "A grid of index cards: 'AI for beekeepers', 'Git for gardeners', 'An alarm that respects sleep'. One card just reads: SHIP IT.",
+     "x": 21,
+     "y": 18
+    },
+    {
+     "id": "coffee_machine",
+     "kind": "inspect",
+     "label": "All-Night Coffee Machine",
+     "text": "It has been running since the city opened. The carafe is never empty and no one has admitted to refilling it.",
+     "x": 28,
+     "y": 18
+    },
+    {
+     "id": "hatch_derelict_dc",
+     "kind": "hatch",
+     "label": "Derelict Data Center \u2014 hidden hatch",
+     "target": "dungeon_datacenter",
+     "x": 12,
+     "y": 34
+    }
+   ],
+   "lamps": [
+    [
+     18,
+     18
+    ],
+    [
+     42,
+     18
+    ],
+    [
+     18,
+     29
+    ],
+    [
+     42,
+     29
+    ]
+   ],
+   "name": "Startup City",
+   "rects": [
+    {
+     "h": 3,
+     "tile": "path",
+     "w": 58,
+     "x": 2,
+     "y": 20
+    },
+    {
+     "h": 12,
+     "tile": "plaza",
+     "w": 26,
+     "x": 17,
+     "y": 16
+    },
+    {
+     "h": 5,
+     "tile": "path",
+     "w": 2,
+     "x": 10,
+     "y": 12
+    },
+    {
+     "h": 5,
+     "tile": "path",
+     "w": 2,
+     "x": 27,
+     "y": 11
+    },
+    {
+     "h": 5,
+     "tile": "path",
+     "w": 2,
+     "x": 44,
+     "y": 13
+    },
+    {
+     "h": 5,
+     "tile": "path",
+     "w": 2,
+     "x": 28,
+     "y": 32
+    },
+    {
+     "h": 2,
+     "tile": "path",
+     "w": 58,
+     "x": 2,
+     "y": 34
+    },
+    {
+     "h": 4,
+     "tile": "water",
+     "w": 5,
+     "x": 4,
+     "y": 36
+    }
+   ],
+   "size": [
+    62,
+    44
+   ],
+   "spawn": {
+    "x": 55,
+    "y": 36
+   },
+   "tile": 32,
+   "trees": [
+    [
+     2,
+     3
+    ],
+    [
+     4,
+     2
+    ],
+    [
+     14,
+     2
+    ],
+    [
+     16,
+     4
+    ],
+    [
+     36,
+     2
+    ],
+    [
+     52,
+     3
+    ],
+    [
+     57,
+     2
+    ],
+    [
+     2,
+     12
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     2,
+     30
+    ],
+    [
+     5,
+     40
+    ],
+    [
+     14,
+     40
+    ],
+    [
+     26,
+     38
+    ],
+    [
+     34,
+     39
+    ],
+    [
+     44,
+     39
+    ],
+    [
+     57,
+     12
+    ],
+    [
+     58,
+     26
+    ],
+    [
+     57,
+     32
+    ],
+    [
+     30,
+     3
+    ],
+    [
+     45,
+     3
+    ],
+    [
+     12,
+     33
+    ]
+   ]
+  },
+  {
+   "ambient": "city",
+   "buildings": [
+    {
+     "door": {
+      "target": "systems_datacenter",
+      "x": 11,
+      "y": 13
+     },
+     "h": 6,
+     "id": "systems_datacenter",
+     "name": "Data Center",
+     "roof": [
+      44,
+      58,
+      70
+     ],
+     "w": 10,
+     "wall": [
+      74,
+      92,
+      104
+     ],
+     "x": 6,
+     "y": 7
+    },
+    {
+     "door": {
+      "target": "systems_netops",
+      "x": 26,
+      "y": 11
+     },
+     "h": 5,
+     "id": "systems_netops",
+     "name": "Network Ops",
+     "roof": [
+      44,
+      58,
+      70
+     ],
+     "w": 9,
+     "wall": [
+      74,
+      92,
+      104
+     ],
+     "x": 22,
+     "y": 6
+    },
+    {
+     "door": {
+      "target": "systems_hardware",
+      "x": 44,
+      "y": 13
+     },
+     "h": 5,
+     "id": "systems_hardware",
+     "name": "Hardware Lab",
+     "roof": [
+      44,
+      58,
+      70
+     ],
+     "w": 10,
+     "wall": [
+      74,
+      92,
+      104
+     ],
+     "x": 39,
+     "y": 8
+    },
+    {
+     "door": {
+      "target": "systems_guild",
+      "x": 28,
+      "y": 31
+     },
+     "h": 5,
+     "id": "systems_guild",
+     "name": "Systems Guild",
+     "roof": [
+      44,
+      58,
+      70
+     ],
+     "w": 9,
+     "wall": [
+      74,
+      92,
+      104
+     ],
+     "x": 24,
+     "y": 26
+    }
+   ],
+   "flowers": [
+    [
+     12,
+     19
+    ],
+    [
+     15,
+     19
+    ],
+    [
+     33,
+     19
+    ],
+    [
+     36,
+     19
+    ],
+    [
+     12,
+     30
+    ],
+    [
+     35,
+     30
+    ],
+    [
+     47,
+     19
+    ],
+    [
+     7,
+     19
+    ],
+    [
+     50,
+     19
+    ]
+   ],
+   "id": "systems_district_town",
+   "interactables": [
+    {
+     "id": "bus_systems",
+     "kind": "bus",
+     "label": "Transit Platform",
+     "x": 52,
+     "y": 36
+    },
+    {
+     "id": "board_systems",
+     "kind": "board",
+     "label": "Systems Board",
+     "x": 20,
+     "y": 18
+    },
+    {
+     "id": "atm_systems",
+     "kind": "bank",
+     "label": "Bank ATM",
+     "x": 36,
+     "y": 18
+    },
+    {
+     "id": "mail_systems",
+     "kind": "mail",
+     "label": "Mailbox",
+     "x": 9,
+     "y": 20
+    },
+    {
+     "id": "humming_rack",
+     "kind": "inspect",
+     "label": "Humming Rack",
+     "text": "A display rack humming at a steady 50 hertz. The label reads: 'latency is a feeling'.",
+     "x": 20,
+     "y": 17
+    },
+    {
+     "id": "cable_run",
+     "kind": "inspect",
+     "label": "Cable Run",
+     "text": "A labeled bundle of cables, every one tagged. The tag on top says 'do not unplug (again)'.",
+     "x": 36,
+     "y": 17
+    }
+   ],
+   "lamps": [
+    [
+     18,
+     18
+    ],
+    [
+     42,
+     18
+    ],
+    [
+     18,
+     29
+    ],
+    [
+     42,
+     29
+    ]
+   ],
+   "name": "Systems District",
+   "rects": [
+    {
+     "h": 3,
+     "tile": "path",
+     "w": 56,
+     "x": 2,
+     "y": 20
+    },
+    {
+     "h": 12,
+     "tile": "plaza",
+     "w": 26,
+     "x": 17,
+     "y": 16
+    },
+    {
+     "h": 5,
+     "tile": "path",
+     "w": 2,
+     "x": 11,
+     "y": 13
+    },
+    {
+     "h": 5,
+     "tile": "path",
+     "w": 2,
+     "x": 26,
+     "y": 11
+    },
+    {
+     "h": 5,
+     "tile": "path",
+     "w": 2,
+     "x": 44,
+     "y": 13
+    },
+    {
+     "h": 5,
+     "tile": "path",
+     "w": 2,
+     "x": 28,
+     "y": 31
+    },
+    {
+     "h": 2,
+     "tile": "path",
+     "w": 56,
+     "x": 2,
+     "y": 34
+    },
+    {
+     "h": 4,
+     "tile": "water",
+     "w": 5,
+     "x": 4,
+     "y": 36
+    }
+   ],
+   "size": [
+    60,
+    42
+   ],
+   "spawn": {
+    "x": 52,
+    "y": 34
+   },
+   "tile": 32,
+   "trees": [
+    [
+     2,
+     3
+    ],
+    [
+     4,
+     2
+    ],
+    [
+     14,
+     2
+    ],
+    [
+     16,
+     4
+    ],
+    [
+     36,
+     2
+    ],
+    [
+     52,
+     3
+    ],
+    [
+     57,
+     2
+    ],
+    [
+     2,
+     12
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     2,
+     30
+    ],
+    [
+     5,
+     40
+    ],
+    [
+     14,
+     40
+    ],
+    [
+     26,
+     38
+    ],
+    [
+     34,
+     39
+    ],
+    [
+     44,
+     39
+    ],
+    [
+     57,
+     12
+    ],
+    [
+     58,
+     26
+    ],
+    [
+     57,
+     32
+    ],
+    [
+     30,
+     3
+    ],
+    [
+     45,
+     3
+    ],
+    [
+     12,
+     33
+    ]
+   ]
+  },
+  {
+   "ambient": "city",
+   "buildings": [
+    {
+     "door": {
+      "target": "capital_research",
+      "x": 10,
+      "y": 13
+     },
+     "h": 6,
+     "id": "capital_research",
+     "name": "Research Campus",
+     "roof": [
+      86,
+      74,
+      118
+     ],
+     "w": 11,
+     "wall": [
+      124,
+      112,
+      156
+     ],
+     "x": 5,
+     "y": 7
+    },
+    {
+     "door": {
+      "target": "capital_foundry",
+      "x": 26,
+      "y": 11
+     },
+     "h": 5,
+     "id": "capital_foundry",
+     "name": "The Foundry",
+     "roof": [
+      86,
+      74,
+      118
+     ],
+     "w": 9,
+     "wall": [
+      124,
+      112,
+      156
+     ],
+     "x": 22,
+     "y": 6
+    },
+    {
+     "door": {
+      "target": "capital_tower",
+      "x": 45,
+      "y": 14
+     },
+     "h": 7,
+     "id": "capital_tower",
+     "name": "Enterprise Tower",
+     "roof": [
+      86,
+      74,
+      118
+     ],
+     "w": 10,
+     "wall": [
+      124,
+      112,
+      156
+     ],
+     "x": 40,
+     "y": 7
+    },
+    {
+     "door": {
+      "target": "capital_studio",
+      "x": 28,
+      "y": 33
+     },
+     "h": 5,
+     "id": "capital_studio",
+     "name": "Creator Studio",
+     "roof": [
+      86,
+      74,
+      118
+     ],
+     "w": 10,
+     "wall": [
+      124,
+      112,
+      156
+     ],
+     "x": 23,
+     "y": 28
+    }
+   ],
+   "flowers": [
+    [
+     12,
+     19
+    ],
+    [
+     15,
+     19
+    ],
+    [
+     33,
+     19
+    ],
+    [
+     36,
+     19
+    ],
+    [
+     12,
+     30
+    ],
+    [
+     35,
+     30
+    ],
+    [
+     47,
+     19
+    ],
+    [
+     7,
+     19
+    ],
+    [
+     50,
+     19
+    ]
+   ],
+   "id": "innovation_capital_town",
+   "interactables": [
+    {
+     "id": "bus_capital",
+     "kind": "bus",
+     "label": "Transit Hub",
+     "x": 56,
+     "y": 40
+    },
+    {
+     "id": "board_capital",
+     "kind": "board",
+     "label": "Research Board",
+     "x": 19,
+     "y": 19
+    },
+    {
+     "id": "atm_capital",
+     "kind": "bank",
+     "label": "Bank ATM",
+     "x": 37,
+     "y": 19
+    },
+    {
+     "id": "mail_capital",
+     "kind": "mail",
+     "label": "Mailbox",
+     "x": 8,
+     "y": 21
+    },
+    {
+     "id": "research_plaque",
+     "kind": "inspect",
+     "label": "Research Plaque",
+     "text": "Names of founders, then a blank brass strip beneath. The caption reads: 'reserved for whoever ships the next big thing'.",
+     "x": 19,
+     "y": 18
+    },
+    {
+     "id": "foundry_plaque",
+     "kind": "inspect",
+     "label": "Foundry Plaque",
+     "text": "Cast metal, warm to the touch. 'Built here. Rebuilt here. Probably rebuilt again.'",
+     "x": 36,
+     "y": 18
+    },
+    {
+     "id": "hatch_machine_floor",
+     "kind": "hatch",
+     "label": "The Experimental Machine Floor \u2014 hidden hatch",
+     "target": "dungeon_machine",
+     "x": 50,
+     "y": 34
+    }
+   ],
+   "lamps": [
+    [
+     18,
+     18
+    ],
+    [
+     42,
+     18
+    ],
+    [
+     18,
+     29
+    ],
+    [
+     42,
+     29
+    ]
+   ],
+   "name": "Innovation Capital",
+   "rects": [
+    {
+     "h": 3,
+     "tile": "path",
+     "w": 60,
+     "x": 2,
+     "y": 20
+    },
+    {
+     "h": 12,
+     "tile": "plaza",
+     "w": 26,
+     "x": 17,
+     "y": 16
+    },
+    {
+     "h": 5,
+     "tile": "path",
+     "w": 2,
+     "x": 10,
+     "y": 13
+    },
+    {
+     "h": 5,
+     "tile": "path",
+     "w": 2,
+     "x": 26,
+     "y": 11
+    },
+    {
+     "h": 5,
+     "tile": "path",
+     "w": 2,
+     "x": 45,
+     "y": 14
+    },
+    {
+     "h": 5,
+     "tile": "path",
+     "w": 2,
+     "x": 28,
+     "y": 33
+    },
+    {
+     "h": 2,
+     "tile": "path",
+     "w": 60,
+     "x": 2,
+     "y": 34
+    },
+    {
+     "h": 4,
+     "tile": "water",
+     "w": 5,
+     "x": 4,
+     "y": 36
+    }
+   ],
+   "size": [
+    64,
+    46
+   ],
+   "spawn": {
+    "x": 56,
+    "y": 38
+   },
+   "tile": 32,
+   "trees": [
+    [
+     2,
+     3
+    ],
+    [
+     4,
+     2
+    ],
+    [
+     14,
+     2
+    ],
+    [
+     16,
+     4
+    ],
+    [
+     36,
+     2
+    ],
+    [
+     52,
+     3
+    ],
+    [
+     57,
+     2
+    ],
+    [
+     2,
+     12
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     2,
+     30
+    ],
+    [
+     5,
+     40
+    ],
+    [
+     14,
+     40
+    ],
+    [
+     26,
+     38
+    ],
+    [
+     34,
+     39
+    ],
+    [
+     44,
+     39
+    ],
+    [
+     57,
+     12
+    ],
+    [
+     58,
+     26
+    ],
+    [
+     57,
+     32
+    ],
+    [
+     30,
+     3
+    ],
+    [
+     45,
+     3
+    ],
+    [
+     12,
+     33
+    ]
+   ]
+  }
+ ]
+}

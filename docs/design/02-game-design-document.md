@@ -228,6 +228,9 @@ Money is earned by work (§7), spent on progression-relevant things.
 (§9); housing gates Phase-2 company formation (§7).
 
 **Rules and failure cases.**
+- Phase 1 ships decoratable homes locally (`housing.json`: workstation, decor
+  and trophy slots with derived home-lab benefits). Ownership, rent and visit
+  permissions become server records in Phase 2.
 - Every money movement is a double-entry ledger row; balances are derived,
   never stored as the source of truth.
 - Equipment stats affect *convenience* (speed, slots), never assessment
@@ -264,8 +267,10 @@ code" becomes "get paid to code" — inside the fiction.
 - State: `jobs`, `contracts`, `companies`, `employees`, `company_ledger`.
 
 **Dependencies.** Job eligibility reads §2/§3/§4 (level, skills, path);
-mission-quality history feeds reputation (§1); payouts write to §6 wallets;
-Phase 1 ships jobs only (contracts/companies are Phase 2, designed here).
+mission-quality history feeds reputation (§1); payouts write to §6 wallets.
+Phase 1 ships a **local company preview** — dashboard, roster, focus, rank and a
+convenience payout preview, with no escrow. Authoritative contracts, escrow and
+the L25 + property + moderation gate are Phase 2.
 
 **Rules and failure cases.**
 - Job matching is skill-based: a player only sees jobs they are plausibly
@@ -293,10 +298,13 @@ bankruptcy drill. [TEST] §7.
 
 ## §8 — Multiplayer, friends, guilds, teams, social spaces
 
-**Purpose + UX.** (Phase 2+; designed now.) Learning is social: friends list,
-guilds (study groups with shared goals), teams for collaborative missions,
-and social spaces (plazas, labs) where players show off projects. Presence is
-lightweight — this is a cozy world, not a lobby shooter.
+**Purpose + UX.** (Designed now; Phase 1 ships a **local preview** and Phase 2+
+adds real players.) Learning is social: friends list, guilds (study groups with
+shared goals), teams for collaborative missions, and social spaces (plazas,
+labs) where players show off projects. Presence is lightweight — this is a cozy
+world, not a lobby shooter. The Phase 1 preview is six written NPC contacts,
+deterministic keyword replies, unread counts and 3-person teams — openable from
+the pause menu; no real players and no free chat.
 
 **Inputs / outputs / state changes.**
 - In: friend requests, guild create/join, team invites, chat messages,
@@ -379,6 +387,12 @@ FAIL hidden tests); determinism tests (100 runs, identical verdicts).
 in-game IDE, hosted in personal repos, publishable to the in-game marketplace
 (portfolio pieces, templates, plugins, games). Selling is for in-game
 currency (Phase 1–2); the portfolio doubles as the "Proof of Skill" showcase.
+
+*Phase 1 build:* multi-file projects, workspaces, a test runner, a JS debugger,
+a terminal and a git panel ship in the IDE. Sandbox-runtime projects also get
+**revision history** through the execution worker's submissions store
+(`saveRevision` / `compareRevisions`): each run is content-hashed and diffable.
+Hosted repos, publishing and the marketplace are Phase 2.
 
 **Inputs / outputs / state changes.**
 - In: project files, publish requests, price (in-game currency), purchases.

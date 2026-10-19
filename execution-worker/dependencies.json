@@ -1,0 +1,10 @@
+{
+  "$comment": "Approved dependency allowlist. A submission may only request packages listed here for its runtime. `baked: true` means the runtime image already contains it (offline, no network needed). `baked: false` marks a package that is approved in principle but not yet baked into the image — a controlled package mirror must supply it before it can run. This is the policy half of 'dependency allowlists or controlled package mirrors' (design 3.3/3.5).",
+  "approved": [
+    { "runtime": "typescript", "name": "typescript", "version": "5.9", "baked": true },
+    { "runtime": "sql", "name": "sqlite3", "version": "3", "baked": true },
+    { "runtime": "python", "name": "numpy", "version": "2.1.0", "baked": false },
+    { "runtime": "python", "name": "pandas", "version": "2.2.3", "baked": false },
+    { "runtime": "javascript", "name": "lodash", "version": "4.17.21", "baked": false }
+  ]
+}
