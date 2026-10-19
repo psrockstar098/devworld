@@ -179,6 +179,8 @@ cd ../game-server && DEVWORLD_IT=1 bun test tests/integration.test.ts
   Redis, the ClickHouse schema, and the smoke tests
 - `game-server/README.md` — the game API: routes, stores, and how grading flows
   to the sandbox worker
+- `execution-worker/README.md` — the sandbox worker: one-command run, layout,
+  configuration
 - `execution-worker/docs/api.md` — execution + assessment API
 - `execution-worker/docs/threat-model.md` — isolation and what it does not cover
 - `game-shell/BUILD.md` — game build instructions
