@@ -1,0 +1,113 @@
+/* DEVWORLD shell — dark professional HUD, teal-green accent (#2dd4bf).
+   No emojis anywhere. Panels are clean dashboard cards. */
+
+:root {
+  --bg: #0b0f16;
+  --surface: #1a1d21;
+  --surface2: #22262c;
+  --line: #2c3138;
+  --text: #e8ecf1;
+  --dim: #9aa3ad;
+  --accent: #2dd4bf;
+  --accent-dim: #1a8f83;
+  --danger: #e26d6d;
+  --gold: #e8c468;
+}
+
+body { font-family: "Segoe UI", system-ui, sans-serif; color: var(--text); }
+.dim { color: var(--dim); font-size: 0.85em; }
+
+/* HUD */
+#hud {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 14px; background: rgba(11, 15, 22, 0.88);
+  border-bottom: 1px solid var(--line); font-size: 14px;
+}
+.hud-left, .hud-mid, .hud-right { display: flex; align-items: center; gap: 10px; }
+.hud-name { font-weight: 700; }
+.hud-level { color: var(--accent); font-weight: 700; }
+.xpbar { width: 120px; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+.xpbar.big { width: 100%; height: 12px; }
+.xpfill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.4s; }
+.credits { color: var(--gold); font-weight: 700; }
+#hud button { background: var(--surface2); color: var(--text); border: 1px solid var(--line);
+  border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+#hud button:hover { border-color: var(--accent); }
+
+/* Overlays / panels */
+.overlay { position: fixed; inset: 0; z-index: 50; display: none;
+  align-items: center; justify-content: center; background: rgba(5, 8, 12, 0.62); }
+.overlay.open { display: flex; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 22px 26px; max-width: 560px; width: min(92vw, 560px); max-height: 84vh;
+  overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
+.panel h2 { margin: 0 0 8px; font-size: 1.25em; }
+.panel h3 { margin: 16px 0 6px; color: var(--accent); font-size: 1em; }
+.panel p { line-height: 1.45; }
+.panel label { display: block; margin: 8px 0; }
+.panel input[type="text"], .panel input:not([type]) {
+  background: var(--surface2); border: 1px solid var(--line); color: var(--text);
+  border-radius: 6px; padding: 7px 10px; margin-left: 8px; width: 200px; }
+.panel button { background: var(--surface2); color: var(--text); border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 14px; margin: 6px 6px 6px 0; cursor: pointer; font-size: 14px; }
+.panel button:hover:not(:disabled) { border-color: var(--accent); }
+.panel button:disabled { opacity: 0.45; cursor: default; }
+.panel button.primary { background: var(--accent-dim); border-color: var(--accent); font-weight: 700; }
+.panel button.closebtn { margin-top: 14px; }
+.swrow { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+.swrow span { width: 52px; color: var(--dim); }
+.sw { width: 30px !important; height: 30px !important; border-radius: 50% !important;
+  padding: 0 !important; margin: 0 4px 0 0 !important; border: 2px solid transparent !important; }
+.sw.sel { border-color: #fff !important; }
+
+.mrow { display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  background: var(--surface2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px 12px; margin: 8px 0; }
+.tag { font-size: 0.8em; padding: 3px 9px; border-radius: 20px; background: var(--surface);
+  border: 1px solid var(--line); color: var(--dim); white-space: nowrap; }
+.tag.active { color: var(--accent); border-color: var(--accent); }
+.tag.done { color: #7ee2a8; border-color: #7ee2a8; }
+.crow { padding: 5px 0; color: #7ee2a8; }
+.lrow { display: flex; justify-content: space-between; gap: 10px; padding: 7px 4px;
+  border-bottom: 1px solid var(--line); font-size: 0.92em; }
+.pos { color: #7ee2a8; } .neg { color: var(--danger); }
+.dlg { font-size: 1.05em; line-height: 1.5; background: var(--surface2);
+  border-radius: 8px; padding: 12px 14px; }
+.opts { display: flex; flex-direction: column; margin-top: 10px; }
+button.opt { text-align: left; }
+
+/* Toasts */
+#toasts { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+  z-index: 90; display: flex; flex-direction: column; gap: 8px; align-items: center;
+  pointer-events: none; width: min(92vw, 520px); }
+.toast { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent);
+  border-radius: 8px; padding: 10px 16px; opacity: 0; transform: translateY(8px);
+  transition: all 0.3s; font-size: 14px; max-width: 100%; }
+.toast.show { opacity: 1; transform: none; }
+.toast.success { border-left-color: #7ee2a8; }
+.toast.error { border-left-color: var(--danger); }
+.toast.quest { border-left-color: var(--gold); }
+.toast.levelup { border-left-color: var(--accent); font-weight: 700; }
+
+/* IDE overlay */
+#ide-overlay { position: fixed; inset: 0; z-index: 60; display: none;
+  flex-direction: column; background: #0b0f16; }
+#ide-bar { background: var(--surface); border-bottom: 1px solid var(--line); padding: 8px 14px; }
+.idebar-inner { display: flex; align-items: center; gap: 12px; }
+.ide-title { font-weight: 700; color: var(--accent); }
+#ide-bar button { background: var(--surface2); color: var(--text); border: 1px solid var(--line);
+  border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+#ide-bar button.primary { background: var(--accent-dim); border-color: var(--accent); font-weight: 700; }
+#ide-frame { flex: 1; width: 100%; border: none; background: #1e1e1e; }
+
+/* Touch */
+#touchpad { position: fixed; bottom: 16px; left: 16px; z-index: 45; }
+#touchpad .dpad button, #touch-e { width: 54px; height: 54px; border-radius: 50%;
+  background: rgba(26, 29, 33, 0.8); border: 1px solid var(--accent); color: var(--text);
+  font-size: 18px; margin: 3px; }
+#touch-e { position: fixed; bottom: 30px; right: 20px; width: 64px; height: 64px;
+  background: rgba(26, 143, 131, 0.85); font-weight: 700; }
+
+#boot { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center;
+  justify-content: center; background: var(--bg); color: var(--accent); font-size: 18px; }

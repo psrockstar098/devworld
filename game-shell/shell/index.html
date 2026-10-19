@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>DEVWORLD — Starter Town</title>
+<link rel="stylesheet" href="shell.css" />
+<style>
+  /* Canvas fills the viewport; Emscripten renders here. */
+  html, body { margin: 0; padding: 0; height: 100%; background: #0b0f16; overflow: hidden; }
+  #game-wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  #canvas { background: #0b0f16; max-width: 100vw; max-height: 100vh; }
+</style>
+</head>
+<body>
+<div id="game-wrap"><canvas id="canvas" width="960" height="600"></canvas></div>
+
+<!-- HUD -->
+<div id="hud" style="display:none">
+  <div class="hud-left">
+    <span id="hud-name" class="hud-name"></span>
+    <span id="hud-level" class="hud-level"></span>
+    <div class="xpbar"><div id="hud-xpfill" class="xpfill"></div></div>
+    <span id="hud-xptext" class="dim"></span>
+  </div>
+  <div class="hud-mid">
+    <span id="hud-map" class="dim"></span>
+    <span id="hud-clock" class="dim"></span>
+  </div>
+  <div class="hud-right">
+    <span id="hud-credits" class="credits"></span>
+    <span id="hud-quests" class="dim"></span>
+    <button id="hud-skill" title="Level and skills">Skills</button>
+    <button id="hud-help" title="Controls">?</button>
+  </div>
+</div>
+
+<!-- DOM UI root (panels render here) -->
+<div id="ui-root"></div>
+<div id="toasts"></div>
+
+<!-- IDE overlay: the real VS Code workbench, bridged via window.GameIDE -->
+<div id="ide-overlay" style="display:none">
+  <div id="ide-bar" style="display:none"></div>
+  <iframe id="ide-frame" title="DEVWORLD coding workspace"></iframe>
+</div>
+
+<!-- Touch controls -->
+<div id="touchpad" style="display:none">
+  <div class="dpad">
+    <button data-d="up">▲</button><br />
+    <button data-d="left">◀</button>
+    <button data-d="down">▼</button>
+    <button data-d="right">▶</button>
+  </div>
+  <button id="touch-e">E</button>
+</div>
+
+<div id="boot">Loading DEVWORLD…</div>
+
+<script src="shell.js"></script>
+<script>
+  // Emscripten module config before game.js loads.
+  var Module = {
+    canvas: document.getElementById('canvas'),
+    onRuntimeInitialized: function () {
+      document.getElementById('boot').style.display = 'none';
+      DW.ui.updateHud();
+      document.getElementById('hud-skill').addEventListener('click', function () {
+        try {
+          var p = Module.ccall('dw_panel_json', 'number', ['string'], ['skilltree']);
+          DW.ui.show('skilltree', JSON.parse(Module.UTF8ToString(p)));
+        } catch (e) {}
+      });
+      document.getElementById('hud-help').addEventListener('click', function () {
+        DW.ui.notify('WASD / arrows: move · E: interact · M: map · J: quests · I: inventory · Esc: menu', 'info');
+      });
+      // Size canvas to window (keep 16:10).
+      function fit() {
+        var w = window.innerWidth, h = window.innerHeight, ar = 16 / 10;
+        var cw = w, ch = w / ar;
+        if (ch > h) { ch = h; cw = h * ar; }
+        var c = document.getElementById('canvas');
+        c.style.width = cw + 'px'; c.style.height = ch + 'px';
+      }
+      window.addEventListener('resize', fit); fit();
+    }
+  };
+</script>
+<script src="game.js"></script>
+</body>
+</html>
