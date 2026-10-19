@@ -1,0 +1,1 @@
+{"description":"Sandboxed code-execution worker for the DEVWORLD game: runtime registry, Docker-isolated execution, and a mission assessment API.","name":"devworld-execution-worker","private":true,"scripts":{"pull-runtimes":"bun scripts/pull-runtimes.ts","start":"bun server.ts","test":"bun test"},"type":"module","version":"0.1.0"}

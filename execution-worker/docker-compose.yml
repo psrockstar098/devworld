@@ -1,0 +1,23 @@
+# DEVWORLD execution worker.
+#
+# IMPORTANT: the worker spawns sibling containers through the host Docker
+# daemon, so the submissions directory must resolve to the SAME absolute
+# path on the host and inside this container. Create /submissions on the
+# host first (sudo mkdir -p /submissions), or point SUBMISSIONS_DIR at
+# another host path that you bind-mount 1:1 here.
+
+services:
+  worker:
+    build: .
+    image: devworld/execution-worker:latest
+    container_name: devworld-execution-worker
+    ports:
+      - "8090:8090"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${SUBMISSIONS_DIR:-/submissions}:/submissions
+    env_file:
+      - .env
+    environment:
+      SUBMISSIONS_DIR: /submissions
+    restart: unless-stopped
