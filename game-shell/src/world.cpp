@@ -1180,6 +1180,17 @@ void World::drawCharacter(SDL_Renderer* ren, TTF_Font* font, float fx, float fy,
   SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_BLEND);
   pcircle(ren, x, y - R(1), R(8), C(8, 12, 16, 80));
   pr(ren, sx(-9), y - R(3), R(18), R(3), C(8, 12, 16, 70));
+  if (moving) {
+    float dustPhase = fabsf(sinf(phase * 1.8f));
+    int dx = (swing > 0) ? sx(-8) : sx(3);
+    uint8_t da = (uint8_t)(std::min(140.0f, dustPhase * 120.0f));
+    pcircle(ren, dx, y - R(1), R(3), C(145, 155, 165, da));
+    pcircle(ren, dx + (swing > 0 ? -R(2) : R(2)), y - R(2), R(2), C(165, 175, 185, (uint8_t)(da * 0.6f)));
+  } else {
+    // Gentle breathing idle chest motion
+    int breath = (int)(sinf(phase * 2.2f) * 0.7f);
+    by += R(breath);
+  }
   SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_NONE);
 
   // Legs and boots, with a tiny walk cycle.
@@ -1341,13 +1352,14 @@ void World::renderLighting(SDL_Renderer* ren, const std::string& mapId,
       pcircle(ren, dx, dy, 30, C(255, 190, 112, 22));
     }
 
-    // Computer screens and interior windows.
+    // Computer screens and interior windows with pulsing monitor scanlines.
     if (m.isInterior) {
       for (auto& cp : m.computers) {
         int gx = rnd(cp.x * T - cam.x + T / 2);
         int gy = rnd(cp.y * T - cam.y + 10);
-        pcircle(ren, gx, gy, 22, C(68, 220, 198, 20));
-        pcircle(ren, gx, gy, 12, C(78, 232, 208, 30));
+        float pulse = 0.84f + 0.16f * sinf((float)animT * 3.4f + cp.x * 1.5f);
+        pcircle(ren, gx, gy, 24, C(68, 220, 198, (uint8_t)(22 * pulse)));
+        pcircle(ren, gx, gy, 12, C(78, 232, 208, (uint8_t)(34 * pulse)));
       }
       for (int ty = 0; ty <= 1; ty++)
         for (int tx = 1; tx < m.w - 1; tx++) {
@@ -1359,10 +1371,44 @@ void World::renderLighting(SDL_Renderer* ren, const std::string& mapId,
     }
   }
 
-  // Player lantern: a soft radius so night navigation stays comfortable.
-  (void)animT;
+  // Dynamic atmospheric particles & drifting cyber-motes / fireflies
+  {
+    SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_ADD);
+    int pcount = m.isInterior ? 22 : 46;
+    for (int i = 0; i < pcount; i++) {
+      float spd = 14.0f + (float)((i * 43) % 28);
+      float px = fmodf((float)(i * 97 + 31) + (float)animT * spd, (float)(vw + 40)) - 20.0f;
+      float wave = sinf((float)animT * 1.5f + i * 1.7f) * 12.0f;
+      float py = fmodf((float)(i * 67 + 23) + wave, (float)vh);
+      float pulse = 0.35f + 0.65f * fabsf(sinf((float)animT * 2.4f + i * 0.9f));
 
-  SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_NONE);
+      Color pc;
+      uint8_t pa = 0;
+      if (m.isInterior) {
+        // Holographic digital dust near workstations
+        pc = C(59, 215, 190);
+        pa = (uint8_t)(20.0f * pulse);
+      } else if (dark > 0.10f) {
+        // Bioluminescent cyber-fireflies / data motes at dusk and night
+        bool isGold = (i % 3 == 0);
+        pc = isGold ? C(242, 189, 107) : C(68, 220, 198);
+        pa = (uint8_t)(48.0f * pulse * (dark / 0.5f));
+      } else {
+        // Sun dust / pollen motes during the day
+        pc = C(245, 235, 195);
+        pa = (uint8_t)(18.0f * pulse);
+      }
+
+      if (pa > 0) {
+        int rad = (i % 6 == 0) ? 3 : 2;
+        pcircle(ren, (int)px, (int)py, rad, C(pc.r, pc.g, pc.b, pa));
+        if (rad > 2) {
+          pr(ren, (int)px - 1, (int)py - 1, 2, 2, C(255, 255, 255, (uint8_t)(pa * 0.8f)));
+        }
+      }
+    }
+    SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_NONE);
+  }
 
   // Night sky stars over exteriors.
   if (!m.isInterior && dark > 0.12f) {
