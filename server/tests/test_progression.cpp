@@ -1,0 +1,51 @@
+#include "doctest.h"
+
+#include "progression.h"
+
+using namespace dw;
+
+TEST_CASE("xp curve and cap") {
+  CHECK(xpForLevel(1) == 100);
+  CHECK(xpForLevel(2) == 400);
+  CHECK(xpForLevel(10) == 10000);
+  CHECK(xpForLevel(50) == 0);
+}
+
+TEST_CASE("level fold is order independent") {
+  // Applying the same XP in chunks equals folding the total once.
+  int64_t total = 0;
+  for (int i = 1; i <= 30; ++i) total += xpForLevel(i) + 37;
+  LevelState chunked;
+  int64_t remaining = total;
+  while (remaining > 0) {
+    int64_t step = std::min<int64_t>(remaining, 733);
+    applyXp(chunked, step);
+    remaining -= step;
+  }
+  XpResult once = levelFromTotal(total);
+  CHECK(chunked.level == once.level);
+  CHECK(chunked.xp == once.xp);
+}
+
+TEST_CASE("levels never exceed the cap and xp never goes negative") {
+  XpResult r = levelFromTotal(1000000000);
+  CHECK(r.level == 50);
+  LevelState s;
+  s.level = 5;
+  s.xp = 10;
+  applyXp(s, -50);
+  CHECK(s.level == 5);
+  CHECK(s.xp == 0);
+}
+
+TEST_CASE("titles and progression view") {
+  CHECK(titleForLevel(1) == "Beginner");
+  CHECK(titleForLevel(10) == "Builder");
+  CHECK(titleForLevel(25) == "Systems Developer");
+  CHECK(titleForLevel(50) == "Creator");
+  JVal v = progressionView(450);
+  CHECK(v.i("level") == 2);
+  CHECK(v.i("totalXp") == 450);
+  CHECK(v.i("xpIntoLevel") == 350);
+  CHECK(v.i("xpForNextLevel") == 400);
+}

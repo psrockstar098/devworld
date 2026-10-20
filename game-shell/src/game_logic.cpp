@@ -12,6 +12,59 @@
 
 namespace dw {
 
+namespace {
+// Join reason lines into one human sentence ("; " separated).
+std::string joinLines(const std::vector<std::string>& v) {
+  std::string s;
+  for (size_t i = 0; i < v.size(); ++i) {
+    if (i) s += "; ";
+    s += v[i];
+  }
+  return s;
+}
+}  // namespace
+
+// The single derived "what can this player do?" snapshot. Unlock evaluation
+// goes through this, never through the raw level (design 09 §5.1/5.3).
+PlayerCapability Game::capabilityNow() {
+  return deriveCapability(player_, missions_, curriculum_, MasteryConfig{}, now_ms());
+}
+
+// Idempotently grant any achievement the capability now satisfies (design 09).
+void Game::awardProgress() {
+  if (achievementCatalog_.empty()) return;
+  PlayerCapability cap = capabilityNow();
+  std::string firstNew;
+  std::vector<std::string> added =
+      awardAchievements(player_, achievementCatalog_, cap, &unlocks_, &curriculum_, &firstNew);
+  for (const auto& id : added) {
+    const AchievementDef* d = achievementCatalog_.def(id);
+    notice("Achievement unlocked: " + std::string(d ? d->title : id), "success");
+  }
+  if (!added.empty()) {
+    sfx("levelup");
+    ui_update_hud();
+  }
+}
+
+// Choose or switch a career path. Competencies are retained (objective 5.5).
+void Game::chooseCareer(const std::string& id) {
+  const CareerDef* d = careers_.def(id);
+  if (!d) return;
+  PlayerCapability cap = capabilityNow();
+  std::string why;
+  if (!careers_.choose(player_, *d, cap, &unlocks_, &curriculum_, &why)) {
+    notice("Can't take that path yet — " + why + ".", "error");
+    sfx("error");
+    return;
+  }
+  player_.career.milestones["career_" + id] = iso_now();
+  notice("Career path set: " + d->title + ". Everything you have earned carries over.", "success");
+  sfx("levelup");
+  awardProgress();
+  saveNow();
+}
+
 // Every player-facing message goes through here so it lands both on screen and
 // in the capped notification log (see the notifications panel).
 void Game::notice(const std::string& text, const std::string& kind) {
@@ -42,6 +95,7 @@ std::string Game::missionsJson() {
          ",\"xp\":" + std::to_string(m.xpReward) +
          ",\"credits\":" + std::to_string(m.creditReward) +
          ",\"tests\":" + std::to_string(m.tests.size()) +
+         ",\"practicing\":" + (practiceMission_ == m.id ? "true" : "false") +
          ",\"state\":" + std::to_string((int)st) + "}";
   }
   return s + "]}";
@@ -53,7 +107,9 @@ std::string Game::questJson() {
   for (auto& kv : player_.missions) {
     if (kv.second.state != MissionState::Active && kv.second.state != MissionState::Submitted)
       continue;
-    const MissionDef& m = missions_[kv.first];
+    auto it = missions_.find(kv.first);
+    if (it == missions_.end()) continue;  // save row for a mission no longer in content
+    const MissionDef& m = it->second;
     if (!first) s += ",";
     first = false;
     s += "{\"id\":" + json_escape(m.id) + ",\"title\":" + json_escape(m.title) +
@@ -67,10 +123,12 @@ std::string Game::questJson() {
   first = true;
   for (auto& kv : player_.missions) {
     if (kv.second.state != MissionState::Complete) continue;
+    auto it = missions_.find(kv.first);
+    if (it == missions_.end()) continue;
     if (!first) s += ",";
     first = false;
-    s += "{\"id\":" + json_escape(missions_[kv.first].id) +
-         ",\"title\":" + json_escape(missions_[kv.first].title) + "}";
+    s += "{\"id\":" + json_escape(it->second.id) +
+         ",\"title\":" + json_escape(it->second.title) + "}";
   }
   return s + "]}";
 }
@@ -85,10 +143,20 @@ std::string Game::travelJson() {
     const CityDef* c = graph_.city(o.toCity);
     if (!first) s += ",";
     first = false;
+    // Explain a locked route from the unlock catalog (design 09 §5.3): the same
+    // evaluation the dashboard and the bus stop read, so they never disagree.
+    std::string reason = o.reason;
+    if (!o.unlocked) {
+      const UnlockDef* ud = unlocks_.def("city." + o.toCity);
+      if (ud) {
+        UnlockStatus st = unlocks_.evaluate(*ud, capabilityNow(), &curriculum_);
+        if (!st.unlocked && !st.missing.empty()) reason = joinLines(st.missing);
+      }
+    }
     s += "{\"id\":" + json_escape(o.toCity) + ",\"name\":" + json_escape(o.toName) +
          ",\"map\":" + json_escape(o.toMap) + ",\"fare\":" + std::to_string(o.fare) +
          ",\"unlocked\":" + (o.unlocked ? "true" : "false") +
-         ",\"reason\":" + json_escape(o.reason) +
+         ",\"reason\":" + json_escape(reason) +
          ",\"blurb\":" + json_escape(c ? c->blurb : "") +
          ",\"region\":" + json_escape(c ? c->region : "") + "}";
   }
@@ -126,6 +194,7 @@ void Game::travelTo(const std::string& cityId) {
     player_.achievements.push_back("visited_" + cityId);
   notice("Arrived in " + pick->toName + ". Fare: " + std::to_string(pick->fare) + " cr.", "success");
   sfx("success");
+  awardProgress();
   saveNow();
 }
 
@@ -182,6 +251,49 @@ void Game::acceptMission(const std::string& id) {
   saveNow();
 }
 
+// Practice: re-solve a finished mission from the starter, with no hints. If it
+// is passed unaided long enough after the first time, it yields DelayedRecall
+// evidence — the in-game path to independent mastery (design 08 §4.4).
+void Game::startPractice(const std::string& id) {
+  auto it = missions_.find(id);
+  if (it == missions_.end()) return;
+  auto mi = player_.missions.find(id);
+  if (mi == player_.missions.end() || mi->second.state != MissionState::Complete) {
+    notice("Only a finished mission can be practised.", "error");
+    sfx("error");
+    return;
+  }
+  practiceMission_ = id;
+  ide_seed_mission(it->second);  // back to the starter: solve it again
+  notice("Practice run: " + it->second.title +
+             ". Re-solve it with no hints — a clean pass later earns delayed-recall evidence.",
+         "quest");
+  sfx("success");
+  ui_show("missionboard", missionsJson());
+}
+
+void Game::completePractice(const std::string& id, int passed, int total) {
+  auto it = missions_.find(id);
+  if (it == missions_.end()) return;
+  const MissionDef& m = it->second;
+  if (passed < total) {
+    player_.flags["failed:" + id] = "1";
+    player_.reliability.fails++;  // raw outcome counter (design 09 §5.1)
+    notice("Practice: " + std::to_string(passed) + "/" + std::to_string(total) +
+               " tests passed. No rewards here — only a stronger memory. Try again.",
+           "error");
+    sfx("error");
+    return;
+  }
+  player_.reliability.recalls++;
+  emitMissionEvidence(m, /*practice=*/true);
+  practiceMission_.clear();
+  notice("Recall confirmed: " + m.title + ". That evidence is yours for good.", "success");
+  sfx("levelup");
+  ui_update_hud();
+  saveNow();
+}
+
 void Game::addXp(int64_t xp) {
   XpResult r = applyXp(player_.levels, xp);
   if (r.levelsGained > 0) {
@@ -212,14 +324,41 @@ void Game::completeMission(const std::string& id, int passed, int total) {
   pr.attempts++;
   if (passed < total) {
     pr.state = MissionState::Active;  // keep trying
+    player_.reliability.fails++;      // raw outcome counter (design 09 §5.1)
+    // Remember the failure: recovering from it is real debugging evidence
+    // (design 08 §4.2) when the mission is eventually passed.
+    player_.flags["failed:" + id] = "1";
     notice("Tests: " + std::to_string(passed) + "/" + std::to_string(total) +
            " passed. The town believes in you — check the IDE output and try again.", "error");
+    // Socratic coaching: if a misconception was authored to probe this mission,
+    // surface its remedy. Gated/independent missions get no hints (design 08 §3).
+    if (m.hints && !m.gate) {
+      for (const auto& topicId : curriculum_.topicsForMission(m.id)) {
+        const Topic* t = curriculum_.topic(topicId);
+        if (!t) continue;
+        for (const auto& mc : t->misconceptions) {
+          if (std::find(mc.probes.begin(), mc.probes.end(), m.id) == mc.probes.end()) continue;
+          notice("Coach — " + t->title + ": " + mc.remedy, "quest");
+          sfx("interact");
+          break;
+        }
+        break;  // one nudge at a time, not a lecture
+      }
+    }
     sfx("error");
     return;
   }
   pr.state = MissionState::Complete;
+  player_.reliability.passes++;
   EquipEffects fx = Equipment::effects(player_, catalog_);
-  int64_t reward = m.xpReward + m.xpReward * fx.xpPercent / 100;
+  // XP for meaningful work only (objective 5.4): first completion, plus a gate
+  // bonus for independent mastery and a bonus for unseen hidden cases. Repeats
+  // and practice never reach here.
+  int64_t reward = xpForEvent(RewardEvent::MissionFirstComplete, m).xp;
+  if (m.gate) reward += xpForEvent(RewardEvent::GateComplete, m).xp;
+  for (const auto& tc : m.tests)
+    if (tc.hidden) { reward += xpForEvent(RewardEvent::HiddenCaseFirst, m).xp; break; }
+  reward += reward * fx.xpPercent / 100;
   addXp(reward);
   ledgerAdd("mission_reward", "Mission complete: " + m.title, m.creditReward);
   player_.reputation += 5;
@@ -229,6 +368,8 @@ void Game::completeMission(const std::string& id, int passed, int total) {
          "success");
   sfx("coin");
   if (player_.trackedMission == id) player_.trackedMission.clear();
+  // Education: a full pass is evidence for every topic the mission teaches.
+  emitMissionEvidence(m);
   // Hidden technology: a dungeon's challenge pays out its rare technology.
   for (const auto& d : dungeons_.all())
     if (d.missionId == id) grantDungeonReward(d);
@@ -238,6 +379,7 @@ void Game::completeMission(const std::string& id, int passed, int total) {
     player_.missions[mid].state = MissionState::Available;
     notice("New mission available: " + missions_[mid].title, "quest");
   }
+  awardProgress();  // grant any achievement the new capability satisfies
   ui_update_hud();
   saveNow();
 }
@@ -411,6 +553,7 @@ void Game::uiEvent(const std::string& json) {
     player_.hair = col("hair", player_.hair);
     ui_hide("charcreate");
     uiOpen_ = false;
+    hasSave_ = true;  // this character now exists; start talking to the world
     // Starter ledger: the town grants every new dev 20 credits, no strings.
     ledgerAdd("grant", "Starter grant from the town", 20);
     notice("Welcome to Starter Town, " + player_.displayName + "! Press E at the glowing spots. The mission board is at the plaza.", "quest");
@@ -420,14 +563,21 @@ void Game::uiEvent(const std::string& json) {
   } else if (t == "panel_closed") {
     uiOpen_ = false;
     if (ide_is_open()) { /* IDE overlay manages itself */ }
+  } else if (t == "panel_opened") {
+    // A DOM panel opened from the page (phone, computer) still owns input.
+    uiOpen_ = true;
   } else if (t == "mission_accept") {
     acceptMission(j.s("id"));
     ui_show("missionboard", missionsJson());  // refresh
+  } else if (t == "practice") {
+    startPractice(j.s("id"));
   } else if (t == "mission_submit") {
     auto it = missions_.find(j.s("id"));
-    if (it != missions_.end() && player_.missions[it->first].state == MissionState::Active) {
+    bool practising = it != missions_.end() && it->first == practiceMission_;
+    if (it != missions_.end() &&
+        (player_.missions[it->first].state == MissionState::Active || practising)) {
       pendingMission_ = it->first;
-      player_.missions[it->first].state = MissionState::Submitted;
+      if (!practising) player_.missions[it->first].state = MissionState::Submitted;
       ide_submit_mission(it->second);
       notice("Running tests in the IDE…", "info");
     }
@@ -501,11 +651,15 @@ void Game::uiEvent(const std::string& json) {
   } else if (t == "company_found") {
     foundCompany(j.s("name"), j.s("focus"));
     ui_show("company", companyJson());
+  } else if (t == "choose_career") {
+    chooseCareer(j.s("id"));
+    ui_show("progression", progressionJson());
   } else if (t == "ide_closed") {
     ui_hide("idebar");
   } else if (t == "keybind") {
-    auto it = keys_.find(j.s("action"));
-    if (it != keys_.end()) it->second = (SDL_Keycode)j.i("key");
+    setKeybind(j.s("action"), j.i("key"));
+  } else if (t == "save") {
+    // "Save now" from the pause menu: persist immediately, no autosave wait.
     saveNow();
   }
 }
@@ -514,12 +668,18 @@ void Game::missionTestResult(int passed, int total) {
   if (pendingMission_.empty()) return;
   std::string id = pendingMission_;
   pendingMission_.clear();
+  if (id == practiceMission_) {
+    completePractice(id, passed, total);
+    return;
+  }
   completeMission(id, passed, total);
 }
 
 void Game::setKeybind(const std::string& action, int keycode) {
   auto it = keys_.find(action);
-  if (it != keys_.end()) it->second = (SDL_Keycode)keycode;
+  if (it == keys_.end()) return;
+  it->second = (SDL_Keycode)keycode;
+  saveNow();  // a rebind survived only until the next autosave otherwise
 }
 
 void Game::touchMove(const std::string& dir, bool down) {
@@ -635,6 +795,8 @@ std::string Game::panelJson(const std::string& panel) {
     return s;
   }
   if (panel == "profile") return profileJson();
+  if (panel == "missionboard") return missionsJson();
+  if (panel == "progression") return progressionJson();  // design 09 dashboard
   if (panel == "settings") return settingsJson();
   if (panel == "notifications") return notificationsJson();
   if (panel == "portfolio") return portfolioJson();
@@ -713,12 +875,7 @@ std::string Game::panelJson(const std::string& panel) {
     return s + "]}";
   }
   if (panel == "skilltree") {
-    int64_t need = xpForLevel(player_.levels.level);
-    return "{\"level\":" + std::to_string(player_.levels.level) +
-           ",\"title\":" + json_escape(titleForLevel(player_.levels.level)) +
-           ",\"xp\":" + std::to_string(player_.levels.xp) +
-           ",\"need\":" + std::to_string(need) +
-           ",\"reputation\":" + std::to_string(player_.reputation) + "}";
+    return skillsJson();
   }
   if (panel == "hudstate") {
     int64_t need = xpForLevel(player_.levels.level);
@@ -733,6 +890,17 @@ std::string Game::panelJson(const std::string& panel) {
       auto pi = player_.missions.find(player_.trackedMission);
       if (pi != player_.missions.end()) trackedObjective = objectiveFor(ti->second, pi->second);
     }
+    auto rgb = [](const Color& c) {
+      return "[" + std::to_string(c.r) + "," + std::to_string(c.g) + "," +
+             std::to_string(c.b) + "]";
+    };
+    const CityDef* city = currentCity();
+    std::string daypart = "Night";
+    if (dayT_ >= 0.22f && dayT_ < 0.34f) daypart = "Dawn";
+    else if (dayT_ >= 0.34f && dayT_ < 0.62f) daypart = "Daylight";
+    else if (dayT_ >= 0.62f && dayT_ < 0.72f) daypart = "Golden hour";
+    else if (dayT_ >= 0.72f && dayT_ < 0.84f) daypart = "Dusk";
+    else if (dayT_ >= 0.84f || dayT_ < 0.22f) daypart = "Night";
     return "{\"name\":" + json_escape(player_.displayName) +
            ",\"level\":" + std::to_string(player_.levels.level) +
            ",\"title\":" + json_escape(titleForLevel(player_.levels.level)) +
@@ -741,6 +909,12 @@ std::string Game::panelJson(const std::string& panel) {
            ",\"credits\":" + std::to_string(player_.balance()) +
            ",\"quests\":" + std::to_string(active) + ",\"clock\":" + json_escape(clock) +
            ",\"map\":" + json_escape(world_.map(curMap_).name) +
+           ",\"city\":" + json_escape(city ? city->name : "Starter Town") +
+           ",\"daypart\":" + json_escape(daypart) +
+           ",\"skin\":" + rgb(player_.skin) +
+           ",\"hair\":" + rgb(player_.hair) +
+           ",\"shirt\":" + rgb(player_.shirt) +
+           ",\"pants\":" + rgb(player_.pants) +
            ",\"trackedTitle\":" + json_escape(trackedTitle) +
            ",\"trackedObjective\":" + json_escape(trackedObjective) +
            ",\"reputation\":" + std::to_string(player_.reputation) +
@@ -799,6 +973,252 @@ void Game::revealDungeon(const std::string& flag) {
     }
   }
   saveNow();
+}
+
+// ---- education: evidence and mastery (design 08) ----
+
+void Game::emitMissionEvidence(const MissionDef& m, bool practice) {
+  if (curriculum_.empty()) return;
+  const int64_t now = now_ms();
+  const MasteryConfig cfg;
+  int hidden = 0;
+  for (const auto& t : m.tests)
+    if (t.hidden) hidden++;
+
+  auto already = [&](const Evidence& e) {
+    const std::string k = evidenceKey(e);
+    for (const auto& x : player_.evidence)
+      if (evidenceKey(x) == k) return true;
+    return false;
+  };
+  auto add = [&](const std::string& skill, EvidenceKind kind, double score) {
+    Evidence e = makeEvidence(player_.name, skill, kind, score, now, m.id);
+    if (!already(e)) player_.evidence.push_back(e);
+  };
+
+  // Recovering from a failed attempt is genuine debugging evidence (design 08
+  // §4.2): the player found and repaired the defect rather than knowing it.
+  const bool recovered = player_.flags.count("failed:" + m.id) > 0;
+
+  for (const auto& skill : curriculum_.topicsForMission(m.id)) {
+    if (practice) {
+      // A practice run is a revisit. It counts as delayed recall only when
+      // enough time has passed since the skill was last exercised.
+      const int64_t last = lastEvidenceAt(player_.evidence, skill);
+      if (last > 0 && now - last >= cfg.recallMinAgeMs)
+        add(skill, EvidenceKind::DelayedRecall, 1.0);
+    } else {
+      if (recovered) add(skill, EvidenceKind::Debugging, 1.0);
+      add(skill, EvidenceKind::AutomatedTest, 1.0);
+    }
+    if (hidden > 0) add(skill, EvidenceKind::HiddenEdgeCase, 1.0);
+    if (m.independent) {
+      // Only an independent assessment — a gate or a capstone proof — emits
+      // evidence strong enough to make a skill "independent" (design 08 §4.3).
+      add(skill, EvidenceKind::Transfer, 1.0);
+      add(skill, EvidenceKind::ProjectRubric, 1.0);
+    }
+  }
+  if (recovered) player_.flags.erase("failed:" + m.id);
+}
+
+std::string Game::skillsJson() {
+  const int64_t now = now_ms();
+  const MasteryConfig cfg;
+  std::map<std::string, SkillMastery> bySkill;
+  std::set<std::string> mastered;
+  for (const auto& sm : summarize(player_.evidence, cfg, now)) {
+    bySkill[sm.skill] = sm;
+    if (sm.mastered) mastered.insert(sm.skill);
+  }
+  std::set<std::string> available;
+  for (const auto& id : curriculum_.availableTopics(mastered)) available.insert(id);
+
+  std::string s = "{\"level\":" + std::to_string(player_.levels.level) +
+                  ",\"title\":" + json_escape(titleForLevel(player_.levels.level)) +
+                  ",\"xp\":" + std::to_string(player_.levels.xp) +
+                  ",\"need\":" + std::to_string(xpForLevel(player_.levels.level)) +
+                  ",\"reputation\":" + std::to_string(player_.reputation) +
+                  ",\"mastered\":" + std::to_string(mastered.size()) +
+                  ",\"topics\":" + std::to_string(curriculum_.topics().size()) +
+                  ",\"areas\":[";
+  bool firstArea = true;
+  for (const auto& area : curriculum_.areas()) {
+    if (!firstArea) s += ",";
+    firstArea = false;
+    s += "{\"id\":" + json_escape(area.id) + ",\"title\":" + json_escape(area.title) +
+         ",\"summary\":" + json_escape(area.summary) + ",\"topics\":[";
+    bool firstTopic = true;
+    for (const Topic* t : curriculum_.topicsInArea(area.id)) {
+      if (!firstTopic) s += ",";
+      firstTopic = false;
+      auto it = bySkill.find(t->id);
+      bool seen = it != bySkill.end();
+      bool isMastered = seen && it->second.mastered;
+      std::string state = isMastered        ? "mastered"
+                          : available.count(t->id) ? "available"
+                          : seen                ? "in_progress"
+                                                : "locked";
+      s += "{\"id\":" + json_escape(t->id) + ",\"title\":" + json_escape(t->title) +
+           ",\"difficulty\":" + std::to_string(t->difficulty) +
+           ",\"state\":" + json_escape(state) +
+           ",\"score\":" + std::to_string(seen ? it->second.score : 0.0) +
+           ",\"independent\":" + (seen && it->second.independent ? "true" : "false") +
+           ",\"evidence\":" + std::to_string(seen ? it->second.evidenceCount : 0) +
+           ",\"weakest\":" + json_escape(seen ? evidenceKindName(it->second.weakest) : "") +
+           ",\"due\":" + (seen && it->second.dueAtMs <= now ? "true" : "false") +
+           ",\"objectives\":[";
+      bool firstObj = true;
+      for (const auto& o : t->objectives) {
+        if (!firstObj) s += ",";
+        firstObj = false;
+        s += json_escape(o.text);
+      }
+      s += "],\"requires\":[";
+      bool firstReq = true;
+      for (const auto& p : t->prerequisites) {
+        if (!firstReq) s += ",";
+        firstReq = false;
+        const Topic* pt = curriculum_.topic(p);
+        s += json_escape(pt ? pt->title : p);
+      }
+      s += "]}";
+    }
+    s += "]}";
+  }
+  s += "]";
+  // Spaced review: skills whose review is due (design 08 §4.4).
+  s += ",\"dueCount\":" + std::to_string(dueForReview(player_.evidence, cfg, now).size());
+  // What to practise next: unmastered skills with the weakest evidence.
+  s += ",\"practice\":[";
+  bool firstP = true;
+  for (const auto& sm : weakestSkills(player_.evidence, cfg, now, 3)) {
+    if (!firstP) s += ",";
+    firstP = false;
+    const Topic* t = curriculum_.topic(sm.skill);
+    s += "{\"id\":" + json_escape(sm.skill) +
+         ",\"title\":" + json_escape(t ? t->title : sm.skill) +
+         ",\"score\":" + std::to_string(sm.score) +
+         ",\"weakest\":" + json_escape(evidenceKindName(sm.weakest)) + "}";
+  }
+  s += "]}";
+  return s;
+}
+
+// Progression dashboard (design 09): every separate record in one place, and
+// every unlock with the reason it was earned or not. This is the UI half of the
+// completion criterion: the player can always see *why*.
+std::string Game::progressionJson() {
+  PlayerCapability cap = capabilityNow();
+
+  std::string s = "{\"level\":" + std::to_string(cap.level) +
+                  ",\"title\":" + json_escape(titleForLevel(cap.level)) +
+                  ",\"xp\":" + std::to_string(cap.xp) +
+                  ",\"need\":" + std::to_string(xpForLevel(cap.level)) +
+                  ",\"reputation\":" + std::to_string(cap.reputation) +
+                  ",\"reliability\":" + std::to_string(cap.reliability) +
+                  ",\"reliabilityTier\":" + json_escape(cap.reliabilityTier) +
+                  ",\"mastered\":" + std::to_string(cap.masteredSkills.size()) +
+                  ",\"independentSkills\":" + std::to_string(cap.independentSkills.size()) +
+                  ",\"independentCount\":" + std::to_string(cap.independentCount) +
+                  ",\"gates\":" + std::to_string(cap.completedGates.size()) +
+                  ",\"companyRep\":" + std::to_string(cap.companyRank);
+
+  // Language proficiency — its own record, grown from completed work.
+  s += ",\"languages\":[";
+  bool first = true;
+  for (const auto& lp : cap.languages) {
+    if (lp.missions == 0) continue;  // only languages actually worked in
+    if (!first) s += ",";
+    first = false;
+    s += "{\"language\":" + json_escape(lp.language) + ",\"tier\":" + std::to_string(lp.tier) +
+         ",\"label\":" + json_escape(lp.label) + ",\"missions\":" + std::to_string(lp.missions) +
+         ",\"tests\":" + std::to_string(lp.tests) +
+         ",\"independent\":" + std::to_string(lp.independent) + "}";
+  }
+  s += "]";
+
+  // Career specialization + every path's eligibility, with reasons.
+  const CareerDef* curDef = careers_.def(player_.career.path);
+  s += ",\"career\":{\"path\":" + json_escape(player_.career.path) +
+       ",\"title\":" + json_escape(curDef ? curDef->title : std::string()) +
+       ",\"blurb\":" + json_escape(curDef ? curDef->blurb : std::string()) + ",\"history\":[";
+  first = true;
+  for (const auto& h : player_.career.history) {
+    if (!first) s += ",";
+    first = false;
+    const CareerDef* hd = careers_.def(h);
+    s += json_escape(hd ? hd->title : h);
+  }
+  s += "],\"paths\":[";
+  first = true;
+  for (const auto& st : careers_.eligibility(cap, &unlocks_, &curriculum_)) {
+    const CareerDef* d = careers_.def(st.id);
+    if (!first) s += ",";
+    first = false;
+    s += "{\"id\":" + json_escape(st.id) + ",\"title\":" + json_escape(d ? d->title : st.id) +
+         ",\"language\":" + json_escape(d ? d->language : std::string()) +
+         ",\"blurb\":" + json_escape(d ? d->blurb : std::string()) +
+         ",\"eligible\":" + (st.unlocked ? "true" : "false") +
+         ",\"current\":" + (player_.career.path == st.id ? "true" : "false") + ",\"missing\":[";
+    bool f2 = true;
+    for (const auto& m : st.missing) {
+      if (!f2) s += ",";
+      f2 = false;
+      s += json_escape(m);
+    }
+    s += "]}";
+  }
+  s += "]}";
+
+  // Achievements — earned and still open, titled from the catalog.
+  int earnedCount = 0;
+  s += ",\"achievements\":[";
+  first = true;
+  for (const auto& d : achievementCatalog_.all()) {
+    bool earned =
+        std::find(player_.achievements.begin(), player_.achievements.end(), d.id) !=
+        player_.achievements.end();
+    if (earned) earnedCount++;
+    bool reveal = earned || !d.hidden;
+    if (!first) s += ",";
+    first = false;
+    s += "{\"id\":" + json_escape(d.id) +
+         ",\"title\":" + json_escape(reveal ? d.title : std::string("???")) +
+         ",\"desc\":" + json_escape(reveal ? d.desc : std::string("A hidden achievement.")) +
+         ",\"earned\":" + (earned ? "true" : "false") + "}";
+  }
+  s += "],\"earnedCount\":" + std::to_string(earnedCount) +
+       ",\"achievementTotal\":" + std::to_string(achievementCatalog_.all().size());
+
+  // The unlock catalog: every opportunity and exactly why it is (not) open.
+  s += ",\"unlocks\":[";
+  first = true;
+  for (const auto& st : unlocks_.evaluateAll(cap, &curriculum_)) {
+    const UnlockDef* d = unlocks_.def(st.id);
+    if (!first) s += ",";
+    first = false;
+    s += "{\"id\":" + json_escape(st.id) + ",\"title\":" + json_escape(d ? d->title : st.id) +
+         ",\"kind\":" + json_escape(d ? unlockKindName(d->kind) : std::string("unknown")) +
+         ",\"blurb\":" + json_escape(d ? d->blurb : std::string()) +
+         ",\"unlocked\":" + (st.unlocked ? "true" : "false") + ",\"met\":[";
+    bool f2 = true;
+    for (const auto& m : st.met) {
+      if (!f2) s += ",";
+      f2 = false;
+      s += json_escape(m);
+    }
+    s += "],\"missing\":[";
+    f2 = true;
+    for (const auto& m : st.missing) {
+      if (!f2) s += ",";
+      f2 = false;
+      s += json_escape(m);
+    }
+    s += "]}";
+  }
+  s += "]}";
+  return s;
 }
 
 std::string Game::portfolioJson() {
@@ -1005,6 +1425,16 @@ void Game::hireContact(const std::string& contactId, bool add) {
 }
 
 void Game::foundCompany(const std::string& name, const std::string& focus) {
+  // Company eligibility is its own axis set (design 09 §5.3): leadership and
+  // reliability, not a specific technology. Explain exactly what is missing.
+  if (const UnlockDef* ud = unlocks_.def("company.found_studio")) {
+    UnlockStatus st = unlocks_.evaluate(*ud, capabilityNow(), &curriculum_);
+    if (!st.unlocked) {
+      notice("Not yet eligible to found a company — " + joinLines(st.missing) + ".", "error");
+      sfx("error");
+      return;
+    }
+  }
   std::string why;
   if (!Company::found(player_, name, focus, &why)) {
     notice(why, "error");
@@ -1015,6 +1445,7 @@ void Game::foundCompany(const std::string& name, const std::string& focus) {
   for (const auto& t : player_.team) player_.company.members.push_back(t);
   notice("Company founded: " + player_.company.name + " (" + focus + ").", "success");
   sfx("levelup");
+  awardProgress();
   saveNow();
 }
 

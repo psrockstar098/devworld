@@ -41,6 +41,13 @@ The embedded-RocksDB proof (the actual `librocksdb` C++ library, not Kvrocks):
 ./scripts/rocksdb-embedded-test.sh
 ```
 
+## The platform server
+
+The API that uses these stores is `server/` — native C++17, built and run
+outside compose. `server/scripts/up.sh` starts the containers above, waits for
+them, builds if needed and launches the server on :8091. See
+`server/README.md` for routes, auth and tests.
+
 ## ClickHouse schema
 
 Initialised once on an empty data volume from `clickhouse/init/`:

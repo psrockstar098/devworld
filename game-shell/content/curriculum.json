@@ -1,0 +1,647 @@
+{
+  "version": "0.1",
+  "note": "The knowledge graph behind the campaign (design 4.1). A topic id is also the skill tag that missions award evidence for. Loaded by game-shell/src/curriculum.cpp; validated by tests/test_content.cpp. Levels 6-50 add topics as their missions ship.",
+  "areas": [
+    { "id": "foundations", "title": "Foundations", "summary": "Running code and moving data in and out of it." },
+    { "id": "variables", "title": "Values & Types", "summary": "Storing, shaping and formatting data." },
+    { "id": "control_flow", "title": "Control Flow", "summary": "Making the program decide." },
+    { "id": "loops", "title": "Iteration", "summary": "Doing work repeatedly without repeating yourself." },
+    { "id": "functions", "title": "Functions & Scope", "summary": "Packaging behaviour so it can be reused and tested." },
+    { "id": "data", "title": "Data Structures", "summary": "Choosing the container that makes the problem easy." },
+    { "id": "sql", "title": "Relational Queries", "summary": "Asking a database precise questions." },
+    { "id": "testing", "title": "Testing & Evidence", "summary": "Proving code works, including where you did not look." },
+    { "id": "debugging", "title": "Debugging", "summary": "Finding out why it does not work." },
+    { "id": "tooling", "title": "Tooling & Version Control", "summary": "The professional's workbench: shell and history." },
+    { "id": "engineering", "title": "Software Engineering", "summary": "Building things that other people can live with." },
+    { "id": "systems", "title": "Systems & Performance", "summary": "How machines behave under load and at scale." }
+  ],
+  "topics": [
+    {
+      "id": "foundations.output_statements",
+      "area": "foundations",
+      "title": "Running a program and printing",
+      "summary": "Run a file, read its output, and produce an exact line of text.",
+      "difficulty": 1,
+      "prerequisites": [],
+      "objectives": ["Run a program and read its output", "Print a string exactly as specified"],
+      "misconceptions": [
+        {
+          "id": "foundations.output_statements.mc1",
+          "text": "The program runs from the editor without being saved or executed.",
+          "remedy": "Nothing runs until it is executed: write the line, then run it and watch the output pane.",
+          "probes": ["m01"]
+        }
+      ],
+      "missions": ["m01"],
+      "projects": []
+    },
+    {
+      "id": "foundations.stdin_reading",
+      "area": "foundations",
+      "title": "Reading standard input",
+      "summary": "Read the whole input, split it into tokens, and cope with an empty input.",
+      "difficulty": 2,
+      "prerequisites": ["foundations.output_statements"],
+      "objectives": [
+        "Read all of standard input at once",
+        "Split input into tokens without assuming how many there are",
+        { "id": "foundations.stdin_reading.empty", "text": "Handle the empty-input case explicitly" }
+      ],
+      "misconceptions": [
+        {
+          "id": "foundations.stdin_reading.mc1",
+          "text": "There will always be at least one value on the input.",
+          "remedy": "Guard the empty case: the tests deliberately feed a blank line. Handle it before you loop.",
+          "probes": ["m06"]
+        }
+      ],
+      "missions": ["m06", "m08"],
+      "projects": []
+    },
+    {
+      "id": "variables.values_types",
+      "area": "variables",
+      "title": "Values and types",
+      "summary": "Know what kind of value you hold and what operations it supports.",
+      "difficulty": 1,
+      "prerequisites": ["foundations.output_statements"],
+      "objectives": ["Store a value in a named variable", "Distinguish text from numbers and convert between them"],
+      "misconceptions": [
+        {
+          "id": "variables.values_types.mc1",
+          "text": "Input arrives as a number ready for arithmetic.",
+          "remedy": "Input is text until converted: parse each token with the numeric conversion before maths.",
+          "probes": ["m05"]
+        }
+      ],
+      "missions": ["m03", "m05"],
+      "projects": []
+    },
+    {
+      "id": "variables.numeric_math",
+      "area": "variables",
+      "title": "Arithmetic and percentages",
+      "summary": "Turn a rule stated in words into the right arithmetic.",
+      "difficulty": 2,
+      "prerequisites": ["variables.values_types"],
+      "objectives": ["Translate a percentage rule into an expression", "Keep integer-cent money exact"],
+      "misconceptions": [
+        {
+          "id": "variables.numeric_math.mc1",
+          "text": "20% off means multiplying by 0.2.",
+          "remedy": "'20% off' is what remains: pay 80%, so multiply by 0.8. Check the printed price against the rule.",
+          "probes": ["m05"]
+        },
+        {
+          "id": "variables.numeric_math.mc2",
+          "text": "Money should always be a float.",
+          "remedy": "Cents are whole numbers; keep them integers until the moment you format the final string.",
+          "probes": ["m12"]
+        }
+      ],
+      "missions": ["m05"],
+      "projects": []
+    },
+    {
+      "id": "variables.fstring_formatting",
+      "area": "variables",
+      "title": "Formatting output exactly",
+      "summary": "Build strings that match a required format character for character.",
+      "difficulty": 2,
+      "prerequisites": ["variables.values_types"],
+      "objectives": ["Interpolate values into a template", "Match punctuation and spacing exactly"],
+      "misconceptions": [
+        {
+          "id": "variables.fstring_formatting.mc1",
+          "text": "Close enough is close enough for a test.",
+          "remedy": "Comparison is exact, including the colon, the space and the currency symbol. Diff your line against the sample.",
+          "probes": ["m08"]
+        }
+      ],
+      "missions": ["m03", "m08"],
+      "projects": []
+    },
+    {
+      "id": "control_flow.conditionals",
+      "area": "control_flow",
+      "title": "Conditionals",
+      "summary": "Choose between outcomes using a comparison.",
+      "difficulty": 2,
+      "prerequisites": ["variables.numeric_math"],
+      "objectives": ["Write an if/else that selects between two outputs", "Get the boundary condition right"],
+      "misconceptions": [
+        {
+          "id": "control_flow.conditionals.mc1",
+          "text": "The boundary belongs to the 'normal' branch.",
+          "remedy": "Read the spec's comparison: 'below 5' excludes 5. Pick the branch the exact boundary falls in.",
+          "probes": ["m09"]
+        }
+      ],
+      "missions": ["m09"],
+      "projects": []
+    },
+    {
+      "id": "control_flow.boolean_logic",
+      "area": "control_flow",
+      "title": "Boolean logic",
+      "summary": "Combine conditions with and/or/not without losing a case.",
+      "difficulty": 3,
+      "prerequisites": ["control_flow.conditionals"],
+      "objectives": ["Combine two conditions correctly", "Know that and/or do not behave like English 'or'"],
+      "misconceptions": [
+        {
+          "id": "control_flow.boolean_logic.mc1",
+          "text": "'or' is a friendlier 'and'.",
+          "remedy": "and needs both sides to hold; or needs just one. Read the rule aloud and pick the word that matches it.",
+          "probes": ["m19"]
+        }
+      ],
+      "missions": ["m19"],
+      "projects": []
+    },
+    {
+      "id": "loops.for_iteration",
+      "area": "loops",
+      "title": "for loops",
+      "summary": "Walk a sequence and do something for each element.",
+      "difficulty": 2,
+      "prerequisites": ["variables.values_types"],
+      "objectives": ["Iterate over a sequence", "Run a fixed number of times with range"],
+      "misconceptions": [
+        {
+          "id": "loops.for_iteration.mc1",
+          "text": "The loop body runs once per line of input.",
+          "remedy": "It runs once per element after splitting. Print while you iterate to see the actual elements.",
+          "probes": ["m06"]
+        }
+      ],
+      "missions": ["m06", "m08", "m11"],
+      "projects": []
+    },
+    {
+      "id": "loops.accumulators",
+      "area": "loops",
+      "title": "Accumulators",
+      "summary": "Carry a running total across iterations instead of replacing it.",
+      "difficulty": 3,
+      "prerequisites": ["loops.for_iteration", "variables.numeric_math"],
+      "objectives": ["Initialise an accumulator before the loop", "Update the accumulator each pass"],
+      "misconceptions": [
+        {
+          "id": "loops.accumulators.mc1",
+          "text": "Assigning the item to the total keeps a running sum.",
+          "remedy": "Assignment replaces. To accumulate you must combine: total = total + item. Trace two inputs by hand.",
+          "probes": ["m02", "m10"]
+        }
+      ],
+      "missions": ["m02", "m10"],
+      "projects": []
+    },
+    {
+      "id": "loops.enumerate_indices",
+      "area": "loops",
+      "title": "Positions and indices",
+      "summary": "Know both the element and where it sits in the sequence.",
+      "difficulty": 3,
+      "prerequisites": ["loops.for_iteration"],
+      "objectives": ["Pair each element with its position", "Start numbering where the spec says"],
+      "misconceptions": [
+        {
+          "id": "loops.enumerate_indices.mc1",
+          "text": "Counting in code starts at 1, like people count.",
+          "remedy": "Indices start at 0. Number from 1 explicitly (for example enumerate with a start).",
+          "probes": ["m03"]
+        }
+      ],
+      "missions": ["m03", "m08"],
+      "projects": []
+    },
+    {
+      "id": "loops.while_conditions",
+      "area": "loops",
+      "title": "while loops",
+      "summary": "Repeat until a condition changes, and prove it will change.",
+      "difficulty": 3,
+      "prerequisites": ["control_flow.conditionals", "loops.for_iteration"],
+      "objectives": ["Loop while a condition holds", "Make sure the condition eventually becomes false"],
+      "misconceptions": [
+        {
+          "id": "loops.while_conditions.mc1",
+          "text": "A while loop and a for loop are interchangeable, so the body never needs to change the condition.",
+          "remedy": "A while loop repeats until its condition turns false. Something inside the body must change that condition, or it runs forever (or never).",
+          "probes": ["m18"]
+        }
+      ],
+      "missions": ["m18"],
+      "projects": []
+    },
+    {
+      "id": "functions.defining",
+      "area": "functions",
+      "title": "Defining functions",
+      "summary": "Name a piece of behaviour and give it one job.",
+      "difficulty": 3,
+      "prerequisites": ["control_flow.conditionals"],
+      "objectives": ["Define a function", "Call it from the main flow"],
+      "misconceptions": [],
+      "missions": ["m11"],
+      "projects": []
+    },
+    {
+      "id": "functions.parameters_return",
+      "area": "functions",
+      "title": "Parameters and return values",
+      "summary": "Pass data in and hand a result back rather than printing it.",
+      "difficulty": 3,
+      "prerequisites": ["functions.defining"],
+      "objectives": ["Accept arguments", "Return a value the caller can use"],
+      "misconceptions": [
+        {
+          "id": "functions.parameters_return.mc1",
+          "text": "Printing inside the function is the same as returning.",
+          "remedy": "Printing sends text to the screen; returning hands a value to the caller. A function used in an expression must return.",
+          "probes": ["m11", "m12"]
+        }
+      ],
+      "missions": ["m11", "m12"],
+      "projects": []
+    },
+    {
+      "id": "functions.scope",
+      "area": "functions",
+      "title": "Scope",
+      "summary": "See why a variable inside a function is not the one outside it.",
+      "difficulty": 3,
+      "prerequisites": ["functions.parameters_return"],
+      "objectives": ["Predict which variable a name refers to", "Avoid hidden dependencies on globals"],
+      "misconceptions": [
+        {
+          "id": "functions.scope.mc1",
+          "text": "A function can freely change the caller's variable.",
+          "remedy": "Parameters are inputs, not aliases. Return the new value and let the caller decide what to do with it.",
+          "probes": ["m12", "m13"]
+        }
+      ],
+      "missions": ["m12", "m13"],
+      "projects": []
+    },
+    {
+      "id": "functions.decomposition",
+      "area": "functions",
+      "title": "Decomposition",
+      "summary": "Split a tangle into small functions with clear contracts.",
+      "difficulty": 4,
+      "prerequisites": ["functions.parameters_return"],
+      "objectives": ["Split a long script into named steps", "Give each function a single responsibility"],
+      "misconceptions": [],
+      "missions": ["m12", "m16"],
+      "projects": []
+    },
+    {
+      "id": "data.lists",
+      "area": "data",
+      "title": "Lists",
+      "summary": "Store an ordered collection and walk it.",
+      "difficulty": 2,
+      "prerequisites": ["variables.values_types"],
+      "objectives": ["Build a list from input", "Read its length and elements"],
+      "misconceptions": [],
+      "missions": ["m02", "m06"],
+      "projects": []
+    },
+    {
+      "id": "data.mapping_keys",
+      "area": "data",
+      "title": "Maps and counting",
+      "summary": "Group and count things by a key.",
+      "difficulty": 3,
+      "prerequisites": ["data.lists", "loops.for_iteration"],
+      "objectives": ["Look something up by key", "Count occurrences into a map"],
+      "misconceptions": [
+        {
+          "id": "data.mapping_keys.mc1",
+          "text": "Adding to a missing key just works.",
+          "remedy": "The first time a key appears it has no entry: initialise it to zero (or use a default) before you add.",
+          "probes": ["m16"]
+        }
+      ],
+      "missions": ["m15", "m16", "m23"],
+      "projects": []
+    },
+    {
+      "id": "data.aggregation",
+      "area": "data",
+      "title": "Aggregation",
+      "summary": "Reduce many rows to totals and summaries.",
+      "difficulty": 4,
+      "prerequisites": ["data.mapping_keys", "loops.accumulators"],
+      "objectives": ["Compute a total over a collection", "Produce per-group counts"],
+      "misconceptions": [],
+      "missions": ["m16", "m23"],
+      "projects": []
+    },
+    {
+      "id": "data.sorting_selection",
+      "area": "data",
+      "title": "Ordering and selection",
+      "summary": "Present results in the order the spec asks for.",
+      "difficulty": 3,
+      "prerequisites": ["data.lists"],
+      "objectives": ["Sort by the required key", "Apply an explicit tie-break"],
+      "misconceptions": [
+        {
+          "id": "data.sorting_selection.mc1",
+          "text": "Default order is good enough.",
+          "remedy": "Tests compare exact order. Sort by the named key and add the tie-break the spec lists.",
+          "probes": ["m15", "m17"]
+        }
+      ],
+      "missions": ["m15", "m16"],
+      "projects": []
+    },
+    {
+      "id": "sql.select_where",
+      "area": "sql",
+      "title": "SELECT and WHERE",
+      "summary": "Read columns from a table and filter rows.",
+      "difficulty": 2,
+      "prerequisites": ["foundations.output_statements"],
+      "objectives": ["Select named columns", "Filter rows with a condition"],
+      "misconceptions": [
+        {
+          "id": "sql.select_where.mc1",
+          "text": "SELECT * is a fine habit.",
+          "remedy": "Name only the columns you need; it documents intent and keeps results predictable.",
+          "probes": ["m04"]
+        }
+      ],
+      "missions": ["m04"],
+      "projects": []
+    },
+    {
+      "id": "sql.aggregate_group",
+      "area": "sql",
+      "title": "GROUP BY and HAVING",
+      "summary": "Summarise rows per group and filter the groups.",
+      "difficulty": 3,
+      "prerequisites": ["sql.select_where"],
+      "objectives": ["Group rows and count them", "Filter groups with HAVING, not WHERE"],
+      "misconceptions": [
+        {
+          "id": "sql.aggregate_group.mc1",
+          "text": "WHERE can filter an aggregate like COUNT(*).",
+          "remedy": "WHERE runs before grouping. Filter grouped results with HAVING.",
+          "probes": ["m07"]
+        }
+      ],
+      "missions": ["m07", "m10"],
+      "projects": []
+    },
+    {
+      "id": "sql.sort_present",
+      "area": "sql",
+      "title": "ORDER BY",
+      "summary": "Present rows in a deterministic order.",
+      "difficulty": 2,
+      "prerequisites": ["sql.select_where"],
+      "objectives": ["Sort by one or more columns", "Add a tie-break for stable output"],
+      "misconceptions": [],
+      "missions": ["m10", "m17"],
+      "projects": []
+    },
+    {
+      "id": "sql.join_aggregate",
+      "area": "sql",
+      "title": "Joining and aggregating",
+      "summary": "Combine tables, aggregate per entity, and keep only the interesting groups.",
+      "difficulty": 4,
+      "prerequisites": ["sql.aggregate_group", "sql.sort_present"],
+      "objectives": ["Join two tables on a key", "Aggregate across the join", "Exclude entities with no qualifying rows"],
+      "misconceptions": [],
+      "missions": ["m17"],
+      "projects": []
+    },
+    {
+      "id": "testing.public_tests",
+      "area": "testing",
+      "title": "Reading tests as a spec",
+      "summary": "Use the visible tests to understand the contract before writing code.",
+      "difficulty": 2,
+      "prerequisites": ["foundations.output_statements"],
+      "objectives": ["Read a test's input and expected output", "Work backwards from a failure"],
+      "misconceptions": [
+        {
+          "id": "testing.public_tests.mc1",
+          "text": "Tests are obstacles to get past.",
+          "remedy": "A test is the clearest statement of what 'done' means. Read it first and let it drive the code.",
+          "probes": ["m02"]
+        }
+      ],
+      "missions": ["m02"],
+      "projects": []
+    },
+    {
+      "id": "testing.hidden_tests",
+      "area": "testing",
+      "title": "Hidden tests and edge cases",
+      "summary": "Write code that survives cases you were not shown.",
+      "difficulty": 3,
+      "prerequisites": ["testing.public_tests"],
+      "objectives": ["Identify edge cases from the spec", "Generalise instead of special-casing"],
+      "misconceptions": [
+        {
+          "id": "testing.hidden_tests.mc1",
+          "text": "If the visible tests pass, the solution is correct.",
+          "remedy": "Visible tests are examples, not proof. Hidden tests probe the same rule on different inputs; generalise.",
+          "probes": ["m13"]
+        }
+      ],
+      "missions": ["m13", "m14"],
+      "projects": []
+    },
+    {
+      "id": "testing.verification_mindset",
+      "area": "testing",
+      "title": "Verification mindset",
+      "summary": "Treat your own output as suspect until something independent confirms it.",
+      "difficulty": 3,
+      "prerequisites": ["testing.public_tests"],
+      "objectives": ["Predict an output before running", "Confirm the result rather than assuming it"],
+      "misconceptions": [],
+      "missions": ["m13"],
+      "projects": []
+    },
+    {
+      "id": "testing.transfer",
+      "area": "testing",
+      "title": "Transfer",
+      "summary": "Apply a technique to an unseen problem without a guide.",
+      "difficulty": 4,
+      "prerequisites": ["testing.hidden_tests", "functions.parameters_return"],
+      "objectives": ["Break an unseen spec into known techniques", "Ship a small tool unaided"],
+      "misconceptions": [],
+      "missions": ["m14"],
+      "projects": ["Re-solve a past mission in a different language and compare the two solutions"]
+    },
+    {
+      "id": "debugging.reading_errors",
+      "area": "debugging",
+      "title": "Reading tracebacks",
+      "summary": "Let the error message tell you where the problem is.",
+      "difficulty": 2,
+      "prerequisites": ["foundations.output_statements"],
+      "objectives": ["Find the failing line in a traceback", "Distinguish the error's location from its cause"],
+      "misconceptions": [
+        {
+          "id": "debugging.reading_errors.mc1",
+          "text": "A crash means the program is fundamentally broken.",
+          "remedy": "A traceback names the operation and the input that broke it. Read the bottom line first: it usually tells you exactly which value was wrong.",
+          "probes": ["m20"]
+        }
+      ],
+      "missions": ["m20"],
+      "projects": []
+    },
+    {
+      "id": "debugging.trace_logic",
+      "area": "debugging",
+      "title": "Tracing logic",
+      "summary": "Follow values through a loop to find where the intent diverges.",
+      "difficulty": 3,
+      "prerequisites": ["control_flow.conditionals", "loops.for_iteration"],
+      "objectives": ["Hand-trace a loop with concrete input", "Spot the line where behaviour and intent diverge"],
+      "misconceptions": [
+        {
+          "id": "debugging.trace_logic.mc1",
+          "text": "Rereading the code is enough to find the bug.",
+          "remedy": "Trace it instead: write down the value of each variable after each pass and compare to what you expected.",
+          "probes": ["m02"]
+        }
+      ],
+      "missions": ["m02"],
+      "projects": []
+    },
+    {
+      "id": "debugging.isolating",
+      "area": "debugging",
+      "title": "Isolating a defect",
+      "summary": "Shrink a large failure to the smallest reproducing case.",
+      "difficulty": 4,
+      "prerequisites": ["debugging.trace_logic", "testing.public_tests"],
+      "objectives": ["Produce a minimal failing input", "Bisect a large program to the offending path"],
+      "misconceptions": [],
+      "missions": ["m21"],
+      "projects": []
+    },
+    {
+      "id": "tooling.git_history",
+      "area": "tooling",
+      "title": "Reading version history",
+      "summary": "Use the change log to understand what was touched and why.",
+      "difficulty": 3,
+      "prerequisites": ["foundations.output_statements"],
+      "objectives": ["List changes over time", "Read a commit as an atomic unit", "Spot files changed more than once"],
+      "misconceptions": [],
+      "missions": ["m15"],
+      "projects": []
+    },
+    {
+      "id": "tooling.command_line",
+      "area": "tooling",
+      "title": "The command line",
+      "summary": "Navigate a system and run tools from a shell.",
+      "difficulty": 3,
+      "prerequisites": ["tooling.git_history"],
+      "objectives": ["Move around a filesystem from a shell", "Run and compose commands"],
+      "misconceptions": [],
+      "missions": ["m22"],
+      "projects": []
+    },
+    {
+      "id": "engineering.code_quality",
+      "area": "engineering",
+      "title": "Code quality",
+      "summary": "Names, structure and duplication: code a colleague can work with.",
+      "difficulty": 3,
+      "prerequisites": ["functions.decomposition"],
+      "objectives": ["Name things for what they mean", "Remove duplication", "Keep one source of truth"],
+      "misconceptions": [
+        {
+          "id": "engineering.code_quality.mc1",
+          "text": "More code means more careful work.",
+          "remedy": "Less code is easier to verify. Extract the repeated expression and test the result.",
+          "probes": ["m12"]
+        }
+      ],
+      "missions": ["m12", "m15"],
+      "projects": []
+    },
+    {
+      "id": "engineering.specification_reading",
+      "area": "engineering",
+      "title": "Reading a specification",
+      "summary": "Turn prose requirements into a checklist you can verify.",
+      "difficulty": 3,
+      "prerequisites": ["testing.public_tests"],
+      "objectives": ["Extract concrete requirements from a brief", "Turn each into a checkable case"],
+      "misconceptions": [],
+      "missions": ["m13"],
+      "projects": []
+    },
+    {
+      "id": "engineering.project_delivery",
+      "area": "engineering",
+      "title": "Delivering a project",
+      "summary": "Take a small tool from spec to a shipped artifact.",
+      "difficulty": 5,
+      "prerequisites": ["engineering.code_quality", "testing.hidden_tests"],
+      "objectives": ["Plan, build and test a small tool", "Ship something the town can use"],
+      "misconceptions": [],
+      "missions": ["m14"],
+      "projects": []
+    },
+    {
+      "id": "systems.data_center",
+      "area": "systems",
+      "title": "Systems telemetry",
+      "summary": "Read logs and status codes as a picture of a machine at work.",
+      "difficulty": 3,
+      "prerequisites": ["data.aggregation"],
+      "objectives": ["Interpret status codes", "Summarise a request log by outcome"],
+      "misconceptions": [],
+      "missions": ["m16"],
+      "projects": []
+    },
+    {
+      "id": "systems.telemetry_analysis",
+      "area": "systems",
+      "title": "Analysis over telemetry",
+      "summary": "Answer operational questions by querying experiment and request data.",
+      "difficulty": 4,
+      "prerequisites": ["data.aggregation", "sql.aggregate_group"],
+      "objectives": ["Compare outcomes across entities", "Filter out entities with no signal"],
+      "misconceptions": [],
+      "missions": ["m17"],
+      "projects": []
+    },
+    {
+      "id": "systems.performance",
+      "area": "systems",
+      "title": "Performance",
+      "summary": "Measure before you rewrite, then make the change count.",
+      "difficulty": 5,
+      "prerequisites": ["data.sorting_selection"],
+      "objectives": ["Profile a slow program", "Choose a better data structure to remove the bottleneck"],
+      "misconceptions": [
+        {
+          "id": "systems.performance.mc1",
+          "text": "Optimise the lines that look slow.",
+          "remedy": "Measure first. Optimise the bottleneck the profile shows, then measure again to prove the gain.",
+          "probes": ["m23"]
+        }
+      ],
+      "missions": ["m23"],
+      "projects": []
+    }
+  ]
+}

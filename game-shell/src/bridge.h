@@ -38,11 +38,20 @@ void ide_submit_mission(const MissionDef& m);
 // ---- persistence (localStorage devworld.save.v1) ----
 std::string load_save();  // "" when none
 
+// ---- in-game devices ----
+void computer_open();  // show the machine's desktop in the page
+
+// ---- shared world ----
+// Publish this character's position (world px) on the shared map. No-op when
+// the page is offline; the shell's net layer owns the socket.
+void world_position(float x, float y, const std::string& mapId);
+
 // ---- audio (WebAudio bleeps; ambient hooks) ----
 void sfx(const std::string& name);  // "interact" | "success" | "error" | "coin" | "open" | "close"
 
 // ---- misc ----
 std::string iso_now();          // client clock ISO string (Phase 1)
+int64_t now_ms();               // client clock epoch milliseconds (Phase 1)
 std::string make_id();          // random id for ledger rows
 
 }  // namespace dw

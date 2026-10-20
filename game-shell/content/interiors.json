@@ -26,6 +26,18 @@
      "tile": "shelf",
      "x": 4,
      "y": 2
+    },
+    {
+     "label": "Couch",
+     "tile": "couch",
+     "x": 7,
+     "y": 2
+    },
+    {
+     "label": "Coffee table",
+     "tile": "table",
+     "x": 7,
+     "y": 4
     }
    ],
    "h": 10,

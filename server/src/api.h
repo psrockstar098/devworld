@@ -1,0 +1,94 @@
+#pragma once
+// api.h — the DEVWORLD HTTP/WebSocket API. Handlers are pure with respect to
+// the injected stores, so the whole surface is unit-tested against in-memory
+// doubles and integration-tested against the real ClickHouse/Redis/Kvrocks.
+#include <deque>
+#include <mutex>
+#include <string>
+
+#include "assess.h"
+#include "clickhouse.h"
+#include "friends.h"
+#include "http.h"
+#include "kv.h"
+#include "missions.h"
+#include "players.h"
+#include "presence.h"
+#include "sessions.h"
+#include "ws.h"
+
+namespace dw {
+
+struct ApiConfig {
+  std::string adminKey;
+  int sessionTtlSec = 604800;
+  int balanceCacheTtlSec = 15;
+};
+
+class Api {
+ public:
+  Api(History* history, KvStore* kv, KvStore* cache, PlayerStore* players,
+      SessionStore* sessions, MissionCatalog* missions, AssessClient* assess,
+      ApiConfig cfg);
+  ~Api();
+
+  HttpResponse handle(const HttpRequest& req);
+  void handleUpgrade(Socket& sock, const HttpRequest& req);
+  WsHub& hub() { return hub_; }
+
+ private:
+  HttpResponse dispatch(const HttpRequest& req);
+  struct Auth {
+    bool ok = false;
+    std::string playerId;
+    HttpResponse response;
+  };
+
+  Auth requirePlayer(const HttpRequest& req);
+  std::string tokenOf(const HttpRequest& req) const;
+
+  HttpResponse handleHealth();
+  HttpResponse handleRegister(const HttpRequest& req);
+  HttpResponse handleLogin(const HttpRequest& req);
+  HttpResponse handleLogout(const HttpRequest& req);
+  HttpResponse handleMe(const HttpRequest& req);
+  HttpResponse handleGetPlayer(const std::string& id);
+  HttpResponse handleMissions();
+  HttpResponse handleMissionStats();
+  HttpResponse handleSubmit(const HttpRequest& req, const std::string& id);
+  HttpResponse handleBalance(const HttpRequest& req);
+  HttpResponse handleAdminLedger(const HttpRequest& req);
+  HttpResponse handleUpdateAppearance(const HttpRequest& req);
+  HttpResponse handleWorldPlayers(const HttpRequest& req);
+  HttpResponse handleFriends(const HttpRequest& req);
+  HttpResponse handleFriendRequest(const HttpRequest& req);
+  HttpResponse handleFriendAccept(const HttpRequest& req);
+  HttpResponse handleFriendDecline(const HttpRequest& req);
+  HttpResponse handleFriendRemove(const std::string& id, const HttpRequest& req);
+
+  void ensureHome(PlayerRecord* rec);
+  JVal friendView(const std::string& playerId);
+  JVal chatHistoryJson();
+  void addChat(const std::string& messageJson);
+
+  bool balanceOf(const std::string& playerId, int64_t* out, std::string* err);
+  bool totalXpOf(const std::string& playerId, int64_t* out, std::string* err);
+
+  History* history_;
+  KvStore* kv_;
+  KvStore* cache_;
+  PlayerStore* players_;
+  SessionStore* sessions_;
+  MissionCatalog* missions_;
+  AssessClient* assess_;
+  ApiConfig cfg_;
+  WsHub hub_;
+  FriendStore friends_;
+  PresenceStore presence_;
+  // Recent world chat, kept in memory so a fresh connection sees context.
+  // Every message is also written to the history store.
+  std::mutex chatMu_;
+  std::deque<std::string> chatLog_;
+};
+
+}  // namespace dw

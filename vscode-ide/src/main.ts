@@ -277,7 +277,9 @@ const services: IEditorOverrideServices = {
     // Microsoft's gallery, which blocks non-VS-Code clients. This is what lets
     // a dev install their own language extension, just like the real world.
     transformExtensionGalleryManifest: (manifest) => ({
-      ...(manifest ?? {}),
+      // If the manifest request fails, hand back a valid empty manifest instead
+      // of one missing the required `version`/`resources`/`capabilities`.
+      ...(manifest ?? { version: '1.0.0', resources: [], capabilities: { extensionQuery: {} } }),
       serviceUrl: 'https://open-vsx.org/api'
     })
   }),
@@ -313,7 +315,14 @@ const constructOptions: IWorkbenchConstructionOptions = {
     nameShort: 'DEVWORLD',
     nameLong: 'DEVWORLD — Game IDE',
     // Extension marketplace: Open VSX (Microsoft's gallery blocks third-party clients)
-    extensionsGallery: { serviceUrl: 'https://open-vsx.org/api' }
+    // monaco-vscode-api's vendored product type declares the gallery config
+    // fields (controlUrl, extensionUrlTemplate, …) as required, but VS Code's
+    // product schema has them optional and the web-only gallery code consults
+    // `serviceUrl` alone — so only that is set. Extra endpoints would be
+    // invented URLs that the client does not need.
+    extensionsGallery: {
+      serviceUrl: 'https://open-vsx.org/api'
+    } as NonNullable<IWorkbenchConstructionOptions['productConfiguration']>['extensionsGallery']
   }
 }
 

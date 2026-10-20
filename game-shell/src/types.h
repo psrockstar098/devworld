@@ -9,6 +9,7 @@
 #include <map>
 #include <cstdint>
 #include "settings.h"
+#include "mastery.h"
 
 namespace dw {
 
@@ -73,6 +74,26 @@ struct LevelState {
   // XP math lives in progression.h (pure, unit-tested; gates are the real check).
 };
 
+// Raw mission-outcome counters (design 09 §5.1). The reliability *score* is
+// DERIVED from these, never stored, so it cannot be inflated by cosmetics or
+// by repeating trivial work. Append-only, like evidence.
+struct ReliabilityRecord {
+  int passes = 0;   // missions completed
+  int fails = 0;    // failed test submissions
+  int recalls = 0;  // delayed-recall practice passes
+};
+
+// The player's chosen specialization and its history (design 09 §5.5).
+// Switching paths appends to `history` and never deletes evidence, completed
+// missions or achievements — earned competencies survive respecialization.
+// `milestones` maps a milestone id (see content/unlocks.json) to the ISO time
+// it was earned.
+struct CareerRecord {
+  std::string path;                               // "" = no path chosen yet
+  std::vector<std::string> history;               // every path held, oldest first
+  std::map<std::string, std::string> milestones;  // milestone id -> ISO time
+};
+
 // ---- quests ----
 struct TestCase {
   std::string name, tstdin, expected;  // tstdin: `stdin` is a stdio.h macro
@@ -93,6 +114,10 @@ struct MissionDef {
   int level = 1;
   bool gate = false;
   bool hints = true;
+  // Independent assessments emit transfer/rubric evidence: the only evidence
+  // that can make a skill "independent" and therefore "mastered" (design 08
+  // §4.3). Gates are always independent; a capstone proof can be flagged too.
+  bool independent = false;
 };
 enum class MissionState { Locked, Available, Active, Submitted, Complete };
 struct MissionProgress {
@@ -150,11 +175,35 @@ struct Player {
   CompanyState company;
   AccessibilitySettings a11y;
   double playSeconds = 0;                           // session-persisted playtime
+  // Progression records kept deliberately separate from level (design 09 §5.1):
+  // a high level must not imply technical expertise. Reliability is raw
+  // counters; the career is the chosen path plus everything ever held.
+  ReliabilityRecord reliability;
+  CareerRecord career;
+  // Education: evidence-based mastery (design 08 §4.3). Append-only; mastery
+  // and skill-tree state are DERIVED from these rows, never stored twice.
+  // [PHASE2] evidence is server-issued; the client cache is untrusted.
+  std::vector<Evidence> evidence;
   int64_t balance() const {
     int64_t b = 0;
     for (auto& r : ledger) b += r.delta;
     return b;
   }
+};
+
+// ---- other real players ----
+// A live snapshot of someone else's character in the shared town. Positions
+// come from the server's presence registry (world px), never from local guess;
+// this struct is only a render cache.
+struct RemotePlayer {
+  std::string id, handle, displayName, mapId = "town";
+  Color skin{232, 190, 150}, shirt{45, 212, 191}, pants{51, 65, 85};
+  Color hair{45, 35, 28};
+  Vec2 pos{0, 0};
+  int facing = 0;
+  bool moving = false;
+  float movingT = 0;   // seconds left of the walk animation
+  float phase = 0;
 };
 
 // ---- NPCs ----

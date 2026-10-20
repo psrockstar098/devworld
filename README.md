@@ -108,6 +108,65 @@ one is marked `[PHASE2]` for server authority.
 not stored twice: evidence score = shipped projects + hidden tests passed.
 Cosmetics and equipment can never change a test verdict or the evidence score.
 
+### The education system (`game-shell/`)
+
+The pedagogical core ([GDD] §9, design `08-education-system.md`):
+
+- **Knowledge graph** — twelve knowledge areas split into topics
+  (`content/curriculum.json`). A topic *is* the skill tag missions award
+  evidence for, so curriculum, content and mastery speak one vocabulary. The
+  graph carries prerequisites (a DAG), learning objectives, and
+  **misconceptions with remedies and the missions that probe them**.
+- **Evidence, not XP** — nine evidence kinds from `automated_test` up to
+  `transfer` and `project_rubric`. Everything is weighted and time-decayed;
+  nothing is stored twice (mastery is derived from the evidence log).
+- **Mastery needs independence** — a skill is `mastered` only when the player
+  has *independent* evidence (transfer/delayed recall) **and** working-code
+  evidence. Passing the shipped tests alone scores well but can never master a
+  skill. Gates (and the First Proof artifact) are the independent assessments.
+- **Spaced review** — an interval ladder (1 · 3 · 7 · 16 · 35 days) grows with
+  consecutive successful recalls. A finished mission can be re-run as
+  **Practice** (no hints, no rewards); passing it well after the first time
+  earns delayed-recall evidence, the in-game route to independently mastering a
+  topic. `weakestSkills()` answers "what should I practise?". The whole model is
+  pure: callers pass `nowMs`.
+
+The game loads the graph, emits evidence on a mission pass, and the in-game
+**Skills** panel renders the tree with locked/available/in-progress/mastered
+topics. All of it is locally authoritative for Phase 1 (`[PHASE2]` marks what
+moves server-side).
+
+### The progression engine (`game-shell/`)
+
+How the learning connects to the open world (design `09-progression-engine.md`):
+
+- **Separate records, never conflated.** A derived `PlayerCapability` snapshot
+  keeps the overall level, per-skill mastery, language proficiency, career
+  specialization, project experience, reputation/reliability, achievements and
+  company leadership as distinct fields. It is recomputed from raw records —
+  nothing is stored twice — and **a level is not expertise**: a level-40 player
+  with no evidence has no mastered skills.
+- **An unlock catalog that explains itself.** Every opportunity (bus route,
+  company eligibility, technical privilege, equipment, job tier, career) is
+  data-driven (`content/unlocks.json`) and evaluated against the capability, not
+  the level. Each returns *why* it was earned or *exactly what is missing*
+  ("reach level 16 (you are 12)"). City access, company eligibility and
+  technical privileges have **separate requirement axes**, and a technical
+  privilege may only require topics from its own area — so nobody has to master
+  an unrelated technology to reach a career that fits. Content validation
+  enforces all of this.
+- **Meaningful work only.** XP rules (`rewards.h`) reward shipping work,
+  independent mastery, unseen problems, debugging recovery, delayed recall,
+  transfer, publishing and mentoring — and return **zero** for repetition,
+  practice and quantity of code. `completeMission()` only runs on a first full
+  pass, so spam cannot earn XP structurally.
+- **Careers without loss.** Career paths (`content/careers.json`) have their own
+  entry requirements. Switching paths records history but never deletes
+  evidence, missions or achievements, so earned competencies survive
+  respecialization.
+- **A dashboard that answers "why".** The **Progression & unlocks** panel shows
+  every record and every unlock with its met/missing reasons.
+
 ### Tests
 
 `game-shell/tests/` holds a native C++ + content suite, a WebAssembly build of
@@ -136,24 +195,33 @@ cd infra && ./scripts/up.sh            # start + wait healthy + round-trip smoke
 ./scripts/rocksdb-embedded-test.sh     # build & run a real librocksdb C++ program
 ```
 
-`game-server/` is the game API (Bun + TypeScript) over those stores: players,
-sessions, the ledger, progression and mission grading. It never executes player
-code — submissions are forwarded to the sandbox worker's `/assess`. A full pass
-runs game server → worker → Python container and reads the result back from
+`server/` is the game API — native C++17, no third-party libraries, HTTP/1.1 +
+WebSocket over POSIX sockets — over those stores: players, username/password
+sessions, the ledger, derived progression and mission grading. It never executes
+player code; submissions are forwarded to the sandbox worker's `/assess`. A full
+pass runs game server → worker → Python container and reads the result back from
 ClickHouse and Kvrocks.
 
 ```bash
-cd game-server && bun install && bun test
 cd infra && ./scripts/up.sh
-cd ../game-server && DEVWORLD_IT=1 bun test tests/integration.test.ts
+cd ../server && ./build.sh
+./scripts/up.sh                         # stores + server, health-checked
+./tests/run_tests.sh                    # 41 cases / 297 assertions
+python3 tests/e2e.py                    # live end-to-end, 10 checks
 ```
+
+The game shell connects to it from the ☁ chip / **Cloud account** panel:
+username/password sign-in, live profile/level/credits from the server, and a
+WebSocket for progression events. `game-server/` (Bun) is kept as a behavior
+reference; it is no longer the production API.
 
 ## Roadmap
 
 1. ✅ Game IDE (this step)
 2. ✅ C++ game shell (Emscripten + WebGL): starter town, player, mission board
 3. ✅ IDE ↔ game bridge: missions defined in content JSON, graded by runners
-4. ✅ Levels 1–5 campaign: 14 missions incl. the Level 5 independent gate
+4. ✅ Levels 1–5 campaign + early Tier-2: 23 missions incl. the Level 5
+   independent gate, three dungeon challenges and six Tier-2 skill missions
 5. ✅ World & rendering: 4 cities, interiors, fast travel, minimap, day/night,
    procedural ambience, multiplayer-ready regions — plus native + WASM tests
 6. ✅ Player identity & interaction: character creation, profile, equipment,
@@ -165,8 +233,9 @@ cd ../game-server && DEVWORLD_IT=1 bun test tests/integration.test.ts
    contacts/teams/companies, project portfolio — all locally authoritative and
    marked for Phase 2 server authority
 9. ✅ Data tier + game server: ClickHouse (history/ledger), RocksDB/Kvrocks
-   (durable state) and Redis (cache) under Docker Compose, with a Bun game API
-   (players, sessions, ledger, progression, grading) wired to the sandbox worker
+   (durable state) and Redis (cache) under Docker Compose, with a native C++
+   API (username/password auth, sessions, ledger, progression, grading) wired
+   to the sandbox worker; the game shell's Cloud panel uses it live
 10. Phase 2: multiplayer presence/chat, server-authoritative economy and
     companies, content pipeline for the 50-level ladder
 
@@ -175,10 +244,17 @@ cd ../game-server && DEVWORLD_IT=1 bun test tests/integration.test.ts
 - `docs/architecture.md` — how the pieces fit together
 - `docs/design/01-product-requirements.md` … `07-founder-decisions.md` — the
   product, game, world, progression, systems, testing and decision record
+- `docs/design/08-education-system.md` — the knowledge graph, the evidence
+  taxonomy and the mastery model behind the skill trees
+- `docs/design/09-progression-engine.md` — the separate progression records, the
+  unlock catalog and prerequisite engine, the meaningful-only XP rules, careers
+  and respecialization
 - `infra/README.md` — the data tier: how to run ClickHouse, Kvrocks (RocksDB) and
   Redis, the ClickHouse schema, and the smoke tests
-- `game-server/README.md` — the game API: routes, stores, and how grading flows
-  to the sandbox worker
+- `server/README.md` — the C++ platform API: routes, auth, stores, tests and
+  the front-end connection
+- `game-server/README.md` — the earlier Bun API, retained as a behavior
+  reference
 - `execution-worker/README.md` — the sandbox worker: one-command run, layout,
   configuration
 - `execution-worker/docs/api.md` — execution + assessment API

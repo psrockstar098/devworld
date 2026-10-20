@@ -11,10 +11,21 @@ Jobs/contracts · Equipment/property · New tech · Rewards/progression ·
 Assessment.
 
 **Phase 1 build status:** the slice that ships is Levels 1–5 plus the early
-Tier-2 arrival content — 17 missions (`m01`–`m17`, including the three hidden
-dungeon challenges in `dungeons.json`), all four cities, regional economies,
-decoratable homes and a local contacts/company/portfolio layer. Levels 6–50
+Tier-2 arrival content — 23 missions (`m01`–`m23`, including the three hidden
+dungeon challenges in `dungeons.json` and six Tier-2 skill missions for the
+control-flow, debugging, tooling and performance topics), all four cities,
+regional economies, decoratable homes and a local contacts/company/portfolio
+layer. Levels 6–50
 describe the target curve; XP values are illustrative until playtest tuning.
+
+The **progression engine** (design `09-progression-engine.md`) now sits
+underneath this ladder: levels stay breadth, while skill mastery, language
+proficiency, career specialization, project experience, reputation/reliability,
+achievements and company leadership are separate, derived records. Every level
+gate, city route, company eligibility rule and technical privilege is one
+data-driven entry in `content/unlocks.json`, evaluated against the player's
+demonstrated capability (never the level alone) and shown with the reason it was
+earned or not in the **Progression & unlocks** dashboard.
 
 ---
 

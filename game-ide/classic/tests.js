@@ -216,7 +216,7 @@ async function assessViaBackend(path, code, lang, cases, onProgress) {
       actual: hidden ? '(hidden test — result only)' : (r.actual != null ? String(r.actual) : ''),
       expected: hidden ? '' : (tc.expected || ''),
       crashed: !!r.errorKind,
-      diagnostics: hidden ? '' : (r.diagnostics || ''),
+      diagnostics: hidden ? '' : (r.error || ''),
     };
   });
 }
@@ -302,9 +302,14 @@ const TestsUI = {
   },
 
   persist(path) {
+    const current = TestStore.forFile(path);
     const list = [];
-    document.querySelectorAll('#testList .testcase').forEach((div) => {
+    document.querySelectorAll('#testList .testcase').forEach((div, i) => {
+      // Edit only the visible fields; everything else on the stored entry
+      // (above all the `hidden` flag on seeded tests) is kept as-is.
+      const keep = current[i] || {};
       list.push({
+        ...keep,
         name: div.querySelector('[data-f=name]').value,
         stdin: div.querySelector('[data-f=stdin]').value,
         expected: div.querySelector('[data-f=expected]').value,

@@ -5,6 +5,8 @@
 #include "bridge.h"
 #include "game.h"
 #include "util.h"
+#include <cstdlib>
+#include <string>
 #include <emscripten.h>
 
 namespace dw {
@@ -40,7 +42,11 @@ EM_JS(bool, dw_ide_seed, (const char* file, const char* code, const char* casesJ
     const ls = window.DW.ide.frame().contentWindow.localStorage;
     store = JSON.parse(ls.getItem(KEY) || '{}') || {};
   } catch (e) {}
-  store[f] = cases;
+  // Merge: seeded cases replace same-named entries and are re-ordered first;
+  // test cases the player added themselves are kept untouched.
+  const existing = Array.isArray(store[f]) ? store[f] : [];
+  const seededNames = new Set(cases.map((t) => t.name));
+  store[f] = cases.concat(existing.filter((t) => t && !seededNames.has(t.name)));
   try {
     window.DW.ide.frame().contentWindow.localStorage.setItem(KEY, JSON.stringify(store));
   } catch (e) {}
@@ -61,20 +67,47 @@ EM_JS(void, dw_ide_submit, (const char* file, const char* missionId), {
   });
 });
 
+// Strings handed *back* from JS cannot be returned as `const char*` directly:
+// a JS string is coerced to a number at the wasm boundary (always 0), so the
+// caller would see every save as missing and every ledger id/timestamp as "".
+// Each helper allocates UTF-8 memory instead; the wrappers below copy it into
+// a std::string and free the temporary.
 EM_JS(const char*, dw_load_save, (), {
-  try { const s = localStorage.getItem('devworld.save.v1'); return s ? s : ""; }
-  catch (e) { return ""; }
+  try {
+    const s = localStorage.getItem('devworld.save.v1');
+    return s ? stringToNewUTF8(s) : 0;
+  } catch (e) { return 0; }
 });
-EM_JS(void, dw_sfx, (const char* name), { window.DW.audio.beep(UTF8ToString(name)); });
-EM_JS(const char*, dw_iso_now, (), { return new Date().toISOString(); });
-EM_JS(const char*, dw_make_id, (), {
-  return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+EM_JS(void, dw_computer_open, (), {
+  try { if (window.DW && window.DW.computer) window.DW.computer.open(); } catch (e) {}
 });
 
-// std::string wrappers (EM_JS returns UTF-8; copy into std::string immediately).
-static std::string s_load_save() { const char* p = dw_load_save(); return p ? p : ""; }
-static std::string s_iso_now() { const char* p = dw_iso_now(); return p ? p : ""; }
-static std::string s_make_id() { const char* p = dw_make_id(); return p ? p : ""; }
+EM_JS(void, dw_world_position, (float x, float y, const char* mapId), {
+  try { if (window.DW && window.DW.net) window.DW.net.position(x, y, UTF8ToString(mapId)); } catch (e) {}
+});
+
+EM_JS(void, dw_sfx, (const char* name), { window.DW.audio.beep(UTF8ToString(name)); });
+EM_JS(const char*, dw_iso_now, (), {
+  try { return stringToNewUTF8(new Date().toISOString()); } catch (e) { return 0; }
+});
+EM_JS(double, dw_now_ms, (), { return Date.now(); });
+EM_JS(const char*, dw_make_id, (), {
+  try {
+    return stringToNewUTF8('id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10));
+  } catch (e) { return 0; }
+});
+
+static std::string take_js_string(const char* p) {
+  if (!p) return "";
+  std::string out(p);
+  std::free(const_cast<char*>(p));  // allocated by _malloc inside the EM_JS body
+  return out;
+}
+
+// std::string wrappers (copy immediately; the JS-owned buffer is freed).
+static std::string s_load_save() { return take_js_string(dw_load_save()); }
+static std::string s_iso_now() { return take_js_string(dw_iso_now()); }
+static std::string s_make_id() { return take_js_string(dw_make_id()); }
 
 void ui_show(const std::string& panel, const std::string& json) { dw_ui_show(panel.c_str(), json.c_str()); }
 void ui_hide(const std::string& panel) { dw_ui_hide(panel.c_str()); }
@@ -103,8 +136,13 @@ void ide_seed_mission(const MissionDef& m) {
 void ide_submit_mission(const MissionDef& m) { dw_ide_submit(m.file.c_str(), m.id.c_str()); }
 
 std::string load_save() { return s_load_save(); }
+void computer_open() { dw_computer_open(); }
+void world_position(float x, float y, const std::string& mapId) {
+  dw_world_position(x, y, mapId.c_str());
+}
 void sfx(const std::string& name) { dw_sfx(name.c_str()); }
 std::string iso_now() { return s_iso_now(); }
+int64_t now_ms() { return (int64_t)dw_now_ms(); }
 std::string make_id() { return s_make_id(); }
 
 }  // namespace dw

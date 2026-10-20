@@ -12,6 +12,7 @@
 #include <fstream>
 #include <sstream>
 #include <cmath>
+#include <cstdio>
 #include <emscripten.h>
 
 namespace dw {
@@ -65,6 +66,10 @@ void Game::loadContent() {
   world_.bindWorld(graph_);
   loadNpcs(parseJson(readFile("content/npcs.json")));
   loadMissions(parseJson(readFile("content/missions.json")));
+  curriculum_.load(parseJson(readFile("content/curriculum.json")));
+  unlocks_.load(parseJson(readFile("content/unlocks.json")));
+  achievementCatalog_.load(parseJson(readFile("content/achievements.json")));
+  careers_.load(parseJson(readFile("content/careers.json")));
   loadShop(parseJson(readFile("content/shop.json")));
   dungeons_.load(parseJson(readFile("content/dungeons.json")));
   housing_.load(parseJson(readFile("content/housing.json")));
@@ -113,6 +118,7 @@ void Game::loadMissions(const JVal& j) {
     d.level = m.i("level", 1);
     d.gate = m.boolean("gate", false);
     d.hints = m.boolean("hints", true);
+    d.independent = d.gate || m.boolean("independent", false);
     for (auto& r : m.at("requires").arr) d.requires.push_back(r.str);
     for (auto& t : m.at("tests").arr) {
       TestCase tc;
@@ -288,6 +294,40 @@ void Game::saveNow() {
     s += json_escape(m);
   }
   s += "]}";
+  // Education: append-only evidence (design 08 §4.2). Mastery is derived, so
+  // only the observations are persisted.
+  s += ",\"evidence\":[";
+  first = true;
+  for (auto& e : player_.evidence) {
+    if (!first) s += ",";
+    first = false;
+    s += "{\"skill\":" + json_escape(e.skill) +
+         ",\"kind\":" + json_escape(evidenceKindName(e.kind)) +
+         ",\"score\":" + std::to_string(e.score) +
+         ",\"atMs\":" + std::to_string(e.atMs) +
+         ",\"source\":" + json_escape(e.source) + "}";
+  }
+  s += "]";
+  // Progression records (design 09 §5.1): raw reliability counters and the
+  // career path + history + milestones. Scores are derived on load.
+  s += ",\"reliability\":{\"passes\":" + std::to_string(player_.reliability.passes) +
+       ",\"fails\":" + std::to_string(player_.reliability.fails) +
+       ",\"recalls\":" + std::to_string(player_.reliability.recalls) + "}";
+  s += ",\"career\":{\"path\":" + json_escape(player_.career.path) + ",\"history\":[";
+  first = true;
+  for (auto& h : player_.career.history) {
+    if (!first) s += ",";
+    first = false;
+    s += json_escape(h);
+  }
+  s += "],\"milestones\":{";
+  first = true;
+  for (auto& kv : player_.career.milestones) {
+    if (!first) s += ",";
+    first = false;
+    s += json_escape(kv.first) + ":" + json_escape(kv.second);
+  }
+  s += "}}";
   s += "}";
   dw_save(s.c_str());
 }
@@ -302,8 +342,7 @@ void Game::loadOrCreate() {
     return;
   }
   hasSave_ = true;
-  try {
-    JVal j = parseJson(s);
+  try {    JVal j = parseJson(s);
     player_.name = j.s("name", "Dev");
     player_.displayName = j.s("displayName", "Dev");
     auto col = [&](const std::string& k, Color d) {
@@ -384,12 +423,38 @@ void Game::loadOrCreate() {
     for (auto& a : co.at("members").arr)
       if (a.type == JVal::STR) player_.company.members.push_back(a.str);
 
+    // Evidence (design 08 §4.2): mastery is re-derived from these rows.
+    for (auto& e : j.at("evidence").arr) {
+      Evidence ev;
+      if (parseEvidence(e, ev)) player_.evidence.push_back(ev);
+    }
+
+    // Progression records (design 09 §5.1). Missing on a pre-feature save, so
+    // every field defaults and an old save loads and plays (Review Focus #3).
+    const JVal& rel = j.at("reliability");
+    player_.reliability.passes = rel.i("passes");
+    player_.reliability.fails = rel.i("fails");
+    player_.reliability.recalls = rel.i("recalls");
+    const JVal& car = j.at("career");
+    player_.career.path = car.s("path");
+    for (auto& h : car.at("history").arr)
+      if (h.type == JVal::STR) player_.career.history.push_back(h.str);
+    for (auto& kv : car.at("milestones").obj)
+      player_.career.milestones[kv.first] = kv.second.str;
+
     // Content upgrades: missions added after a save was written start Locked.
     // If the save already satisfies their requirements, unlock them now.
     for (const auto& mid : eligibleUnlocks(missions_, player_.missions))
       player_.missions[mid].state = MissionState::Available;
+  } catch (const std::exception& e) {
+    // Corrupt save -> fresh start (never crash on bad data). Keep a short
+    // console trace so a broken save can be diagnosed without a debugger.
+    printf("DEVWORLD: save load failed: %s\n", e.what());
+    hasSave_ = false;
+    ui_show("charcreate");
+    uiOpen_ = true;
   } catch (...) {
-    // Corrupt save -> fresh start (never crash on bad data).
+    printf("DEVWORLD: save load failed: unknown error\n");
     hasSave_ = false;
     ui_show("charcreate");
     uiOpen_ = true;

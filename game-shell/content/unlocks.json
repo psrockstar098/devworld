@@ -1,0 +1,112 @@
+{
+  "milestones": [
+    { "id": "first_proof", "title": "First Proof", "mission": "m13" },
+    { "id": "first_project", "title": "Shipped a project", "mission": "m14" },
+    { "id": "data_pipeline", "title": "Moved real data", "mission": "m16" },
+    { "id": "systems_instinct", "title": "Systems instinct", "mission": "m23" }
+  ],
+  "unlocks": [
+    {
+      "id": "city.starter_town",
+      "title": "Home: Starter Town",
+      "kind": "city_access",
+      "blurb": "Where you started. Open to everyone.",
+      "requires": { "level": 1 }
+    },
+    {
+      "id": "city.startup_city",
+      "title": "Bus to Startup City",
+      "kind": "city_access",
+      "blurb": "The bus leaves Starter Town once you have proven yourself at the Level 5 gate and shipped your first project.",
+      "requires": { "level": 6, "missions": ["m14"] }
+    },
+    {
+      "id": "city.systems_district",
+      "title": "Access to the Systems District",
+      "kind": "city_access",
+      "blurb": "The districts of Startup City open as your breadth grows.",
+      "requires": { "level": 16 }
+    },
+    {
+      "id": "city.innovation_capital",
+      "title": "Access to the Innovation Capital",
+      "kind": "city_access",
+      "blurb": "The Capital admits engineers with a long record of shipped, independent work.",
+      "requires": { "level": 36, "milestones": ["systems_instinct"] }
+    },
+    {
+      "id": "company.found_studio",
+      "title": "Found an Indie Studio",
+      "kind": "company_eligibility",
+      "blurb": "Company eligibility rests on leadership and reliability, never on a single technology.",
+      "requires": { "level": 5, "gates": ["m13"], "minReliability": 40 }
+    },
+    {
+      "id": "company.upgrade_software",
+      "title": "Upgrade to a Software Company",
+      "kind": "company_eligibility",
+      "blurb": "A proven studio can take on larger, more independent work.",
+      "requires": { "requiresCompany": true, "minCompanyRep": 50, "minIndependent": 2 }
+    },
+    {
+      "id": "privilege.git_terminal",
+      "title": "Git-aware terminal",
+      "kind": "technical_privilege",
+      "area": "tooling",
+      "blurb": "A terminal that understands history — earned by proving you can work with a repository unaided.",
+      "requires": { "independentSkills": ["tooling.git_history"] }
+    },
+    {
+      "id": "privilege.db_inspector",
+      "title": "Database inspector",
+      "kind": "technical_privilege",
+      "area": "data",
+      "blurb": "Inspect live tables once you own the data structures they are built from.",
+      "requires": { "independentSkills": ["data.mapping_keys"] }
+    },
+    {
+      "id": "privilege.profiler",
+      "title": "Profiler",
+      "kind": "technical_privilege",
+      "area": "systems",
+      "blurb": "Measure before you optimise — unlock the profiler by mastering performance work.",
+      "requires": { "skills": ["systems.performance"] }
+    },
+    {
+      "id": "privilege.debugger",
+      "title": "Step debugger",
+      "kind": "technical_privilege",
+      "area": "debugging",
+      "blurb": "Pause a running program once you can read a traceback.",
+      "requires": { "skills": ["debugging.reading_errors"] }
+    },
+    {
+      "id": "equipment.laptop_upgrade",
+      "title": "Laptop upgrade",
+      "kind": "equipment",
+      "blurb": "A faster machine — convenience only, it never changes a test verdict.",
+      "requires": { "level": 5, "missions": ["m13"] }
+    },
+    {
+      "id": "equipment.api_tool",
+      "title": "API testing tool",
+      "kind": "equipment",
+      "blurb": "A tool for probing services, unlocked as your engineering breadth grows.",
+      "requires": { "level": 13 }
+    },
+    {
+      "id": "job.junior_board",
+      "title": "Junior bug-fix board",
+      "kind": "job_tier",
+      "blurb": "Paid bug-fix work appears once you can read and change real code.",
+      "requires": { "level": 3 }
+    },
+    {
+      "id": "job.qa_bounties",
+      "title": "QA bounties",
+      "kind": "job_tier",
+      "blurb": "Write tests for other people's code — unlocked by owning testing yourself.",
+      "requires": { "level": 9, "skills": ["testing.public_tests"] }
+    }
+  ]
+}

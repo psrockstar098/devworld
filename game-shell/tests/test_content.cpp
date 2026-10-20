@@ -5,9 +5,13 @@
 // These tests parse the same files the game preloads and enforce the campaign
 // invariants from docs/design/04-progression-50-levels.md.
 #include "doctest.h"
+#include "achievements.h"
+#include "careers.h"
+#include "curriculum.h"
 #include "json.h"
 #include "progression.h"
 #include "regions.h"
+#include "unlocks.h"
 
 #include <algorithm>
 #include <fstream>
@@ -63,6 +67,7 @@ std::map<std::string, MissionDef> loadMissions() {
     d.level = m.i("level", 1);
     d.gate = m.boolean("gate", false);
     d.hints = m.boolean("hints", true);
+    d.independent = d.gate || m.boolean("independent", false);
     for (const auto& r : m.at("requires").arr) d.requires.push_back(r.str);
     for (const auto& t : m.at("tests").arr) {
       TestCase tc;
@@ -165,6 +170,26 @@ TEST_CASE("the Level 5 gate is a real gate") {
   for (const auto& t : gate.tests) (t.hidden ? hidden : open)++;
   CHECK(open == 0);
   CHECK(hidden >= 3);  // unseen cases, not one lucky run
+}
+
+TEST_CASE("independent assessments can make skills masterable") {
+  // Mastery requires independent evidence (design 08 §4.3). That evidence can
+  // only come from an independent assessment: a gate, or a capstone proof like
+  // the First Proof artifact. At least one must exist or no skill can master.
+  auto missions = loadMissions();
+  int independent = 0;
+  for (const auto& kv : missions)
+    if (kv.second.independent) independent++;
+  CHECK(independent >= 1);
+  for (const auto& kv : missions) {
+    if (kv.second.gate) {
+      INFO("gate " << kv.first);
+      CHECK(kv.second.independent);
+      CHECK_FALSE(kv.second.hints);
+    }
+  }
+  // The gate itself is the canonical independent assessment.
+  CHECK(missions.at("m13").independent);
 }
 
 TEST_CASE("prerequisite ids exist and no mission requires itself") {
@@ -649,4 +674,208 @@ TEST_CASE("rare technology is convenience-only like everything else") {
   }
   CHECK(rare == 3);  // one reward per dungeon
   CHECK(shop.at("items").arr.size() >= 10);  // the expanded market
+}
+
+// ---- education system: the curriculum knowledge graph (design 4.1/4.3) ----
+
+TEST_CASE("curriculum content is a sound knowledge graph") {
+  JVal j = loadContent("curriculum.json");
+  Curriculum c;
+  c.load(j);
+
+  CHECK_FALSE(c.empty());
+  CHECK(c.areas().size() >= 12);   // "twelve knowledge areas" (design 4.1)
+
+  // validate() checks areas, prerequisites, objectives, misconceptions, mission
+  // references and cycles in one pass.
+  auto known = loadMissions();
+  std::set<std::string> knownIds;
+  for (const auto& kv : known) knownIds.insert(kv.first);
+  auto errs = c.validate(knownIds);
+  for (const auto& e : errs) INFO(e);
+  CHECK(errs.empty());
+}
+
+TEST_CASE("every shipped mission teaches at least one topic") {
+  // Design 02 §3: evidence-mapping tests — each mission maps to >=1 node, or it
+  // is content that cannot light up any part of the skill tree.
+  auto missions = loadMissions();
+  Curriculum c;
+  c.load(loadContent("curriculum.json"));
+
+  for (const auto& kv : missions) {
+    INFO("mission " << kv.first);
+    CHECK_FALSE(c.topicsForMission(kv.first).empty());
+  }
+}
+
+TEST_CASE("every topic is reachable: prerequisites and projects are real") {
+  Curriculum c;
+  c.load(loadContent("curriculum.json"));
+
+  // A topic either teaches shipped missions or names a planned project — never
+  // neither (validate() enforces this too; here we also prove reachability).
+  for (const auto& kv : c.topics()) {
+    const Topic& t = kv.second;
+    INFO("topic " << t.id);
+    CHECK((!t.missions.empty() || !t.projects.empty()));
+    for (const auto& p : t.prerequisites) {
+      INFO("prerequisite " << p);
+      CHECK(c.topic(p) != nullptr);
+    }
+  }
+
+  // The graph is acyclic and every topic appears in a dependency-first order.
+  auto order = c.topologicalOrder();
+  CHECK(order.size() == c.topics().size());
+  std::set<std::string> seen;
+  for (const auto& id : order) {
+    for (const auto& p : c.directPrerequisites(id)) {
+      INFO("topic " << id << " needs " << p);
+      CHECK(seen.count(p) == 1);
+    }
+    seen.insert(id);
+  }
+}
+
+TEST_CASE("the campaign's first topics are unlocked at the start") {
+  Curriculum c;
+  c.load(loadContent("curriculum.json"));
+  auto first = c.availableTopics({});
+  REQUIRE_FALSE(first.empty());
+  // A brand-new player must be able to start the campaign.
+  for (const auto& id : first) INFO(id);
+  CHECK(first.size() >= 1);
+  // And there is a finite, non-trivial ladder toward mastery.
+  CHECK(c.topics().size() >= 30);
+}
+
+TEST_CASE("the shipped unlock catalog is sound and references live content") {
+  auto missions = loadMissions();
+  Curriculum c;
+  c.load(loadContent("curriculum.json"));
+  UnlockCatalog cat;
+  cat.load(loadContent("unlocks.json"));
+
+  for (const auto& e : cat.validate()) INFO(e);
+  CHECK(cat.validate().empty());
+  CHECK(cat.all().size() >= 8);
+
+  for (const auto& d : cat.all()) {
+    INFO("unlock " << d.id);
+    CHECK(!d.title.empty());
+    for (const auto& m : d.requires.missions) {
+      INFO("mission " << m);
+      CHECK(missions.count(m) == 1);
+    }
+    for (const auto& g : d.requires.gates) {
+      INFO("gate " << g);
+      REQUIRE(missions.count(g) == 1);
+      CHECK(missions.at(g).gate);
+    }
+    for (const auto& s : d.requires.skills) {
+      INFO("skill " << s);
+      CHECK(c.topic(s) != nullptr);
+    }
+    for (const auto& s : d.requires.independentSkills) {
+      INFO("independent skill " << s);
+      CHECK(c.topic(s) != nullptr);
+    }
+  }
+}
+
+TEST_CASE("city access unlocks agree with the world graph") {
+  // Two sources describe city gates (world.json and unlocks.json). This pins
+  // them together so content edits cannot let the explanation drift from the
+  // route the bus stop actually offers.
+  UnlockCatalog cat;
+  cat.load(loadContent("unlocks.json"));
+  JVal world = loadContent("world.json");
+  for (const auto& city : world.at("cities").arr) {
+    std::string id = city.s("id");
+    const UnlockDef* d = cat.def("city." + id);
+    INFO("city " << id);
+    REQUIRE(d != nullptr);
+    CHECK(d->kind == UnlockKind::CityAccess);
+    CHECK(d->requires.minLevel == city.i("minLevel", 1));
+    std::string req = city.s("requiresMission");
+    if (req.empty()) {
+      CHECK(d->requires.missions.empty());
+    } else {
+      REQUIRE(d->requires.missions.size() == 1);
+      CHECK(d->requires.missions[0] == req);
+    }
+  }
+}
+
+TEST_CASE("the shipped achievement catalog is sound and references live content") {
+  auto missions = loadMissions();
+  Curriculum c;
+  c.load(loadContent("curriculum.json"));
+  UnlockCatalog ucat;
+  ucat.load(loadContent("unlocks.json"));
+  AchievementCatalog ac;
+  ac.load(loadContent("achievements.json"));
+
+  for (const auto& e : ac.validate()) INFO(e);
+  CHECK(ac.validate().empty());
+  CHECK(ac.all().size() >= 8);
+
+  for (const auto& d : ac.all()) {
+    INFO("achievement " << d.id);
+    CHECK(!d.title.empty());
+    for (const auto& m : d.requires.missions) {
+      INFO("mission " << m);
+      CHECK(missions.count(m) == 1);
+    }
+    for (const auto& g : d.requires.gates) {
+      INFO("gate " << g);
+      REQUIRE(missions.count(g) == 1);
+      CHECK(missions.at(g).gate);
+    }
+    for (const auto& s : d.requires.skills) {
+      INFO("skill " << s);
+      CHECK(c.topic(s) != nullptr);
+    }
+    for (const auto& ms : d.requires.milestones) {
+      INFO("milestone " << ms);
+      CHECK(ucat.milestone(ms) != nullptr);
+    }
+  }
+}
+
+TEST_CASE("the shipped careers are sound and every path has an entry requirement") {
+  auto missions = loadMissions();
+  Curriculum c;
+  c.load(loadContent("curriculum.json"));
+  UnlockCatalog ucat;
+  ucat.load(loadContent("unlocks.json"));
+  Careers cs;
+  cs.load(loadContent("careers.json"));
+
+  for (const auto& e : cs.validate()) INFO(e);
+  CHECK(cs.validate().empty());
+  CHECK(cs.all().size() >= 3);
+
+  for (const auto& d : cs.all()) {
+    INFO("career " << d.id);
+    CHECK_FALSE(requirementEmpty(d.entry));  // a career is earned, not free
+    for (const auto& m : d.entry.missions) {
+      INFO("mission " << m);
+      CHECK(missions.count(m) == 1);
+    }
+    for (const auto& g : d.entry.gates) {
+      INFO("gate " << g);
+      REQUIRE(missions.count(g) == 1);
+      CHECK(missions.at(g).gate);
+    }
+    for (const auto& s : d.entry.skills) {
+      INFO("skill " << s);
+      CHECK(c.topic(s) != nullptr);
+    }
+    for (const auto& ms : d.entry.milestones) {
+      INFO("milestone " << ms);
+      CHECK(ucat.milestone(ms) != nullptr);
+    }
+  }
 }

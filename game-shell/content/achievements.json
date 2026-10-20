@@ -1,0 +1,19 @@
+{
+  "achievements": [
+    { "id": "first_steps", "title": "First Steps", "desc": "Ran your first program the game could grade.", "requires": { "missions": ["m01"] } },
+    { "id": "first_proof", "title": "First Proof", "desc": "Passed the Level 5 gate: independent work, no hints.", "requires": { "gates": ["m13"] } },
+    { "id": "first_project", "title": "Shipped Something", "desc": "Delivered your first full project.", "requires": { "missions": ["m14"] } },
+    { "id": "data_pipeline", "title": "Moved Real Data", "desc": "Built a working data pipeline.", "requires": { "milestones": ["data_pipeline"] } },
+    { "id": "systems_instinct", "title": "Systems Instinct", "desc": "Showed instinct for how the machine really works.", "requires": { "milestones": ["systems_instinct"] } },
+    { "id": "loop_master", "title": "Loop Craft", "desc": "Mastered iteration and accumulators.", "requires": { "skills": ["loops.for_iteration"] } },
+    { "id": "performance_mindset", "title": "Measure First", "desc": "Mastered performance work: profile, then optimise.", "requires": { "skills": ["systems.performance"] } },
+    { "id": "independent_one", "title": "On Your Own", "desc": "Produced evidence of independent ability.", "requires": { "minIndependent": 1 } },
+    { "id": "independent_five", "title": "Self-Reliant", "desc": "Five independent assessments passed.", "requires": { "minIndependent": 5 } },
+    { "id": "reliable", "title": "Reliable", "desc": "A steady record of finished work.", "requires": { "minReliability": 70 } },
+    { "id": "trusted", "title": "Trusted", "desc": "The town's clients ask for you by name.", "requires": { "minReliability": 90 } },
+    { "id": "founder", "title": "Founder", "desc": "Founded a company of your own.", "requires": { "requiresCompany": true } },
+    { "id": "level_10", "title": "Builder", "desc": "Reached level 10.", "requires": { "level": 10 } },
+    { "id": "level_25", "title": "Systems Developer", "desc": "Reached level 25.", "requires": { "level": 25 } },
+    { "id": "level_50", "title": "Creator", "desc": "Reached level 50.", "requires": { "level": 50 } }
+  ]
+}

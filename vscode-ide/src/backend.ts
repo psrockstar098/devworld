@@ -140,7 +140,7 @@ export async function assessViaBackend(
       actual: hidden ? '(hidden test — result only)' : (r.actual != null ? String(r.actual) : ''),
       expected: hidden ? '' : (tc.expected || ''),
       crashed: !!r.errorKind,
-      diagnostics: hidden ? '' : (r.diagnostics || '')
+      diagnostics: hidden ? '' : (r.error || '')
     }
   })
 }

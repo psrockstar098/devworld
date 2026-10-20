@@ -2,7 +2,7 @@
 node_modules/
 *.log
 .DS_Store
-game-shell/dist/ide/
+game-shell/dist/ide
 vscode-ide/dist/
 
 # local-only secrets and data
@@ -13,5 +13,8 @@ execution-worker/.env
 
 # generated test binaries and caches
 game-shell/tests/build/
+server/build/
+server/tests/build/
+server/.env
 __pycache__/
 *.pyc

@@ -9,32 +9,81 @@
   /* Canvas fills the viewport; Emscripten renders here. */
   html, body { margin: 0; padding: 0; height: 100%; background: #0b0f16; overflow: hidden; }
   #game-wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
-  #canvas { background: #0b0f16; max-width: 100vw; max-height: 100vh; }
+  #canvas { background: #0b0f16; max-width: 100vw; max-height: 100vh; image-rendering: pixelated; }
 </style>
 </head>
 <body>
 <div id="game-wrap"><canvas id="canvas" width="960" height="600"></canvas></div>
 
+<!-- Soft screen treatment: vignette + a barely-there scanline lattice. -->
+<div id="fx-vignette"></div>
+<div id="fx-scan"></div>
+
 <!-- HUD -->
 <div id="hud" style="display:none">
-  <div class="hud-left">
-    <span id="hud-name" class="hud-name"></span>
-    <span id="hud-level" class="hud-level"></span>
-    <div class="xpbar"><div id="hud-xpfill" class="xpfill"></div></div>
-    <span id="hud-xptext" class="dim"></span>
+  <div class="hud-left hud-card">
+    <div class="hud-portrait">
+      <canvas id="hud-avatar" width="56" height="56"></canvas>
+      <span id="hud-level" class="hud-lv">Lv 1</span>
+    </div>
+    <div class="hud-id">
+      <div class="hud-name-row">
+        <span id="hud-name" class="hud-name"></span>
+        <span id="hud-title" class="hud-title"></span>
+      </div>
+      <div class="xpbar"><div id="hud-xpfill" class="xpfill"></div><span class="xpbar-ticks"></span></div>
+      <div class="hud-xprow">
+        <span id="hud-xptext" class="dim"></span>
+        <span id="hud-rep" class="hud-rep"></span>
+      </div>
+    </div>
   </div>
-  <div class="hud-mid">
-    <span id="hud-map" class="dim"></span>
-    <span id="hud-clock" class="dim"></span>
-    <span id="hud-track" class="hud-track"></span>
+
+  <div class="hud-mid hud-card">
+    <div class="hud-place">
+      <span class="hud-kicker">Location</span>
+      <span id="hud-map" class="hud-value"></span>
+    </div>
+    <span class="hud-sep"></span>
+    <div class="hud-time">
+      <span class="hud-kicker" id="hud-daypart">Dusk</span>
+      <span id="hud-clock" class="hud-value"></span>
+    </div>
   </div>
+
   <div class="hud-right">
-    <span id="hud-credits" class="credits"></span>
-    <span id="hud-quests" class="dim"></span>
-    <button id="hud-profile" title="Profile (P)">Profile</button>
-    <button id="hud-skill" title="Level and skills">Skills</button>
-    <button id="hud-help" title="Controls">?</button>
+    <div class="hud-stat hud-card">
+      <span class="hud-kicker">Credits</span>
+      <span id="hud-credits" class="credits"></span>
+    </div>
+    <div class="hud-stat hud-card">
+      <span class="hud-kicker">Quests</span>
+      <span id="hud-quests">0</span>
+    </div>
+    <div class="hud-actions">
+      <button id="hud-phone" title="Phone (F)">Phone</button>
+      <button id="hud-town" title="Town &amp; chat (T)">Town</button>
+      <button id="hud-profile" title="Profile (P)">Profile</button>
+      <button id="hud-skill" title="Level and skills">Skills</button>
+      <button id="hud-help" title="Controls">?</button>
+    </div>
   </div>
+</div>
+
+<div id="hud-track-card" class="hud-objective" style="display:none">
+  <span class="hud-kicker">Current objective</span>
+  <span id="hud-track"></span>
+</div>
+
+<div id="controls-hint">
+  <span><b>WASD</b> move</span>
+  <span><b>E</b> interact</span>
+  <span><b>M</b> map</span>
+  <span><b>J</b> quests</span>
+  <span><b>I</b> inventory</span>
+  <span><b>T</b> town</span>
+  <span><b>F</b> phone</span>
+  <span><b>Esc</b> menu</span>
 </div>
 
 <!-- DOM UI root (panels render here) -->
@@ -58,7 +107,12 @@
   <button id="touch-e">E</button>
 </div>
 
-<div id="boot">Loading DEVWORLD…</div>
+<div id="boot">
+  <div class="boot-mark"><span class="boot-dev">DEV</span><span class="boot-world">WORLD</span></div>
+  <div class="boot-sub">STARTER TOWN · OPEN WORLD LIFE SIM</div>
+  <div class="boot-bar"><i></i></div>
+  <div class="boot-tip">Loading the town…</div>
+</div>
 
 <script src="shell.js"></script>
 <script>
@@ -68,6 +122,12 @@
     onRuntimeInitialized: function () {
       document.getElementById('boot').style.display = 'none';
       DW.ui.updateHud();
+      document.getElementById('hud-phone').addEventListener('click', function () {
+        DW.phone.open();
+      });
+      document.getElementById('hud-town').addEventListener('click', function () {
+        DW.cloud.openTown();
+      });
       document.getElementById('hud-profile').addEventListener('click', function () {
         DW.ui.request('profile');
       });
@@ -77,6 +137,10 @@
       document.getElementById('hud-help').addEventListener('click', function () {
         DW.ui.notify('WASD / arrows: move · E: interact · M: map · J: quests · I: inventory · P: profile · N: notices · Esc: menu', 'info');
       });
+      setTimeout(function () {
+        var hint = document.getElementById('controls-hint');
+        if (hint) hint.classList.add('fading');
+      }, 9000);
       // Size canvas to window (keep 16:10).
       function fit() {
         var w = window.innerWidth, h = window.innerHeight, ar = 16 / 10;

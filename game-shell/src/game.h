@@ -22,6 +22,12 @@
 #include "social.h"
 #include "portfolio.h"
 #include "company.h"
+#include "curriculum.h"
+#include "capability.h"
+#include "unlocks.h"
+#include "achievements.h"
+#include "careers.h"
+#include "rewards.h"
 #include "json.h"
 
 namespace dw {
@@ -41,6 +47,10 @@ class Game {
   void touchMove(const std::string& dir, bool down);  // on-screen D-pad
   void queueSeed(const std::string& missionId);  // IDE not loaded yet; retry later
   void ideReady();                               // iframe loaded: flush seed queue
+  void worldEvent(const std::string& json);      // snapshot/move/leave from the shared world
+  void setAppearanceJson(const std::string& json); // colors from the account record
+  std::string appearanceJson() const;              // current colors, for the account
+  void computerAction(const std::string& action);  // desktop launched the IDE
 
   Player& player() { return player_; }
   std::string panelJson(const std::string& panel);  // shop/bank/inventory/map/skill/hud
@@ -65,14 +75,30 @@ class Game {
   Dungeons dungeons_;                        // hidden technology dungeons
   Housing housing_;                          // developer homes
   Social social_;                            // contacts, messaging, teams
+  Curriculum curriculum_;                    // knowledge graph (design 08 §4.1)
+  UnlockCatalog unlocks_;                    // unlock catalog (design 09 §5.3)
+  AchievementCatalog achievementCatalog_;    // achievement rules (design 09)
+  Careers careers_;                          // career paths (design 09 §5.5)
   std::string curMap_ = "town";
   Vec2 cam_{0, 0};
   float dayT_ = 0.72f;          // warm dusk at start (world spec vibe)
   double animT_ = 0;
+  int facing_ = 0;              // 0 down, 1 left, 2 right, 3 up
+  float walkPhase_ = 0;         // walk-cycle phase while moving
+  float bannerT_ = 0;           // map-name banner timer
   bool hasSave_ = false;
   bool uiOpen_ = false;         // any DOM panel open (pauses world input)
   std::string pendingMission_;  // mission awaiting test results
+  std::string practiceMission_;  // finished mission being re-solved for recall
   std::vector<std::string> pendingSeeds_;  // missions to seed when IDE loads
+
+  // Shared world: real accounts rendered in the town. Keyed by player id.
+  std::map<std::string, RemotePlayer> remotePlayers_;
+  int64_t lastPublishMs_ = 0;
+  Vec2 lastPublished_{-1, -1};
+  std::string lastPublishedMap_;
+  void publishPosition(bool force = false);
+  void upsertRemote(const JVal& playerJson);
 
   // input
   std::map<std::string, SDL_Keycode> keys_;  // action -> key
@@ -101,6 +127,8 @@ class Game {
   // missions / economy
   void acceptMission(const std::string& id);
   void completeMission(const std::string& id, int passed, int total);
+  void startPractice(const std::string& id);     // re-solve a finished mission
+  void completePractice(const std::string& id, int passed, int total);
   void addXp(int64_t xp);
   void ledgerAdd(const std::string& kind, const std::string& memo, int64_t delta);
   void buyItem(const std::string& id);
@@ -126,6 +154,12 @@ class Game {
   void grantDungeonReward(const DungeonDef& d);        // rarity on mission clear
   std::string portfolioJson();                         // project portfolio
   std::string companyJson();                           // company dashboard
+  std::string skillsJson();                            // skill tree (mastery)
+  PlayerCapability capabilityNow();                    // derived snapshot (design 09 §5.1)
+  std::string progressionJson();                       // progression dashboard (design 09)
+  void awardProgress();                                // award earned achievements (idempotent)
+  void chooseCareer(const std::string& id);            // pick/respecialize a path
+  void emitMissionEvidence(const MissionDef& m, bool practice = false);  // evidence from a pass
   std::string contactsJson(const std::string& contactId);  // friends / messaging
   std::string homeJson();                              // home decoration panel
   void placeHome(const std::string& slot, const std::string& item);

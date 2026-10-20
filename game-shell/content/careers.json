@@ -1,0 +1,19 @@
+{
+  "paths": [
+    { "id": "python_backend", "title": "Backend Python", "language": "python",
+      "blurb": "Services, APIs and business logic in Python.",
+      "entry": { "level": 5, "gates": ["m13"] } },
+    { "id": "data_sql", "title": "Data & SQL", "language": "sql",
+      "blurb": "Shape, query and move data reliably.",
+      "entry": { "level": 5, "skills": ["sql.select_where"] } },
+    { "id": "systems", "title": "Systems C", "language": "c",
+      "blurb": "Get close to the machine: memory, performance, concurrency.",
+      "entry": { "level": 10, "skills": ["systems.performance"] } },
+    { "id": "web", "title": "Web & APIs", "language": "javascript",
+      "blurb": "Build the interfaces and services people actually use.",
+      "entry": { "level": 5, "missions": ["m14"] } },
+    { "id": "toolsmith", "title": "Toolsmith", "language": "python",
+      "blurb": "Build the tools other engineers build with.",
+      "entry": { "level": 5, "milestones": ["first_proof"] } }
+  ]
+}

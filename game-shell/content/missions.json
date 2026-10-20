@@ -385,6 +385,7 @@
    "giver": "junie",
    "hints": false,
    "id": "m13",
+   "independent": true,
    "language": "python",
    "level": 5,
    "requires": [
@@ -428,6 +429,7 @@
    "giver": "junie",
    "hints": true,
    "id": "m14",
+   "independent": true,
    "language": "python",
    "level": 5,
    "requires": [
@@ -549,6 +551,223 @@
    ],
    "title": "The Experimental Machine Floor",
    "xpReward": 1500
+  },
+  {
+   "briefing": "Junie's lamp timer never stops because the countdown never counts. Make it count down from n to 1, one number per line, then print 'Lift-off!'. An empty count still lifts off.",
+   "creditReward": 45,
+   "file": "missions/m18_countdown.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m18",
+   "language": "python",
+   "level": 4,
+   "requires": [
+    "m09"
+   ],
+   "starter": "# Mission 18: While the Kettle Boils\n# Countdown from n to 1 with a while loop, then print Lift-off!.\nimport sys\n\nn = int(sys.stdin.read().strip() or 0)\nwhile n <= 0:  # BUG: wrong condition and nothing changes n\n    print(n)\n    n -= 1\nprint(\"Lift-off!\")\n",
+   "tests": [
+    {
+     "expected": "3\n2\n1\nLift-off!",
+     "hidden": false,
+     "name": "counts down from 3",
+     "stdin": "3"
+    },
+    {
+     "expected": "1\nLift-off!",
+     "hidden": true,
+     "name": "counts down from 1",
+     "stdin": "1"
+    },
+    {
+     "expected": "Lift-off!",
+     "hidden": true,
+     "name": "zero lifts off immediately",
+     "stdin": "0"
+    }
+   ],
+   "title": "While the Kettle Boils",
+   "xpReward": 260
+  },
+  {
+   "briefing": "The club door needs both a valid age and a ticket. Print ADMIT only when the age is at least 13 AND the ticket is 'yes'; otherwise print DENY.",
+   "creditReward": 45,
+   "file": "missions/m19_door_policy.py",
+   "gate": false,
+   "giver": "rafi",
+   "hints": true,
+   "id": "m19",
+   "language": "python",
+   "level": 4,
+   "requires": [
+    "m09"
+   ],
+   "starter": "# Mission 19: Both Keys at Once\n# ADMIT only if age >= 13 AND ticket == 'yes'.\nimport sys\n\nparts = sys.stdin.read().split()\nage = int(parts[0])\nticket = parts[1] == \"yes\"\nif age >= 13 or ticket:  # BUG: 'or' lets one key open the door\n    print(\"ADMIT\")\nelse:\n    print(\"DENY\")\n",
+   "tests": [
+    {
+     "expected": "ADMIT",
+     "hidden": false,
+     "name": "old with a ticket",
+     "stdin": "20 yes"
+    },
+    {
+     "expected": "DENY",
+     "hidden": true,
+     "name": "young with a ticket",
+     "stdin": "10 yes"
+    },
+    {
+     "expected": "DENY",
+     "hidden": true,
+     "name": "old without a ticket",
+     "stdin": "20 no"
+    }
+   ],
+   "title": "Both Keys at Once",
+   "xpReward": 260
+  },
+  {
+   "briefing": "A batch from the kiosk has junk mixed in and the script dies on it. Read the traceback: keep every token that is a number, ignore the rest, and print the total.",
+   "creditReward": 30,
+   "file": "missions/m20_wreckage.py",
+   "gate": false,
+   "giver": "ben",
+   "hints": true,
+   "id": "m20",
+   "language": "python",
+   "level": 3,
+   "requires": [
+    "m02"
+   ],
+   "starter": "# Mission 20: Read the Wreckage\n# Sum the numeric tokens; ignore tokens that are not numbers.\nimport sys\n\ntotal = 0\nfor token in sys.stdin.read().split():\n    total += int(token)  # BUG: raises on a non-numeric token\nprint(total)\n",
+   "tests": [
+    {
+     "expected": "8",
+     "hidden": false,
+     "name": "all numbers",
+     "stdin": "5 3"
+    },
+    {
+     "expected": "8",
+     "hidden": true,
+     "name": "junk between numbers",
+     "stdin": "5 x 3"
+    },
+    {
+     "expected": "0",
+     "hidden": true,
+     "name": "all junk",
+     "stdin": "a b c"
+    }
+   ],
+   "title": "Read the Wreckage",
+   "xpReward": 200
+  },
+  {
+   "briefing": "A reading went out of order in a log. Print the index of the first value smaller than the one before it, or -1 if the sequence never drops. Shrink the failure to the smallest input.",
+   "creditReward": 70,
+   "file": "missions/m21_isolate.py",
+   "gate": false,
+   "giver": "mara",
+   "hints": true,
+   "id": "m21",
+   "language": "python",
+   "level": 5,
+   "requires": [
+    "m02",
+    "m06"
+   ],
+   "starter": "# Mission 21: Find the Smallest Reproducer\n# Print the INDEX of the first drop, or -1. (This reports the value.)\nimport sys\n\nnums = [int(x) for x in sys.stdin.read().split()]\nbad = -1\nfor i in range(1, len(nums)):\n    if nums[i] < nums[i - 1]:\n        bad = nums[i]  # BUG: prints the value, not the index\nprint(bad)\n",
+   "tests": [
+    {
+     "expected": "-1",
+     "hidden": false,
+     "name": "never drops",
+     "stdin": "1 2 3"
+    },
+    {
+     "expected": "2",
+     "hidden": true,
+     "name": "drops at index two",
+     "stdin": "5 9 4"
+    },
+    {
+     "expected": "1",
+     "hidden": true,
+     "name": "drops immediately",
+     "stdin": "7 3 8"
+    }
+   ],
+   "title": "Find the Smallest Reproducer",
+   "xpReward": 320
+  },
+  {
+   "briefing": "A shell transcript is the only record of what a machine did. Print each command that was run — the lines starting with '$ ' — with the '$ ' removed, in order. Ignore output and comments.",
+   "creditReward": 90,
+   "file": "missions/m22_transcript.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m22",
+   "language": "python",
+   "level": 6,
+   "requires": [
+    "m15"
+   ],
+   "starter": "# Mission 22: Restore from the Transcript\n# Print only the commands: lines that start with '$ '.\nimport sys\n\nfor line in sys.stdin.read().splitlines():\n    print(line)  # BUG: prints output and comments too\n",
+   "tests": [
+    {
+     "expected": "ls\npwd",
+     "hidden": false,
+     "name": "two commands with output",
+     "stdin": "$ ls\nhello.txt\n$ pwd"
+    },
+    {
+     "expected": "echo hi",
+     "hidden": true,
+     "name": "ignores comments and noise",
+     "stdin": "# note\n$ echo hi\nnoise"
+    }
+   ],
+   "title": "Restore from the Transcript",
+   "xpReward": 400
+  },
+  {
+   "briefing": "The traffic log is too big to scan by hand. Count each distinct token, print them in order of first appearance as 'token: count' — one pass, one dictionary, not a nested scan.",
+   "creditReward": 110,
+   "file": "missions/m23_tally.py",
+   "gate": false,
+   "giver": "ben",
+   "hints": true,
+   "id": "m23",
+   "language": "python",
+   "level": 6,
+   "requires": [
+    "m16"
+   ],
+   "starter": "# Mission 23: Ten Times Faster\n# Count each distinct token; print 'token: count' in first-seen order.\nimport sys\n\nwords = sys.stdin.read().split()\nseen = []\nfor w in words:\n    if w not in seen:\n        seen.append(w)\nfor w in seen:\n    print(f\"{w}: 1\")  # BUG: always 1, and the membership scan is O(n^2)\n",
+   "tests": [
+    {
+     "expected": "a: 2\nb: 1",
+     "hidden": false,
+     "name": "repeated token counted",
+     "stdin": "a b a"
+    },
+    {
+     "expected": "x: 1",
+     "hidden": true,
+     "name": "single token",
+     "stdin": "x"
+    },
+    {
+     "expected": "p: 3\nq: 2",
+     "hidden": true,
+     "name": "many repeats",
+     "stdin": "p q q p p"
+    }
+   ],
+   "title": "Ten Times Faster",
+   "xpReward": 400
   }
  ]
 }
