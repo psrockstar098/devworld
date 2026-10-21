@@ -39,7 +39,7 @@ Config Config::fromEnv() {
 
   c.workerUrl = env("WORKER_URL", "");
   c.workerApiKey = env("WORKER_API_KEY", "");
-  c.adminKey = env("ADMIN_KEY", "dev_admin_key");
+  c.adminKey = env("ADMIN_KEY", "");
   c.contentDir = env("CONTENT_DIR", c.contentDir);
   c.sessionTtlSec = envInt("SESSION_TTL_SEC", c.sessionTtlSec);
   c.balanceCacheTtlSec = envInt("BALANCE_CACHE_TTL_SEC", c.balanceCacheTtlSec);

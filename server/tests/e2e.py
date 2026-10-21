@@ -11,6 +11,9 @@ import urllib.request
 
 BASE = "http://127.0.0.1:8091"
 PW = "devworld_dev_pw"
+ADMIN_KEY = os.environ.get("ADMIN_KEY", "")
+if not ADMIN_KEY:
+    sys.exit("e2e: set ADMIN_KEY to the server's admin key (admin routes are disabled without one)")
 
 
 def call(method, path, body=None, token=None, headers=None):
@@ -145,7 +148,7 @@ def main():
         {"ref": "e2e-1", "playerId": pid, "account": "wallet", "amount": 25},
     ]
     st, led = call("POST", "/admin/ledger", {"entries": entries},
-                   headers={"X-Admin-Key": "dev_admin_key"})
+                   headers={"X-Admin-Key": ADMIN_KEY})
     assert st == 200, (st, led)
     st, bal = call("GET", "/ledger/balance", token=token)
     assert st == 200 and bal["balance"] == 25, (st, bal)
@@ -154,7 +157,7 @@ def main():
         {"ref": "e2e-bad", "playerId": pid, "account": "wallet", "amount": 4},
     ]
     st, _ = call("POST", "/admin/ledger", {"entries": bad_entries},
-                 headers={"X-Admin-Key": "dev_admin_key"})
+                 headers={"X-Admin-Key": ADMIN_KEY})
     assert st == 400, st
     print("ledger: balanced=200 balance=25 unbalanced=400")
     ok += 1
@@ -178,7 +181,7 @@ def main():
         "POST",
         "/events",
         {"type": "company.founded", "title": "Acme", "city": "startup_city"},
-        headers={"X-Admin-Key": os.environ.get("ADMIN_KEY", "dev_admin_key")},
+        headers={"X-Admin-Key": ADMIN_KEY},
     )
     assert st == 201 and created["type"] == "company.founded", created
     st, log = call("GET", "/events?type=company.founded&limit=5", token=token)
