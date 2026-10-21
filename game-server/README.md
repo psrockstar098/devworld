@@ -56,6 +56,10 @@ Auth is `Authorization: Bearer <token>` from `POST /auth/login`.
 | GET | `/presence/online` | Players online now, with handle, city, map and `lastSeenMs`. |
 | POST | `/events` | `x-admin-key`; records a world event `{ type, title, detail?, actorId?, city? }`. |
 | GET | `/events` | World event log, newest-first; `?type=` filter, `?limit=` (max 100). |
+| POST | `/friends/request` | `{ playerId }` — sends a friend request to a real player. |
+| POST | `/friends/accept` · `/friends/decline` | `{ playerId }` — accepts or declines a pending request. |
+| GET | `/friends` | Your friends, with handle and online status + city from presence. |
+| GET | `/friends/requests` | Pending incoming friend requests. |
 
 ### Submission flow
 

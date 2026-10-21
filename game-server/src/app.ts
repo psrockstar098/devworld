@@ -14,6 +14,7 @@ import type { KvStore } from "./kv";
 import { PlayerError, PlayerStore, validatePlayerId } from "./players";
 import { PresenceStore } from "./presence";
 import { EventStore } from "./events";
+import { FriendStore } from "./friends";
 import { SessionStore } from "./sessions";
 import { loadMissionCatalog, summarize, assessTestsFor, type MissionDef } from "./missions";
 import { levelFromTotal, progressionView } from "./progression";
@@ -89,6 +90,7 @@ export function createApp(deps: AppDeps): { fetch: (req: Request) => Promise<Res
   const sessions = new SessionStore(deps.cache, deps.sessionTtlSec ?? 60 * 60 * 24 * 7);
   const presence = new PresenceStore(deps.cache);
   const events = new EventStore(deps.kv);
+  const friends = new FriendStore(deps.kv);
   const balanceTtl = deps.balanceCacheTtlSec ?? 15;
 
   const json = (body: unknown, status = 200): Response =>
@@ -400,6 +402,65 @@ export function createApp(deps: AppDeps): { fetch: (req: Request) => Promise<Res
     return json({ events: await events.list(opts) });
   }
 
+  async function friendTarget(req: Request): Promise<{ me: string; other: string }> {
+    const me = await requirePlayer(req);
+    const body = await readJson(req);
+    const other = String(body.playerId ?? "");
+    validatePlayerId(other);
+    if (other === me) throw new ApiError(400, "cannot friend yourself");
+    if (!(await players.get(other))) throw new ApiError(404, "no such player");
+    return { me, other };
+  }
+
+  async function handleFriendRequest(req: Request): Promise<Response> {
+    const { me, other } = await friendTarget(req);
+    const result = await friends.request(me, other);
+    if (result !== "ok") return err(409, result === "already_friends" ? "already friends" : "request already pending");
+    return json({ ok: true, from: me, to: other });
+  }
+
+  async function handleFriendAccept(req: Request): Promise<Response> {
+    const { me, other } = await friendTarget(req);
+    if (!(await friends.accept(me, other))) return err(404, "no such request");
+    return json({ ok: true, friends: [me, other] });
+  }
+
+  async function handleFriendDecline(req: Request): Promise<Response> {
+    const { me, other } = await friendTarget(req);
+    if (!(await friends.decline(me, other))) return err(404, "no such request");
+    return json({ ok: true });
+  }
+
+  async function handleListFriends(req: Request): Promise<Response> {
+    const me = await requirePlayer(req);
+    const ids = await friends.friendsOf(me);
+    const online = new Map((await presence.listOnline()).map((e) => [e.playerId, e]));
+    const list = [];
+    for (const id of ids) {
+      const rec = await players.get(id);
+      const here = online.get(id);
+      list.push({
+        playerId: id,
+        handle: rec?.handle ?? null,
+        displayName: rec?.displayName ?? null,
+        online: here !== undefined,
+        city: here?.city ?? null,
+      });
+    }
+    return json({ friends: list });
+  }
+
+  async function handleListFriendRequests(req: Request): Promise<Response> {
+    const me = await requirePlayer(req);
+    const ids = await friends.pendingFor(me);
+    const list = [];
+    for (const id of ids) {
+      const rec = await players.get(id);
+      list.push({ playerId: id, handle: rec?.handle ?? null, displayName: rec?.displayName ?? null });
+    }
+    return json({ requests: list });
+  }
+
   async function route(req: Request): Promise<Response> {
     const url = new URL(req.url);
     const path = url.pathname;
@@ -433,6 +494,12 @@ export function createApp(deps: AppDeps): { fetch: (req: Request) => Promise<Res
 
     if (path === "/events" && method === "POST") return handleRecordEvent(req);
     if (path === "/events" && method === "GET") return handleListEvents(req);
+
+    if (path === "/friends/request" && method === "POST") return handleFriendRequest(req);
+    if (path === "/friends/accept" && method === "POST") return handleFriendAccept(req);
+    if (path === "/friends/decline" && method === "POST") return handleFriendDecline(req);
+    if (path === "/friends" && method === "GET") return handleListFriends(req);
+    if (path === "/friends/requests" && method === "GET") return handleListFriendRequests(req);
 
     return err(404, "not found");
   }
