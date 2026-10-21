@@ -266,7 +266,8 @@ void Game::update(float dt) {
   // loc.regionId/instanceId are set by enterMap(); re-writing them here with
   // the map id would clobber the region the save persisted.
   updateCamera();
-  updateNpcs();
+  updateNpcs(dt);
+  updateCritterSim(dt);
 
   for (auto& entry : remotePlayers_) {
     RemotePlayer& rp = entry.second;
@@ -304,9 +305,160 @@ Vec2 Game::npcPos(const NpcDef& n) const {
   return {-1000, -1000};  // off-map / not here right now
 }
 
-void Game::updateNpcs() {
-  // Phase 1: NPCs snap to schedule positions (no pathfinding).
-  // [PHASE2] world-sim service drives positions; client interpolates.
+void Game::updateNpcs(float dt) {
+  // Residents walk between schedule spots instead of teleporting, and while
+  // posted at one they take the occasional short stroll around their anchor.
+  // The schedule (see npcPos) is the destination; this eases toward it at a
+  // stroll. Snap only on first sight after a map change, and for the
+  // reduced-motion preference.
+  const bool snap = player_.a11y.reducedMotion;
+  const float speed = 60.0f;  // px/s — a laid-back stroll, half the player's
+  const TileMap& m = world_.map(curMap_);
+  auto walkable = [&](float x, float y) {
+    return !m.solid((int)(x / m.tile), (int)(y / m.tile));
+  };
+  for (auto& n : npcs_) {
+    Vec2 p = npcPos(n);
+    if (p.x < -500) {  // off-map right now (asleep / at work elsewhere)
+      npcLive_.erase(n.id);
+      continue;
+    }
+    NpcLive& live = npcLive_[n.id];
+    if (!live.seen) {
+      live.pos = live.target = live.anchor = p;
+      live.seen = true;
+      live.moving = false;
+      uint32_t h = 0;
+      for (char c : n.id) h = h * 131 + (uint8_t)c;
+      live.rng = h * 2654435761u + 12345u;
+    } else if (p.x != live.anchor.x || p.y != live.anchor.y) {
+      live.anchor = p;  // schedule slot changed: head for the new post
+      live.target = p;
+      live.moving = (live.pos.x != p.x || live.pos.y != p.y);
+    }
+    // Walk whenever we are not at the target: the schedule post or a stroll.
+    Vec2 d = {live.target.x - live.pos.x, live.target.y - live.pos.y};
+    float dist = hypotf(d.x, d.y);
+    if (snap) {
+      live.pos = live.target;
+      live.moving = false;
+    } else if (dist > 0.5f) {
+      float step = speed * dt;
+      if (dist <= step) {  // arrival: settle, then rest a while
+        live.pos = live.target;
+        live.moving = false;
+        live.idleLeft = 6.0f + ((live.rng >> 4) / 16777216.0f) * 14.0f;
+        live.rng = live.rng * 1664525u + 1013904223u;
+      } else {
+        live.pos.x += d.x / dist * step;
+        live.pos.y += d.y / dist * step;
+        live.moving = true;
+        live.phase += dt * 11.0f;
+        live.facing = (fabsf(d.x) > fabsf(d.y)) ? (d.x < 0 ? 1 : 2)
+                                                : (d.y < 0 ? 3 : 0);
+      }
+    }
+    if (live.moving) continue;
+    // Posted and idle: now and then a short stroll near the anchor, back and
+    // forth within a tile or two, like someone waiting out the shift.
+    live.idleLeft -= dt;
+    if (live.idleLeft > 0 || dt <= 0) continue;
+    float ang = ((live.rng >> 8) / 16777216.0f) * 6.2831853f;
+    float rad = (16.0f + ((live.rng >> 16) / 16777216.0f) * 28.0f) * m.tile / 32.0f;
+    float x = live.anchor.x + cosf(ang) * rad;
+    float y = live.anchor.y + sinf(ang) * rad;
+    if (walkable(x, y)) {
+      live.target = {x, y};
+      live.moving = true;
+    }
+    live.idleLeft = 6.0f + ((live.rng >> 4) / 16777216.0f) * 14.0f;
+    live.rng = live.rng * 1664525u + 1013904223u;
+  }
+}
+
+Vec2 Game::npcLivePos(const NpcDef& n) {
+  Vec2 p = npcPos(n);
+  if (p.x < -500) return p;  // off-map
+  auto it = npcLive_.find(n.id);
+  if (it == npcLive_.end()) return p;  // not yet simulated: schedule spot
+  return it->second.pos;
+}
+
+void Game::updateCritterSim(float dt) {
+  const TileMap& m = world_.map(curMap_);
+  if (m.isInterior) {  // wildlife lives outdoors only
+    critters_.clear();
+    crittersMap_.clear();
+    return;
+  }
+  if (crittersMap_ != curMap_ || critters_.empty()) {
+    float mapW = (float)m.w * m.tile, mapH = (float)m.h * m.tile;
+    critters_ = spawnCritters(curMap_, mapW, mapH, dayT_, 7u, [&](float x, float y) {
+      return !m.solid((int)(x / m.tile), (int)(y / m.tile));
+    });
+    crittersMap_ = curMap_;
+  }
+  if (player_.a11y.reducedMotion) return;  // critters rest
+  updateCritters(critters_, dt, dayT_, [&](float x, float y) {
+    return !m.solid((int)(x / m.tile), (int)(y / m.tile));
+  });
+}
+
+void Game::renderCritters() {
+  const TileMap& m = world_.map(curMap_);
+  if (m.isInterior) return;
+  SDL_SetRenderDrawBlendMode(ren_, SDL_BLENDMODE_BLEND);  // firefly glow
+  for (const Critter& c : critters_) {
+    if (!critterVisible(c.kind, dayT_)) continue;
+    float sx = c.pos.x - cam_.x, sy = c.pos.y - cam_.y;
+    if (sx < -40 || sx > vw_ + 40 || sy < -40 || sy > vh_ + 40) continue;
+    float bob = c.moving ? sinf((float)c.phase) * 2.0f * c.size : 0;
+    if (c.kind == "cat") {
+      // body + head + ears + swaying tail
+      float w = 13 * c.size, hgt = 8 * c.size;
+      SDL_Rect body{(int)(sx - w / 2), (int)(sy - hgt / 2 - bob), (int)w, (int)hgt};
+      SDL_SetRenderDrawColor(ren_, 96, 88, 84, 255);
+      SDL_RenderFillRect(ren_, &body);
+      SDL_Rect head{(int)(body.x + w - 5), (int)(body.y - 3), 6, 6};
+      SDL_RenderFillRect(ren_, &head);
+      SDL_SetRenderDrawColor(ren_, 70, 64, 60, 255);
+      float tail = sinf((float)animT_ * 2.0f + c.id) * 3.0f;
+      SDL_RenderDrawLine(ren_, body.x, body.y + 2, body.x - 6, (int)(body.y + tail));
+      SDL_SetRenderDrawColor(ren_, 236, 240, 244, 255);
+      SDL_RenderDrawPoint(ren_, head.x + 5, head.y + 2);  // eye
+    } else if (c.kind == "bird") {
+      // round body, head peck while pausing
+      int r = (int)(3.5f * c.size);
+      SDL_Rect body{(int)(sx - r), (int)(sy - r - bob), 2 * r, 2 * r};
+      SDL_SetRenderDrawColor(ren_, 92, 74, 60, 255);
+      SDL_RenderFillRect(ren_, &body);
+      float peck = c.moving ? 0 : sinf((float)animT_ * 6 + c.id * 1.7f);
+      SDL_Rect head{(int)(body.x - r + 1), (int)(body.y + (peck > 0.5f ? r : 0)), r, r};
+      SDL_SetRenderDrawColor(ren_, 122, 100, 80, 255);
+      SDL_RenderFillRect(ren_, &head);
+    } else if (c.kind == "butterfly") {
+      // two wings flapping around a bright dot
+      float flap = sinf((float)(c.phase)) ;
+      int wingW = (int)(4 * c.size * (0.4f + 0.6f * fabsf(flap)));
+      SDL_SetRenderDrawColor(ren_, 232, 130, 70, 255);
+      SDL_Rect wl{(int)(sx - wingW), (int)(sy - 3 - bob), wingW, 6};
+      SDL_Rect wr{(int)(sx + 1), (int)(sy - 3 - bob), wingW, 6};
+      SDL_RenderFillRect(ren_, &wl);
+      SDL_RenderFillRect(ren_, &wr);
+      SDL_SetRenderDrawColor(ren_, 46, 34, 30, 255);
+      SDL_RenderDrawLine(ren_, (int)sx, (int)(sy - 4 - bob), (int)sx, (int)(sy + 1 - bob));
+    } else {  // firefly: a blinking warm dot
+      float blink = 0.5f + 0.5f * sinf((float)animT_ * 3.0f + c.id * 2.1f);
+      Uint8 a = (Uint8)(120 + 135 * blink);
+      SDL_SetRenderDrawColor(ren_, 255, 236, 150, a);
+      int r = 1 + (int)(blink * 1.5f);
+      SDL_Rect dot{(int)(sx - r), (int)(sy - r), 2 * r, 2 * r};
+      SDL_RenderFillRect(ren_, &dot);
+      SDL_SetRenderDrawColor(ren_, 255, 236, 150, (Uint8)(a / 4));
+      SDL_Rect halo{(int)(sx - 3 * r), (int)(sy - 3 * r), 6 * r, 6 * r};
+      SDL_RenderFillRect(ren_, &halo);
+    }
+  }
 }
 
 bool Game::findInteract(Hit& out) {
@@ -324,7 +476,7 @@ bool Game::findInteract(Hit& out) {
     consider(it.kind, it.id, it.label, it.target, it.rect);
   }
   for (auto& n : npcs_) {
-    Vec2 p = npcPos(n);
+    Vec2 p = npcLivePos(n);
     if (p.x < -500) continue;
     Rect r{p.x - 12, p.y - 12, 24, 24};
     consider("npc", n.id, n.name, "", r);
@@ -342,6 +494,11 @@ void Game::enterMap(const std::string& mapId, int tx, int ty) {
   // are instanced per player, exteriors are shared regions.
   player_.loc.regionId = m.regionId;
   player_.loc.instanceId = m.instanceType;
+  // Resident schedules restart relative to this map; wildlife re-seeds for
+  // the new map (deterministically, so a revisit shows the same crowd).
+  npcLive_.clear();
+  critters_.clear();
+  crittersMap_.clear();
   bannerT_ = 2.6f;
   updateCamera();
   saveNow();
@@ -509,21 +666,31 @@ void Game::render() {
 
   world_.render(ren_, font_, curMap_, cam_, vw_, vh_, dayT_, animT_, hidden);
 
-  // NPCs (scheduled). They face the player when close, otherwise face south.
+  // Residents (walking their schedule routes). They face the player when
+  // close and idle, otherwise face where they are headed.
   for (auto& n : npcs_) {
-    Vec2 p = npcPos(n);
+    Vec2 p = npcLivePos(n);
     if (p.x < -500) continue;
     float sx = p.x - cam_.x, sy = p.y - cam_.y;
     if (sx < -80 || sx > vw_ + 80 || sy < -100 || sy > vh_ + 100) continue;
-    float dx = player_.pos.x - p.x, dy = player_.pos.y - p.y;
-    int facing = 0;
-    if (fabsf(dx) + fabsf(dy) < 150)
-      facing = (fabsf(dx) > fabsf(dy)) ? (dx < 0 ? 1 : 2) : (dy < 0 ? 3 : 0);
-    uint32_t h = 0;
-    for (char c : n.id) h = h * 131 + (uint8_t)c;
-    float phase = (float)animT_ * 1.4f + (float)(h % 10);
+    const NpcLive* live = nullptr;
+    auto it = npcLive_.find(n.id);
+    if (it != npcLive_.end()) live = &it->second;
+    bool moving = live ? live->moving : false;
+    float phase = live ? (moving ? live->phase
+                                 : (float)animT_ * 1.4f + (float)(n.id.size() * 3))
+                       : (float)animT_ * 1.4f;
+    int facing;
+    if (moving) {
+      facing = live->facing;
+    } else {
+      float dx = player_.pos.x - p.x, dy = player_.pos.y - p.y;
+      facing = 0;
+      if (fabsf(dx) + fabsf(dy) < 150)
+        facing = (fabsf(dx) > fabsf(dy)) ? (dx < 0 ? 1 : 2) : (dy < 0 ? 3 : 0);
+    }
     world_.drawCharacter(ren_, font_, sx, sy, n.skin, n.shirt, npcPantColor(n.shirt),
-                         npcHairColor(n.id), n.name, facing, phase, false, false);
+                         npcHairColor(n.id), n.name, facing, phase, moving, false);
   }
 
   // Other real accounts sharing this map. Interiors stay private; the town and
@@ -556,6 +723,9 @@ void Game::render() {
   }
 
   // Atmosphere and lamp light on top of everything so the whole scene grades.
+  // Ambient wildlife between the characters and the light pass.
+  renderCritters();
+
   world_.renderLighting(ren_, curMap_, cam_, vw_, vh_, dayT_, animT_);
 
   // Map-name banner when entering a new place.
@@ -644,9 +814,9 @@ void Game::drawMinimap() {
     cell(tx, ty, c, 1);
   }
 
-  // NPC dots.
+  // NPC dots (live positions, so residents show as walking on the minimap).
   for (const auto& n : npcs_) {
-    Vec2 p = npcPos(n);
+    Vec2 p = npcLivePos(n);
     if (p.x < -500) continue;
     int tx = (int)(p.x / m.tile), ty = (int)(p.y / m.tile);
     cell(tx, ty, C(240, 236, 220, 240), 1);

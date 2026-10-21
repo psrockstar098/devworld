@@ -20,7 +20,7 @@ mkdir -p dist
 echo "== compiling =="
 em++ src/main.cpp src/game_init.cpp src/game_loop.cpp src/game_logic.cpp \
      src/world.cpp src/world_model.cpp src/bridge.cpp src/progression.cpp \
-     src/ambience.cpp src/audio.cpp src/equipment.cpp src/profile.cpp src/settings.cpp \
+     src/ambience.cpp src/critters.cpp src/audio.cpp src/equipment.cpp src/profile.cpp src/settings.cpp \
      src/regions.cpp src/dungeons.cpp src/housing.cpp \
      src/social.cpp src/company.cpp src/portfolio.cpp \
      src/curriculum.cpp src/mastery.cpp src/capability.cpp src/unlocks.cpp \

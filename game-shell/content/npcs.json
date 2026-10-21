@@ -8,7 +8,7 @@
     "bye": {
      "options": [],
      "speaker": "Mara",
-     "text": "Soldering iron's hot \u2014 come back when you've got code to fix."
+     "text": "Soldering iron's hot — come back when you've got code to fix."
     },
     "root": {
      "options": [
@@ -43,6 +43,20 @@
    "schedule": [
     {
      "fromHour": 8,
+     "mapId": "fixit_interior",
+     "toHour": 13,
+     "x": 6,
+     "y": 4
+    },
+    {
+     "fromHour": 13,
+     "mapId": "town",
+     "toHour": 14,
+     "x": 46,
+     "y": 17
+    },
+    {
+     "fromHour": 14,
      "mapId": "fixit_interior",
      "toHour": 18,
      "x": 6,
@@ -172,12 +186,33 @@
     {
      "fromHour": 8,
      "mapId": "hall_interior",
+     "toHour": 12,
+     "x": 7,
+     "y": 6
+    },
+    {
+     "fromHour": 12,
+     "mapId": "town",
+     "toHour": 14,
+     "x": 31,
+     "y": 15
+    },
+    {
+     "fromHour": 14,
+     "mapId": "hall_interior",
      "toHour": 18,
      "x": 7,
      "y": 6
     },
     {
      "fromHour": 18,
+     "mapId": "town",
+     "toHour": 20,
+     "x": 31,
+     "y": 18
+    },
+    {
+     "fromHour": 20,
      "mapId": "town",
      "toHour": 23,
      "x": 30,
@@ -317,6 +352,27 @@
     {
      "fromHour": 9,
      "mapId": "town",
+     "toHour": 13,
+     "x": 33,
+     "y": 21
+    },
+    {
+     "fromHour": 13,
+     "mapId": "town",
+     "toHour": 16,
+     "x": 29,
+     "y": 24
+    },
+    {
+     "fromHour": 16,
+     "mapId": "town",
+     "toHour": 18,
+     "x": 36,
+     "y": 18
+    },
+    {
+     "fromHour": 18,
+     "mapId": "town",
      "toHour": 21,
      "x": 33,
      "y": 21
@@ -386,6 +442,20 @@
     {
      "fromHour": 8,
      "mapId": "startup_city_town",
+     "toHour": 12,
+     "x": 10,
+     "y": 11
+    },
+    {
+     "fromHour": 12,
+     "mapId": "startup_city_town",
+     "toHour": 14,
+     "x": 28,
+     "y": 13
+    },
+    {
+     "fromHour": 14,
+     "mapId": "startup_city_town",
      "toHour": 22,
      "x": 10,
      "y": 11
@@ -436,6 +506,20 @@
    "schedule": [
     {
      "fromHour": 0,
+     "mapId": "systems_district_town",
+     "toHour": 12,
+     "x": 11,
+     "y": 13
+    },
+    {
+     "fromHour": 12,
+     "mapId": "systems_district_town",
+     "toHour": 14,
+     "x": 26,
+     "y": 13
+    },
+    {
+     "fromHour": 14,
      "mapId": "systems_district_town",
      "toHour": 24,
      "x": 11,
@@ -505,6 +589,20 @@
    "schedule": [
     {
      "fromHour": 7,
+     "mapId": "innovation_capital_town",
+     "toHour": 12,
+     "x": 10,
+     "y": 13
+    },
+    {
+     "fromHour": 12,
+     "mapId": "innovation_capital_town",
+     "toHour": 14,
+     "x": 27,
+     "y": 13
+    },
+    {
+     "fromHour": 14,
      "mapId": "innovation_capital_town",
      "toHour": 21,
      "x": 10,

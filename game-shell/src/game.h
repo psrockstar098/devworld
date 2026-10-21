@@ -28,6 +28,7 @@
 #include "achievements.h"
 #include "careers.h"
 #include "rewards.h"
+#include "critters.h"
 #include "json.h"
 
 namespace dw {
@@ -68,6 +69,21 @@ class Game {
   WorldGraph graph_;
   AmbienceAudio audio_;
   std::vector<NpcDef> npcs_;
+  // Live NPC positions: the schedule gives the destination, residents walk
+  // there instead of teleporting. Keyed by npc id; cleared on map change.
+  struct NpcLive {
+    Vec2 pos{0, 0}, target{0, 0}, anchor{0, 0};
+    int facing = 0;
+    float phase = 0;
+    float idleLeft = 3;   // s until the next little stroll around the post
+    bool moving = false;
+    bool seen = false;
+    uint32_t rng = 0;     // per-resident wander clock
+  };
+  std::map<std::string, NpcLive> npcLive_;
+  // Ambient wildlife for the current exterior map.
+  std::vector<Critter> critters_;
+  std::string crittersMap_;
   std::map<std::string, MissionDef> missions_;
   std::vector<ItemDef> shopItems_;
   std::map<std::string, ItemDef> catalog_;   // itemId -> def (equipment + panels)
@@ -115,7 +131,10 @@ class Game {
   void update(float dt);
   void render();
   void updateCamera();
-  void updateNpcs();
+  void updateNpcs(float dt);         // residents walk between schedule spots
+  Vec2 npcLivePos(const NpcDef& n);  // live px (walked); snaps on first sight
+  void updateCritterSim(float dt);   // ambient wildlife on exteriors
+  void renderCritters();
 
   // interaction
   struct Hit { std::string kind, id, label, target; Vec2 at{0,0}; };

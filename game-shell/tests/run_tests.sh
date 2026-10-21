@@ -12,7 +12,7 @@ echo "== building native tests =="
 "$CXX" -std=c++17 -O1 -Wall -Wextra \
   -I src -I tests -I tests/third_party \
   tests/test_main.cpp tests/test_json.cpp tests/test_progression.cpp \
-  tests/test_world_model.cpp tests/test_ambience.cpp \
+  tests/test_world_model.cpp tests/test_ambience.cpp tests/test_critters.cpp \
   tests/test_equipment.cpp tests/test_profile.cpp tests/test_settings.cpp \
   tests/test_regions.cpp tests/test_dungeons.cpp tests/test_housing.cpp \
   tests/test_social.cpp tests/test_company.cpp tests/test_portfolio.cpp \
@@ -23,7 +23,7 @@ echo "== building native tests =="
   tests/test_rewards.cpp \
   tests/test_careers.cpp \
   tests/test_content.cpp \
-  src/progression.cpp src/world_model.cpp src/ambience.cpp \
+  src/progression.cpp src/world_model.cpp src/ambience.cpp src/critters.cpp \
   src/equipment.cpp src/profile.cpp src/settings.cpp \
   src/regions.cpp src/dungeons.cpp src/housing.cpp \
   src/social.cpp src/company.cpp src/portfolio.cpp \
