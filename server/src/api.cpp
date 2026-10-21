@@ -354,29 +354,21 @@ HttpResponse Api::handleLogin(const HttpRequest& req) {
 
   std::string username = body.s("username");
   std::string password = body.s("password");
-  std::string legacyId = body.s("playerId");
 
   std::string err;
   PlayerRecord rec;
   bool found = false;
 
-  if (!username.empty() || !password.empty()) {
-    if (username.empty() || password.empty())
-      return HttpResponse::error(400, "username and password are required");
-    if (!players_->getByUsername(username, &rec, &found, &err))
-      return HttpResponse::error(500, "player store unavailable");
-    // Always run the KDF so a missing username is not a timing oracle.
-    const std::string& hash = found ? rec.passwordHash : dummyHash();
-    bool valid = passwordVerify(password, hash);
-    if (!found || !valid)
-      return HttpResponse::error(401, "invalid credentials");
-  } else if (!legacyId.empty()) {
-    if (!players_->get(legacyId, &rec, &found, &err))
-      return HttpResponse::error(500, "player store unavailable");
-    if (!found) return HttpResponse::error(404, "no such player");
-  } else {
+  // Password login only: a bare player id must never issue a session.
+  if (username.empty() || password.empty())
     return HttpResponse::error(400, "username and password are required");
-  }
+  if (!players_->getByUsername(username, &rec, &found, &err))
+    return HttpResponse::error(500, "player store unavailable");
+  // Always run the KDF so a missing username is not a timing oracle.
+  const std::string& hash = found ? rec.passwordHash : dummyHash();
+  bool valid = passwordVerify(password, hash);
+  if (!found || !valid)
+    return HttpResponse::error(401, "invalid credentials");
 
   // Accounts created before Home Row existed get a unit on first login.
   ensureHome(&rec);

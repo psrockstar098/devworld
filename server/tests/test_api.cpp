@@ -364,3 +364,23 @@ TEST_CASE("world events cannot be recorded without an admin key") {
   r.headers["x-admin-key"] = "anything";
   CHECK(api.handle(r).status == 404);
 }
+
+TEST_CASE("login with a bare player id is rejected") {
+  Fixture f;
+  Api api(&f.history, &f.kv, &f.cache, &f.players, &f.sessions, &f.missions,
+          nullptr, f.cfg);
+  HttpResponse reg = api.handle(req(
+      "POST", "/auth/register",
+      "{\"username\":\"alice\",\"password\":\"password123\"}"));
+  REQUIRE(reg.status == 201);
+  std::string pid = parseJson(reg.body).at("player").s("id");
+  // The old passwordless path must never issue a session, even for a real id.
+  HttpResponse res = api.handle(req(
+      "POST", "/auth/login", "{\"playerId\":\"" + pid + "\"}"));
+  CHECK(res.status == 400);
+  // Password login still works.
+  HttpResponse ok = api.handle(req(
+      "POST", "/auth/login",
+      "{\"username\":\"alice\",\"password\":\"password123\"}"));
+  CHECK(ok.status == 200);
+}
