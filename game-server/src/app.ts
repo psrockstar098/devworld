@@ -162,6 +162,7 @@ export function createApp(deps: AppDeps): { fetch: (req: Request) => Promise<Res
       displayName: body.displayName != null ? String(body.displayName) : undefined,
     });
     await deps.history.insertEvents([{ playerId: rec.id, event: "player.created", service: "game-server" }]);
+    await events.record({ type: "player.joined", title: `${rec.handle} joined the world`, actorId: rec.id });
     return json({ id: rec.id, handle: rec.handle, displayName: rec.displayName, createdAt: rec.createdAt }, 201);
   }
 
@@ -287,6 +288,12 @@ export function createApp(deps: AppDeps): { fetch: (req: Request) => Promise<Res
       ]);
       await players.markCompleted(playerId, mission.id);
       await deps.cache.del(`balance:${playerId}:credits`).catch(() => {});
+      await events.record({
+        type: "mission.completed",
+        title: `${rec.handle} completed ${mission.title}`,
+        actorId: playerId,
+        detail: `+${grading.rewards.xp} XP, +${grading.rewards.credits} credits`,
+      });
       rewarded = true;
     }
 
