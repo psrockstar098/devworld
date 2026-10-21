@@ -52,6 +52,8 @@ Auth is `Authorization: Bearer <token>` from `POST /auth/login`.
 | GET | `/ledger/balance` | Wallet balance (cached). |
 | POST | `/admin/ledger` | `x-admin-key`; posts a balanced transaction. |
 | GET | `/stats/missions` | Attempts/passes per mission from `mv_mission_pass`. |
+| POST | `/presence/heartbeat` | `{ city, map? }` — reports the caller's location; entries expire after 120 s without a heartbeat. |
+| GET | `/presence/online` | Players online now, with handle, city, map and `lastSeenMs`. |
 
 ### Submission flow
 

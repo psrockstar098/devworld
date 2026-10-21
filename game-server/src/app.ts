@@ -12,6 +12,7 @@ import { AssessUnavailableError } from "./assess";
 import type { EventSink } from "./history";
 import type { KvStore } from "./kv";
 import { PlayerError, PlayerStore, validatePlayerId } from "./players";
+import { PresenceStore } from "./presence";
 import { SessionStore } from "./sessions";
 import { loadMissionCatalog, summarize, assessTestsFor, type MissionDef } from "./missions";
 import { levelFromTotal, progressionView } from "./progression";
@@ -85,6 +86,7 @@ export function hashSubmission(files: FileInput[]): string {
 export function createApp(deps: AppDeps): { fetch: (req: Request) => Promise<Response> } {
   const players = new PlayerStore(deps.kv);
   const sessions = new SessionStore(deps.cache, deps.sessionTtlSec ?? 60 * 60 * 24 * 7);
+  const presence = new PresenceStore(deps.cache);
   const balanceTtl = deps.balanceCacheTtlSec ?? 15;
 
   const json = (body: unknown, status = 200): Response =>
@@ -331,6 +333,37 @@ export function createApp(deps: AppDeps): { fetch: (req: Request) => Promise<Res
     return json({ missions: await deps.history.missionStats() });
   }
 
+  const LOCATION_RE = /^[A-Za-z0-9_-]{1,64}$/;
+
+  async function handlePresenceHeartbeat(req: Request): Promise<Response> {
+    const playerId = await requirePlayer(req);
+    const body = await readJson(req);
+    const city = String(body.city ?? "");
+    const map = body.map != null ? String(body.map) : "";
+    if (!LOCATION_RE.test(city)) throw new ApiError(400, "city must be 1-64 chars [A-Za-z0-9_-]");
+    if (map !== "" && !LOCATION_RE.test(map)) throw new ApiError(400, "map must be 1-64 chars [A-Za-z0-9_-]");
+    const entry = await presence.heartbeat(playerId, city, map);
+    return json({ ok: true, ...entry });
+  }
+
+  async function handlePresenceOnline(req: Request): Promise<Response> {
+    await requirePlayer(req);
+    const entries = await presence.listOnline();
+    const listed = [];
+    for (const e of entries) {
+      const rec = await players.get(e.playerId);
+      listed.push({
+        playerId: e.playerId,
+        handle: rec?.handle ?? null,
+        displayName: rec?.displayName ?? null,
+        city: e.city,
+        map: e.map,
+        lastSeenMs: e.lastSeenMs,
+      });
+    }
+    return json({ players: listed });
+  }
+
   async function route(req: Request): Promise<Response> {
     const url = new URL(req.url);
     const path = url.pathname;
@@ -358,6 +391,9 @@ export function createApp(deps: AppDeps): { fetch: (req: Request) => Promise<Res
 
     if (path === "/ledger/balance" && method === "GET") return handleLedgerBalance(req);
     if (path === "/admin/ledger" && method === "POST") return handleAdminTransaction(req);
+
+    if (path === "/presence/heartbeat" && method === "POST") return handlePresenceHeartbeat(req);
+    if (path === "/presence/online" && method === "GET") return handlePresenceOnline(req);
 
     return err(404, "not found");
   }
