@@ -169,6 +169,26 @@ def main():
     print("auth guard + CORS preflight: ok")
     ok += 1
 
+    # World event log: admin writes, an authenticated player reads it back.
+    st, _ = call("POST", "/events", {"type": "company.founded", "title": "Acme"})
+    assert st == 401
+    st, _ = call("GET", "/events")
+    assert st == 401
+    st, created = call(
+        "POST",
+        "/events",
+        {"type": "company.founded", "title": "Acme", "city": "startup_city"},
+        headers={"X-Admin-Key": os.environ.get("ADMIN_KEY", "dev_admin_key")},
+    )
+    assert st == 201 and created["type"] == "company.founded", created
+    st, log = call("GET", "/events?type=company.founded&limit=5", token=token)
+    assert st == 200 and log["events"][0]["title"] == "Acme", log
+    st, world = call("GET", "/events?limit=100", token=token)
+    types = [e["type"] for e in world["events"]]
+    assert "company.founded" in types and "player.joined" in types, types
+    print("world events: admin record + filtered, newest-first read-back")
+    ok += 1
+
     # WebSocket: handshake, hello frame, ping/pong.
     key = base64.b64encode(os.urandom(16)).decode()
     s = socket.create_connection(("127.0.0.1", 8091), timeout=10)

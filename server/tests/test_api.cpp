@@ -210,6 +210,17 @@ TEST_CASE("mission submission grades, rewards and updates progression") {
   bad.headers["x-admin-key"] = "test_admin";
   CHECK(api.handle(bad).status == 400);
 
+  // A first full pass writes world history, rewards included.
+  HttpResponse log = api.handle(req("GET", "/events", "", token));
+  REQUIRE(log.status == 200);
+  JVal logBody = parseJson(log.body);
+  const JVal& events = logBody.at("events");
+  REQUIRE(events.arr.size() == 2);
+  CHECK(events.arr[0].s("type") == "mission.completed");
+  CHECK(events.arr[0].s("title") == "builder completed First Boot");
+  CHECK(events.arr[0].s("detail") == "+150 XP, +10 credits");
+  CHECK(events.arr[1].s("type") == "player.joined");
+
   worker.stop();
 }
 
@@ -235,4 +246,121 @@ TEST_CASE("health reports the stores") {
   CHECK(j.at("stores").boolean("clickhouse"));
   CHECK(j.at("stores").boolean("kvrocks"));
   CHECK(j.at("stores").boolean("redis"));
+}
+
+TEST_CASE("world events: admin records, players read") {
+  Fixture f;
+  Api api(&f.history, &f.kv, &f.cache, &f.players, &f.sessions, &f.missions,
+          nullptr, f.cfg);
+  std::string token = issueToken(api, "starter");
+
+  // Recording needs the admin key; reading needs a session.
+  CHECK(api.handle(req("POST", "/events",
+                       "{\"type\":\"company.founded\",\"title\":\"Acme\"}"))
+            .status == 401);
+  HttpRequest wrong = req("POST", "/events",
+                          "{\"type\":\"company.founded\",\"title\":\"Acme\"}");
+  wrong.headers["x-admin-key"] = "wrong";
+  CHECK(api.handle(wrong).status == 401);
+  CHECK(api.handle(req("GET", "/events")).status == 401);
+
+  HttpRequest ok = req(
+      "POST", "/events",
+      "{\"type\":\"company.founded\",\"title\":\"Acme\","
+      "\"detail\":\"two founders and a laptop\",\"city\":\"startup_city\"}");
+  ok.headers["x-admin-key"] = "test_admin";
+  HttpResponse created = api.handle(ok);
+  REQUIRE(created.status == 201);
+  JVal cj = parseJson(created.body);
+  CHECK(cj.s("type") == "company.founded");
+  CHECK(cj.s("title") == "Acme");
+  CHECK(cj.s("detail") == "two founders and a laptop");
+  CHECK(cj.s("city") == "startup_city");
+  CHECK(cj.s("id").size() > 5);
+  CHECK(cj.at("createdAtMs").type == JVal::NUM);
+
+  // Newest first. Registration itself wrote a player.joined event, so the
+  // log holds both and the world writes its own history.
+  HttpResponse listed = api.handle(req("GET", "/events", "", token));
+  REQUIRE(listed.status == 200);
+  JVal listedBody = parseJson(listed.body);
+  const JVal& events = listedBody.at("events");
+  REQUIRE(events.arr.size() == 2);
+  CHECK(events.arr[0].s("type") == "company.founded");
+  CHECK(events.arr[0].s("title") == "Acme");
+  CHECK(events.arr[1].s("type") == "player.joined");
+  CHECK(events.arr[1].s("title").find("joined the world") != std::string::npos);
+}
+
+TEST_CASE("world events: filters, limits and validation") {
+  Fixture f;
+  Api api(&f.history, &f.kv, &f.cache, &f.players, &f.sessions, &f.missions,
+          nullptr, f.cfg);
+  std::string token = issueToken(api, "editor");
+
+  auto record = [&](const std::string& body) {
+    HttpRequest r = req("POST", "/events", body);
+    r.headers["x-admin-key"] = "test_admin";
+    return api.handle(r);
+  };
+  REQUIRE(record("{\"type\":\"company.founded\",\"title\":\"First\"}").status ==
+          201);
+  REQUIRE(record("{\"type\":\"product.launched\",\"title\":\"Second\"}")
+              .status == 201);
+  REQUIRE(record("{\"type\":\"company.founded\",\"title\":\"Third\"}").status ==
+          201);
+
+  HttpRequest byType = req("GET", "/events", "", token);
+  byType.params["type"] = "company.founded";
+  HttpResponse filtered = api.handle(byType);
+  REQUIRE(filtered.status == 200);
+  JVal filteredBody = parseJson(filtered.body);
+  const JVal& fEvents = filteredBody.at("events");
+  REQUIRE(fEvents.arr.size() == 2);
+  CHECK(fEvents.arr[0].s("title") == "Third");
+  CHECK(fEvents.arr[1].s("title") == "First");
+
+  HttpRequest limited = req("GET", "/events", "", token);
+  limited.params["limit"] = "2";
+  HttpResponse recent = api.handle(limited);
+  REQUIRE(recent.status == 200);
+  JVal recentBody = parseJson(recent.body);
+  const JVal& rEvents = recentBody.at("events");
+  REQUIRE(rEvents.arr.size() == 2);
+  CHECK(rEvents.arr[0].s("title") == "Third");
+  CHECK(rEvents.arr[1].s("title") == "Second");
+
+  // Limits must be positive numbers; types must be dotted identifiers.
+  HttpRequest zero = req("GET", "/events", "", token);
+  zero.params["limit"] = "0";
+  CHECK(api.handle(zero).status == 400);
+  HttpRequest nan = req("GET", "/events", "", token);
+  nan.params["limit"] = "abc";
+  CHECK(api.handle(nan).status == 400);
+  HttpRequest badType = req("GET", "/events", "", token);
+  badType.params["type"] = "bad type!";
+  CHECK(api.handle(badType).status == 400);
+
+  CHECK(record("{\"type\":\"bad type!\",\"title\":\"X\"}").status == 400);
+  CHECK(record("{\"type\":\"company.founded\",\"title\":\"\"}").status == 400);
+  CHECK(record("{\"type\":\"company.founded\",\"title\":\"" +
+               std::string(201, 'x') + "\"}")
+            .status == 400);
+  CHECK(record("{\"type\":\"company.founded\",\"title\":\"X\",\"detail\":\"" +
+               std::string(2001, 'd') + "\"}")
+            .status == 400);
+  CHECK(record("{\"type\":\"company.founded\",\"title\":\"X\",\"actorId\":\"" +
+               std::string(65, 'a') + "\"}")
+            .status == 400);
+}
+
+TEST_CASE("world events cannot be recorded without an admin key") {
+  Fixture f;
+  f.cfg.adminKey.clear();
+  Api api(&f.history, &f.kv, &f.cache, &f.players, &f.sessions, &f.missions,
+          nullptr, f.cfg);
+  HttpRequest r = req("POST", "/events",
+                      "{\"type\":\"company.founded\",\"title\":\"X\"}");
+  r.headers["x-admin-key"] = "anything";
+  CHECK(api.handle(r).status == 404);
 }

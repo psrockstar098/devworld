@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <cstdlib>
 #include <set>
 
 #include "crypto.h"
@@ -93,6 +94,59 @@ std::string dummyHash() {
   return h;
 }
 
+std::string htmlEscape(const std::string& s) {
+  std::string o;
+  o.reserve(s.size() + 16);
+  for (char c : s) {
+    switch (c) {
+      case '&': o += "&amp;"; break;
+      case '<': o += "&lt;"; break;
+      case '>': o += "&gt;"; break;
+      case '"': o += "&quot;"; break;
+      case '\'': o += "&#39;"; break;
+      default: o += c;
+    }
+  }
+  return o;
+}
+
+// JSON literal that is safe to inline inside a <script> block.
+std::string inlineJson(std::string out) {
+  std::string safe;
+  safe.reserve(out.size());
+  for (size_t i = 0; i < out.size(); ++i) {
+    if (out[i] == '<' && i + 1 < out.size() &&
+        (out[i + 1] == '/' || out[i + 1] == '!')) {
+      safe += "\\u003c";
+    } else if (i + 2 < out.size() &&
+               (unsigned char)out[i] == 0xe2 &&
+               (unsigned char)out[i + 1] == 0x80 &&
+               ((unsigned char)out[i + 2] == 0xa8 ||
+                (unsigned char)out[i + 2] == 0xa9)) {
+      // U+2028/U+2029 are valid JSON but line terminators in older JS.
+      safe += (unsigned char)out[i + 2] == 0xa8 ? "\\u2028" : "\\u2029";
+      i += 2;
+    } else {
+      safe += out[i];
+    }
+  }
+  return safe;
+}
+
+std::string scriptJson(const std::string& s) {
+  return inlineJson(dumpJson(jstr(s)));
+}
+
+// Provider accents come from configuration and end up in a CSS custom
+// property, so only accept a plain hex colour.
+std::string safeBrand(const std::string& brand) {
+  if (brand.size() != 4 && brand.size() != 7 && brand.size() != 9) return "";
+  if (brand[0] != '#') return "";
+  for (size_t i = 1; i < brand.size(); ++i)
+    if (!std::isxdigit((unsigned char)brand[i])) return "";
+  return brand;
+}
+
 }  // namespace
 
 Api::Api(History* history, KvStore* kv, KvStore* cache, PlayerStore* players,
@@ -100,7 +154,8 @@ Api::Api(History* history, KvStore* kv, KvStore* cache, PlayerStore* players,
          ApiConfig cfg)
     : history_(history), kv_(kv), cache_(cache), players_(players),
       sessions_(sessions), missions_(missions), assess_(assess),
-      cfg_(std::move(cfg)), friends_(kv), presence_(cache) {}
+      cfg_(std::move(cfg)), oauth_(cfg_.oauth, cache, players, sessions),
+      friends_(kv), presence_(cache), events_(kv) {}
 
 Api::~Api() = default;
 
@@ -187,12 +242,23 @@ HttpResponse Api::dispatch(const HttpRequest& req) {
     if (path == "/auth/register" && method == "POST") return handleRegister(req);
     if (path == "/auth/login" && method == "POST") return handleLogin(req);
     if (path == "/auth/logout" && method == "POST") return handleLogout(req);
+    if (path == "/auth/providers" && method == "GET")
+      return handleOAuthProviders();
+    std::string oauthProvider;
+    if (method == "GET" &&
+        matchId(path, "/auth/oauth/", "/start", &oauthProvider))
+      return handleOAuthStart(req, oauthProvider);
+    if (method == "GET" &&
+        matchId(path, "/auth/oauth/", "/callback", &oauthProvider))
+      return handleOAuthCallback(req, oauthProvider);
     if ((path == "/me" || path == "/progression/me") && method == "GET")
       return handleMe(req);
     if (path == "/missions" && method == "GET") return handleMissions();
     if (path == "/stats/missions" && method == "GET") return handleMissionStats();
     if (path == "/ledger/balance" && method == "GET") return handleBalance(req);
     if (path == "/admin/ledger" && method == "POST") return handleAdminLedger(req);
+    if (path == "/events" && method == "POST") return handleRecordEvent(req);
+    if (path == "/events" && method == "GET") return handleListEvents(req);
     if (path == "/me/appearance" && (method == "PUT" || method == "POST"))
       return handleUpdateAppearance(req);
     if (path == "/world/players" && method == "GET")
@@ -267,6 +333,13 @@ HttpResponse Api::handleRegister(const HttpRequest& req) {
   history_->insertEvents(
       {{rec.id, "player.registered", "", "game-server", "{}"}}, &err);
 
+  // Play writes its own history: a new resident joins the world.
+  WorldEvent joined;
+  joined.type = "player.joined";
+  joined.title = rec.handle + " joined the world";
+  joined.actorId = rec.id;
+  events_.record(joined, nullptr, &err);
+
   JVal v = jobj();
   jset(v, "token", jstr(issued.token));
   jset(v, "expiresInSec", jnum(issued.expiresInSec));
@@ -329,6 +402,212 @@ HttpResponse Api::handleLogout(const HttpRequest& req) {
   return jsonRes(v);
 }
 
+HttpResponse Api::handleOAuthProviders() {
+  JVal providers = jarr();
+  for (const auto& p : oauth_.providers()) {
+    if (!p.configured()) continue;
+    JVal one = jobj();
+    jset(one, "id", jstr(p.id));
+    jset(one, "name", jstr(p.name));
+    std::string brand = safeBrand(p.brand);
+    jset(one, "brand", jstr(brand.empty() ? "#64748b" : brand));
+    // Absolute: the callback and its state cookie must live on the configured
+    // public origin, even when the panel itself is served from another host.
+    jset(one, "startUrl",
+         jstr(cfg_.oauth.baseUrl + "/auth/oauth/" + p.id + "/start"));
+    providers.arr.push_back(std::move(one));
+  }
+  JVal v = jobj();
+  jset(v, "providers", std::move(providers));
+  jset(v, "configured", jbool(oauth_.configured()));
+  HttpResponse res = jsonRes(v);
+  res.headers["cache-control"] = "no-store";
+  return res;
+}
+
+std::string Api::cookieOf(const HttpRequest& req, const std::string& name) const {
+  std::string raw = req.header("cookie");
+  for (const auto& part : split(raw, ';')) {
+    std::string item = trim(part);
+    size_t eq = item.find('=');
+    if (eq == std::string::npos) continue;
+    if (trim(item.substr(0, eq)) == name) return trim(item.substr(eq + 1));
+  }
+  return "";
+}
+
+HttpResponse Api::oauthFailure(const HttpRequest& req, int status,
+                               const std::string& message, bool json) {
+  (void)req;
+  HttpResponse res;
+  if (json) {
+    res = HttpResponse::error(status, message);
+  } else {
+    res.status = status;
+    res.headers["content-type"] = "text/html; charset=utf-8";
+    res.body =
+        "<!doctype html><html><head><meta charset=\"utf-8\">"
+        "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+        "<title>DEVWORLD sign-in failed</title>"
+        "<style>body{margin:0;min-height:100vh;display:grid;place-items:center;"
+        "background:#081016;color:#dbe7ea;font:15px/1.5 system-ui,sans-serif}"
+        ".box{max-width:420px;padding:28px;border:1px solid #1e303a;"
+        "background:#0b1319}h1{font-size:18px;margin:0 0 10px}"
+        "p{color:#93a7ad;margin:0 0 16px}button{font:inherit;padding:8px 14px;"
+        "background:#1e303a;color:#dbe7ea;border:1px solid #2b4652;"
+        "cursor:pointer}</style></head><body><div class=\"box\">"
+        "<h1>Sign-in failed</h1><p>" +
+        htmlEscape(message) +
+        "</p><button onclick=\"window.close()\">Close window</button>"
+        "</div><script>try{if(window.opener&&!window.opener.closed){"
+        "window.opener.postMessage({type:'devworld-oauth',error:" +
+        scriptJson(message) + "},'*');}}catch(e){}</script>"
+        "</body></html>";
+  }
+  res.headers["cache-control"] = "no-store";
+  res.headers["referrer-policy"] = "no-referrer";
+  res.headers["content-security-policy"] =
+      "default-src 'none'; style-src 'unsafe-inline'; script-src "
+      "'unsafe-inline'; base-uri 'none'; form-action 'none'";
+  res.headers["set-cookie"] =
+      std::string("dw_oauth_state=; Path=/auth/oauth; HttpOnly; SameSite=Lax; "
+                  "Max-Age=0") +
+      (startsWith(toLower(cfg_.oauth.baseUrl), "https://") ? "; Secure" : "");
+  return res;
+}
+
+HttpResponse Api::handleOAuthStart(const HttpRequest& req,
+                                   const std::string& provider) {
+  bool json = toLower(req.param("format")) == "json";
+  std::string returnTo = req.param("returnTo");
+  if (returnTo.empty()) returnTo = req.param("redirect");
+
+  std::string url, state, err;
+  int status = 500;
+  if (!oauth_.start(provider, returnTo, json, &url, &state, &status, &err))
+    return oauthFailure(req, status, err, json);
+
+  HttpResponse res;
+  res.status = 302;
+  res.headers["location"] = url;
+  res.headers["cache-control"] = "no-store";
+  res.headers["referrer-policy"] = "no-referrer";
+  res.headers["set-cookie"] =
+      "dw_oauth_state=" + state + "; Path=/auth/oauth; HttpOnly; SameSite=Lax; "
+      "Max-Age=" + std::to_string(cfg_.oauth.stateTtlSec) +
+      (startsWith(toLower(cfg_.oauth.baseUrl), "https://") ? "; Secure" : "");
+  return res;
+}
+
+HttpResponse Api::oauthSuccessPage(const OAuthResult& result,
+                                   const IssuedSession& session) {
+  std::string origin;
+  cfg_.oauth.returnToAllowed(result.returnTo, &origin);
+  JVal payload = jobj();
+  jset(payload, "type", jstr("devworld-oauth"));
+  jset(payload, "token", jstr(session.token));
+  jset(payload, "provider", jstr(result.provider));
+  jset(payload, "providerName", jstr(result.providerName));
+  std::string payloadJson = inlineJson(dumpJson(payload));
+
+  std::string body =
+      "<!doctype html><html><head><meta charset=\"utf-8\">"
+      "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+      "<title>DEVWORLD sign-in</title>"
+      "<style>body{margin:0;min-height:100vh;display:grid;place-items:center;"
+      "background:#081016;color:#dbe7ea;font:15px/1.5 system-ui,sans-serif}"
+      ".box{max-width:420px;padding:28px;border:1px solid #1e303a;"
+      "background:#0b1319}h1{font-size:18px;margin:0 0 10px}"
+      "p{color:#93a7ad;margin:0}</style></head><body><div class=\"box\">"
+      "<h1>Signed in</h1><p id=\"msg\">Returning to DEVWORLD…</p></div>"
+      "<script>(function(){var payload=" +
+      payloadJson + ";var returnTo=" + scriptJson(result.returnTo) +
+      ";var target=" + scriptJson(origin) +
+      ";try{if(window.opener&&!window.opener.closed&&target){"
+      "window.opener.postMessage(payload,target);"
+      "setTimeout(function(){window.close();},80);return;}}catch(e){}"
+      "if(returnTo){var sep=returnTo.indexOf('#')>=0?'&':'#';"
+      "location.replace(returnTo+sep+'oauth_token='+encodeURIComponent("
+      "payload.token));return;}"
+      "document.getElementById('msg').textContent='Signed in. You can close "
+      "this window.';})();</script></body></html>";
+
+  HttpResponse res;
+  res.status = 200;
+  res.headers["content-type"] = "text/html; charset=utf-8";
+  res.headers["cache-control"] = "no-store";
+  res.headers["referrer-policy"] = "no-referrer";
+  res.headers["content-security-policy"] =
+      "default-src 'none'; style-src 'unsafe-inline'; script-src "
+      "'unsafe-inline'; base-uri 'none'; form-action 'none'";
+  res.headers["set-cookie"] =
+      std::string("dw_oauth_state=; Path=/auth/oauth; HttpOnly; SameSite=Lax; "
+                  "Max-Age=0") +
+      (startsWith(toLower(cfg_.oauth.baseUrl), "https://") ? "; Secure" : "");
+  res.body = std::move(body);
+  return res;
+}
+
+HttpResponse Api::handleOAuthCallback(const HttpRequest& req,
+                                      const std::string& provider) {
+  bool json = toLower(req.param("format")) == "json";
+  std::string providerError = req.param("error");
+  if (!providerError.empty()) {
+    std::string detail = req.param("error_description");
+    if (detail.empty()) detail = providerError;
+    return oauthFailure(req, 400, "Sign-in was cancelled: " + detail, json);
+  }
+
+  OAuthResult result;
+  int status = 400;
+  std::string err;
+  if (!oauth_.complete(provider, req.param("code"), req.param("state"),
+                       cookieOf(req, "dw_oauth_state"), &result, &status, &err))
+    return oauthFailure(req, status, err, json);
+
+  json = json || result.json;
+  ensureHome(&result.player);
+
+  IssuedSession session;
+  if (!sessions_->create(result.player.id, &session, &err))
+    return oauthFailure(req, 503, "could not create session", json);
+
+  JVal props = jobj();
+  jset(props, "provider", jstr(result.provider));
+  jset(props, "created", jbool(result.created));
+  history_->insertEvents({{result.player.id,
+                           result.created ? "player.registered"
+                                          : "player.oauth_login",
+                           "", "game-server", dumpJson(props)}},
+                         &err);
+
+  if (result.created) {
+    WorldEvent joined;
+    joined.type = "player.joined";
+    joined.title = result.player.handle + " joined the world";
+    joined.actorId = result.player.id;
+    events_.record(joined, nullptr, &err);
+  }
+
+  if (json) {
+    JVal v = jobj();
+    jset(v, "token", jstr(session.token));
+    jset(v, "expiresInSec", jnum(session.expiresInSec));
+    jset(v, "player", result.player.selfJson());
+    jset(v, "provider", jstr(result.provider));
+    jset(v, "providerName", jstr(result.providerName));
+    jset(v, "created", jbool(result.created));
+    HttpResponse res = jsonRes(v);
+    res.headers["cache-control"] = "no-store";
+    res.headers["set-cookie"] =
+        std::string("dw_oauth_state=; Path=/auth/oauth; HttpOnly; SameSite=Lax; "
+                    "Max-Age=0") +
+        (startsWith(toLower(cfg_.oauth.baseUrl), "https://") ? "; Secure" : "");
+    return res;
+  }
+  return oauthSuccessPage(result, session);
+}
+
 HttpResponse Api::handleMe(const HttpRequest& req) {
   Auth a = requirePlayer(req);
   if (!a.ok) return a.response;
@@ -348,7 +627,7 @@ HttpResponse Api::handleMe(const HttpRequest& req) {
   if (!balanceOf(a.playerId, &balance, &err))
     return HttpResponse::error(503, "history store unavailable");
 
-  JVal v = rec.publicJson();
+  JVal v = rec.selfJson();
   jset(v, "progression", progressionView(xp));
   jset(v, "balance", jnum((double)balance));
   return jsonRes(v);
@@ -606,6 +885,72 @@ HttpResponse Api::handleFriendRemove(const std::string& id,
   return jsonRes(v);
 }
 
+HttpResponse Api::handleRecordEvent(const HttpRequest& req) {
+  if (cfg_.adminKey.empty()) return HttpResponse::error(404, "not found");
+  if (req.header("x-admin-key") != cfg_.adminKey)
+    return HttpResponse::error(401, "unauthorized");
+
+  JVal body;
+  HttpResponse bad;
+  if (!readObject(req, &body, &bad)) return bad;
+
+  WorldEvent ev;
+  ev.type = body.s("type");
+  ev.title = body.s("title");
+  if (body.at("detail").type == JVal::STR) ev.detail = body.at("detail").str;
+  if (body.at("actorId").type == JVal::STR) ev.actorId = body.at("actorId").str;
+  if (body.at("city").type == JVal::STR) ev.city = body.at("city").str;
+
+  if (!validEventType(ev.type))
+    return HttpResponse::error(400,
+                               "type must be 1-64 chars [A-Za-z0-9_.-]");
+  if (ev.title.empty() || ev.title.size() > 200)
+    return HttpResponse::error(400, "title must be 1-200 chars");
+  if (ev.detail.size() > 2000)
+    return HttpResponse::error(400, "detail must be at most 2000 chars");
+  if (ev.actorId.size() > 64)
+    return HttpResponse::error(400, "actorId must be at most 64 chars");
+  if (ev.city.size() > 64)
+    return HttpResponse::error(400, "city must be at most 64 chars");
+
+  WorldEvent saved;
+  std::string err;
+  if (!events_.record(ev, &saved, &err))
+    return HttpResponse::error(503, "event store unavailable");
+  return jsonRes(saved.toJson(), 201);
+}
+
+HttpResponse Api::handleListEvents(const HttpRequest& req) {
+  Auth a = requirePlayer(req);
+  if (!a.ok) return a.response;
+
+  std::string type = req.param("type");
+  if (!type.empty() && !validEventType(type))
+    return HttpResponse::error(400,
+                               "type must be 1-64 chars [A-Za-z0-9_.-]");
+
+  int limit = EventStore::kDefaultList;
+  std::string limitRaw = req.param("limit");
+  if (!limitRaw.empty()) {
+    char* end = nullptr;
+    double n = std::strtod(limitRaw.c_str(), &end);
+    if (end == limitRaw.c_str() || *end != '\0' || !std::isfinite(n) || n < 1)
+      return HttpResponse::error(400, "limit must be a positive number");
+    limit = static_cast<int>(n);
+  }
+
+  std::vector<WorldEvent> events;
+  std::string err;
+  if (!events_.list(type, limit, &events, &err))
+    return HttpResponse::error(503, "event store unavailable");
+
+  JVal arr = jarr();
+  for (const WorldEvent& ev : events) arr.arr.push_back(ev.toJson());
+  JVal v = jobj();
+  jset(v, "events", arr);
+  return jsonRes(v);
+}
+
 HttpResponse Api::handleMissions() { return jsonRes(missions_->listJson()); }
 
 HttpResponse Api::handleMissionStats() {
@@ -762,6 +1107,15 @@ HttpResponse Api::handleSubmit(const HttpRequest& req, const std::string& id) {
     players_->markCompleted(a.playerId, mission->id, &err);
     rec.completedMissions.push_back(mission->id);
     cache_->del("balance:" + a.playerId + ":credits", &err);
+
+    // The world writes its own history: every first full pass is news.
+    WorldEvent completed;
+    completed.type = "mission.completed";
+    completed.title = rec.handle + " completed " + mission->title;
+    completed.actorId = a.playerId;
+    completed.detail = "+" + std::to_string(mission->xpReward) + " XP, +" +
+                       std::to_string(mission->creditReward) + " credits";
+    events_.record(completed, nullptr, &err);
   }
 
   int64_t balance = 0;

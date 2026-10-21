@@ -94,6 +94,9 @@ username/password.
 | GET | `/health` | – | process + all three stores |
 | POST | `/auth/register` | – | `{username, password, displayName?}` → `{token, player}` |
 | POST | `/auth/login` | – | `{username, password}` → `{token, player}` |
+| GET | `/auth/providers` | – | configured social sign-in providers + absolute `startUrl` |
+| GET | `/auth/oauth/:provider/start` | – | redirect to the provider; sets the one-time state cookie |
+| GET | `/auth/oauth/:provider/callback` | – | exchange the code, resolve/link the player, issue a session |
 | POST | `/auth/logout` | bearer | revoke the session |
 | GET | `/me` | bearer | player + derived progression + balance |
 | GET | `/progression/me` | bearer | alias of `/me` |
@@ -110,11 +113,78 @@ username/password.
 | GET | `/ledger/balance` | bearer | derived credit balance |
 | POST | `/missions/:id/submit` | bearer | send files to the execution worker; records the attempt |
 | POST | `/admin/ledger` | `X-Admin-Key` | post a balanced ledger transaction |
+| POST | `/events` | `X-Admin-Key` | record a world event `{type, title, detail?, actorId?, city?}` |
+| GET | `/events` | bearer | world event log, newest-first; `?type=` filter, `?limit=` (max 100) |
 | GET | `/ws?token=…` | token | WebSocket: `hello`, `world.snapshot`, `world.move`, `chat.message`, `player.updated`, friend events, `mission.completed`, ping/pong |
+
+## World event log
+
+Every consequential thing that happens in the world is one durable entry in
+Kvrocks (`events:log`, the last 1000 kept): a company founded, a product
+launched — and, because play writes its own history, `player.joined` on
+sign-up and `mission.completed` on a first full pass, with the rewards in the
+detail. Any signed-in player reads it newest-first (`?type=` filters,
+`?limit=` caps at 100); writing needs the admin key. The in-game newspaper,
+the world timeline and event-driven NPC dialogue are meant to read this log
+rather than invent their own news.
 
 Passwords: PBKDF2-HMAC-SHA256, 120,000 iterations, 16-byte salt, 32-byte hash,
 serialized as `pbkdf2_sha256$<iters>$<salt-b64>$<hash-b64>`. Public player JSON
-never includes `passwordHash`.
+never includes `passwordHash`, email or provider subjects; the owner's `/me`
+view includes the email and linked provider names.
+
+## Social sign-in (OAuth 2.0 / OIDC)
+
+Google, GitHub, Facebook, Discord, GitLab and Microsoft are built in, and any
+standards-compliant OIDC provider can be added with `OAUTH_OIDC_*` — no code
+change. A provider appears in `GET /auth/providers` only when its client id and
+secret are configured.
+
+Set `OAUTH_BASE_URL` to the public origin of this API and register exactly
+`<OAUTH_BASE_URL>/auth/oauth/<provider>/callback` as the redirect URI with the
+provider. For local development:
+
+```bash
+export OAUTH_BASE_URL=http://127.0.0.1:8091
+export OAUTH_ALLOWED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000
+export OAUTH_GOOGLE_CLIENT_ID=...
+export OAUTH_GOOGLE_CLIENT_SECRET=...
+```
+
+Then open **Cloud account** in the game shell and press **Continue with
+Google** (or another configured provider).
+
+Flow and security properties:
+
+- Standard authorization-code flow with a single-use, 10-minute state stored in
+  Redis and bound to an `HttpOnly; SameSite=Lax` cookie (login-CSRF defence).
+- PKCE (S256) is used for Google, Discord, GitLab, Microsoft and generic OIDC.
+- The callback exchanges the code, fetches the provider profile, and:
+  - signs in an existing `oauth:<provider>:<subject>` identity;
+  - links to an existing account when the provider asserts a **verified**
+    email;
+  - otherwise creates a passwordless account with a unique username/handle.
+- Re-linking the same provider id is idempotent; a different subject for a
+  provider already on the account is a `409` instead of silently replacing it.
+- Provider access tokens are never exposed. The browser gets the same opaque session token as
+  password login; the provider access token is never sent to it or stored.
+- The callback answers JSON (`?format=json` at start) or an HTML page that
+  `postMessage`s the token to the opener and falls back to
+  `<returnTo>#oauth_token=…` when there is no popup.
+- HTTPS egress uses the system `curl` binary (so the server still links no TLS
+  library); `http://` provider URLs work for local mocks. Secrets are sent in
+  the request body over stdin, never in argv or a URL. Redirects are disabled
+  and the protocol is pinned to HTTPS.
+- Enable egress to the provider token/userinfo hosts; `curl` and CA
+  certificates must be present on the host.
+
+Front-end contract (`game-shell/shell/shell.js` → `DW.cloud`):
+
+```js
+DW.cloud.loadProviders();          // fills the buttons, GET /auth/providers
+DW.cloud.oauth('google');          // popup, postMessage, session
+DW.cloud.consumeOAuthHash();       // full-page fallback after a redirect
+```
 
 ## Shared world protocol
 
@@ -150,12 +220,12 @@ code.
 ## Tests
 
 ```bash
-server/tests/run_tests.sh     # 41 cases / ~300 assertions, real stores
+server/tests/run_tests.sh     # 49 cases / 437 assertions, real stores
 python3 server/tests/e2e.py   # live end-to-end against :8091
 ```
 
 Store-dependent cases self-skip when a store is absent; the end-to-end script
-requires all three plus a running server. `e2e.py` covers auth, CORS, ledger
+requires all three plus a running server. `e2e.py` covers auth, CORS, world events, ledger
 invariants, WebSocket framing, Kvrocks persistence and ClickHouse queries.
 
 Browser test (headless Chrome, requires the static server on :8000 and the
@@ -188,6 +258,11 @@ debugging on port 9222; set `CDP`, `PAGE` or `SERVER` to change the targets.
 | `CONTENT_DIR` | `../game-shell/content` |
 | `SESSION_TTL_SEC` | `604800` (7 days) |
 | `BALANCE_CACHE_TTL_SEC` | `15` |
+| `OAUTH_BASE_URL` | `http://127.0.0.1:8091` |
+| `OAUTH_ALLOWED_ORIGINS` | `http://localhost:8000,http://127.0.0.1:8000` |
+| `OAUTH_SUCCESS_REDIRECT` | empty |
+| `OAUTH_STATE_TTL_SEC` / `OAUTH_HTTP_TIMEOUT_MS` | `600` / `15000` |
+| `OAUTH_<PROVIDER>_CLIENT_ID` / `_CLIENT_SECRET` | empty (provider disabled) |
 
 ## Notes
 

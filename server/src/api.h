@@ -8,10 +8,12 @@
 
 #include "assess.h"
 #include "clickhouse.h"
+#include "events.h"
 #include "friends.h"
 #include "http.h"
 #include "kv.h"
 #include "missions.h"
+#include "oauth.h"
 #include "players.h"
 #include "presence.h"
 #include "sessions.h"
@@ -23,6 +25,7 @@ struct ApiConfig {
   std::string adminKey;
   int sessionTtlSec = 604800;
   int balanceCacheTtlSec = 15;
+  OAuthConfig oauth;
 };
 
 class Api {
@@ -51,6 +54,15 @@ class Api {
   HttpResponse handleRegister(const HttpRequest& req);
   HttpResponse handleLogin(const HttpRequest& req);
   HttpResponse handleLogout(const HttpRequest& req);
+  HttpResponse handleOAuthProviders();
+  HttpResponse handleOAuthStart(const HttpRequest& req, const std::string& provider);
+  HttpResponse handleOAuthCallback(const HttpRequest& req,
+                                   const std::string& provider);
+  HttpResponse oauthFailure(const HttpRequest& req, int status,
+                            const std::string& message, bool json);
+  HttpResponse oauthSuccessPage(const OAuthResult& result,
+                                const IssuedSession& session);
+  std::string cookieOf(const HttpRequest& req, const std::string& name) const;
   HttpResponse handleMe(const HttpRequest& req);
   HttpResponse handleGetPlayer(const std::string& id);
   HttpResponse handleMissions();
@@ -65,6 +77,8 @@ class Api {
   HttpResponse handleFriendAccept(const HttpRequest& req);
   HttpResponse handleFriendDecline(const HttpRequest& req);
   HttpResponse handleFriendRemove(const std::string& id, const HttpRequest& req);
+  HttpResponse handleRecordEvent(const HttpRequest& req);
+  HttpResponse handleListEvents(const HttpRequest& req);
 
   void ensureHome(PlayerRecord* rec);
   JVal friendView(const std::string& playerId);
@@ -82,9 +96,11 @@ class Api {
   MissionCatalog* missions_;
   AssessClient* assess_;
   ApiConfig cfg_;
+  OAuthService oauth_;
   WsHub hub_;
   FriendStore friends_;
   PresenceStore presence_;
+  EventStore events_;
   // Recent world chat, kept in memory so a fresh connection sees context.
   // Every message is also written to the history store.
   std::mutex chatMu_;

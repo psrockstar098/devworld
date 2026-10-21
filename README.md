@@ -196,24 +196,27 @@ cd infra && ./scripts/up.sh            # start + wait healthy + round-trip smoke
 ```
 
 `server/` is the game API — native C++17, no third-party libraries, HTTP/1.1 +
-WebSocket over POSIX sockets — over those stores: players, username/password
-sessions, the ledger, derived progression and mission grading. It never executes
-player code; submissions are forwarded to the sandbox worker's `/assess`. A full
-pass runs game server → worker → Python container and reads the result back from
-ClickHouse and Kvrocks.
+WebSocket over POSIX sockets — over those stores: players, username/password and
+OAuth sessions, the ledger, derived progression and mission grading. It never
+executes player code; submissions are forwarded to the sandbox worker's
+`/assess`. A full pass runs game server → worker → Python container and reads
+the result back from ClickHouse and Kvrocks.
 
 ```bash
 cd infra && ./scripts/up.sh
 cd ../server && ./build.sh
 ./scripts/up.sh                         # stores + server, health-checked
-./tests/run_tests.sh                    # 41 cases / 297 assertions
-python3 tests/e2e.py                    # live end-to-end, 10 checks
+./tests/run_tests.sh                    # 49 cases / 437 assertions
+python3 tests/e2e.py                    # live end-to-end, 11 checks
 ```
 
 The game shell connects to it from the ☁ chip / **Cloud account** panel:
-username/password sign-in, live profile/level/credits from the server, and a
-WebSocket for progression events. `game-server/` (Bun) is kept as a behavior
-reference; it is no longer the production API.
+username/password **or Google, GitHub, Facebook, Discord, GitLab/Microsoft (and
+any OIDC provider)** sign-in, live profile/level/credits from the server, and a
+WebSocket for progression events. OAuth identities are linked to the same account
+when the provider reports a verified email, and new players get a passwordless
+account automatically. `game-server/` (Bun) is kept as a behavior reference; it
+is no longer the production API.
 
 ## Roadmap
 
