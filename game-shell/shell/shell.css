@@ -699,6 +699,31 @@ details[open] summary { color: var(--accent); margin-bottom: 6px; }
 }
 .cloud-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent-dim), var(--accent)); }
 .cloud-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.oauth-grid { display: grid; gap: 7px; margin: 14px 0 4px; }
+.oauth-btn {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 9px 12px; background: #0b1319; color: var(--ink);
+  border: 1px solid var(--line); cursor: pointer; font: inherit;
+  text-align: left; transition: border-color 0.15s, background 0.15s;
+}
+.oauth-btn:hover, .oauth-btn:focus-visible {
+  border-color: var(--brand, var(--accent)); background: #101c23;
+  outline: none;
+}
+.oauth-mark {
+  display: inline-grid; place-items: center; width: 22px; height: 22px;
+  flex: 0 0 22px; border-radius: 50%; background: var(--brand, #64748b);
+  color: #fff; font-family: var(--mono); font-size: 11px; font-weight: 700;
+}
+.cloud-or {
+  display: flex; align-items: center; gap: 10px; margin: 14px 0 4px;
+  color: var(--muted); font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.cloud-or::before, .cloud-or::after {
+  content: ""; height: 1px; flex: 1; background: var(--line);
+}
+.oauth-hint { margin-top: 12px; }
 .cloud-err {
   color: var(--red) !important; border-left: 3px solid var(--red);
   background: rgba(224, 106, 106, 0.08); padding: 7px 10px;

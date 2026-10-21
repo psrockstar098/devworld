@@ -56,6 +56,7 @@ int main() {
   apiCfg.adminKey = cfg.adminKey;
   apiCfg.sessionTtlSec = cfg.sessionTtlSec;
   apiCfg.balanceCacheTtlSec = cfg.balanceCacheTtlSec;
+  apiCfg.oauth = cfg.oauth;
 
   Api api(&history, &kv, &cache, &players, &sessions, &missions,
           assess.configured() ? &assess : nullptr, apiCfg);
@@ -76,7 +77,8 @@ int main() {
       "  kvrocks     %s\n"
       "  redis       %s\n"
       "  worker      %s\n"
-      "  missions    %zu (%s)\n",
+      "  missions    %zu (%s)\n"
+      "  oauth       %zu provider(s), callback base %s\n",
       cfg.host.c_str(), server.port(), cfg.clickhouse.url.c_str(),
       cfg.clickhouse.database.c_str(),
       cfg.kvUrl.substr(0, cfg.kvUrl.find('@') == std::string::npos
@@ -89,11 +91,13 @@ int main() {
           .c_str(),
       assess.configured() ? cfg.workerUrl.c_str()
                           : "(not configured - grading disabled)",
-      missions.size(), missionsPath.c_str());
+      missions.size(), missionsPath.c_str(), cfg.oauth.providers.size(),
+      cfg.oauth.baseUrl.c_str());
   std::fflush(stdout);
 
   std::signal(SIGINT, onSignal);
   std::signal(SIGTERM, onSignal);
+  std::signal(SIGPIPE, SIG_IGN);
   while (!g_stop) std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
   std::printf("shutting down...\n");

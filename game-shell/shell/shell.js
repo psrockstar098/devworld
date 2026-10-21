@@ -851,8 +851,14 @@ DW.ui = (() => {
     },
     cloud(d) {
       if (!d.signedIn) {
+        const providers = d.providers || [];
+        const oauthButtons = providers.map((p) =>
+          `<button class="oauth-btn" data-oauth="${esc(p.id)}" style="--brand:${esc(p.brand || '#64748b')}">` +
+          `<span class="oauth-mark" aria-hidden="true">${esc((p.name || '?').slice(0, 1))}</span>` +
+          `Continue with ${esc(p.name)}</button>`).join('');
         return `<h2>Cloud Account</h2>
           <p class="dim">Sign in to the DEVWORLD platform server. Your level, XP, credits and completed missions live on the server, not in this browser.</p>
+          ${oauthButtons ? `<div class="oauth-grid">${oauthButtons}</div><div class="cloud-or"><span>or use a password</span></div>` : ''}
           <label>Server <input id="cloud-base" value="${esc(d.base)}" spellcheck="false" /></label>
           <label>Username <input id="cloud-user" autocomplete="username" maxlength="32" spellcheck="false" /></label>
           <label>Password <input id="cloud-pass" type="password" autocomplete="current-password" /></label>
@@ -863,6 +869,7 @@ DW.ui = (() => {
             <button id="cloud-register">Create account</button>
             <button id="cloud-save">Save server</button>
           </div>
+          ${providers.length ? '' : '<p class="dim oauth-hint">Social sign-in is not configured on this server. Set the OAUTH_* credentials to enable it.</p>'}
           <p class="dim">${d.connected ? 'Live socket connected.' : 'Not connected to the platform server.'}</p>`;
       }
       const p = d.player || {};
@@ -884,6 +891,7 @@ DW.ui = (() => {
         </div>
         <div class="cloud-bar"><span style="width:${pct}%"></span></div>
         <p class="dim">${pr.xpIntoLevel || 0} / ${need} XP into level ${pr.level || 1} · ${pr.totalXp || 0} XP total</p>
+        ${(p.providers || []).length ? `<p class="dim">Linked sign-in: ${(p.providers || []).map((x) => esc(x)).join(' · ')}</p>` : ''}
         <h3>Recent server events</h3>
         <div class="cloud-events">${events || '<p class="dim">No live events yet. Complete a mission and it will appear here.</p>'}</div>
         ${d.error ? `<p class="cloud-err">${esc(d.error)}</p>` : ''}
@@ -1313,6 +1321,13 @@ DW.ui = (() => {
       notify('Server URL saved.', 'success');
     });
 
+    root.querySelectorAll('[data-oauth]').forEach((button) => {
+      button.addEventListener('click', () => {
+        if (baseInput) DW.cloud.setBase(baseInput.value);
+        DW.cloud.oauth(button.getAttribute('data-oauth'));
+      });
+    });
+
     const login = q('cloud-login');
     if (login) login.addEventListener('click', async () => {
       const user = val('cloud-user').trim();
@@ -1421,6 +1436,7 @@ DW.cloud = (() => {
   const state = {
     base, token: !!token, signedIn: false, connected: false,
     player: null, progression: null, balance: 0, missions: [],
+    providers: [], providersConfigured: false,
     online: 0, events, error: ''
   };
 
@@ -1483,6 +1499,7 @@ DW.cloud = (() => {
       events: events.slice(-8).reverse(),
       online: Array.from(world.values()),
       chat: chat.slice(-60),
+      providers: state.providers,
       friends: friends.friends,
       incoming: friends.incoming,
       outgoing: friends.outgoing,
@@ -1674,19 +1691,26 @@ DW.cloud = (() => {
     return me;
   }
 
+  async function adoptToken(nextToken, providerName) {
+    token = nextToken;
+    localStorage.setItem(LS_TOKEN, token);
+    state.error = '';
+    try { await refresh(); } catch (e) {}
+    connectWs();
+    emit();
+    if (providerName && DW.ui) {
+      DW.ui.notify('Signed in with ' + providerName + '.', 'success');
+    }
+  }
+
   async function login(username, password) {
     try {
       const r = await api('/auth/login', {
         method: 'POST',
-        // Server contract (game-server/src/app.ts): login takes playerId, not username.
-        body: JSON.stringify({ playerId: username, password })
+        body: JSON.stringify({ username, password })
       });
-      token = r.token;
-      localStorage.setItem(LS_TOKEN, token);
-      state.error = '';
+      await adoptToken(r.token);
       if (r.player) state.player = r.player;
-      try { await refresh(); } catch (e) {}
-      connectWs();
       emit();
       return r;
     } catch (e) {
@@ -1699,35 +1723,127 @@ DW.cloud = (() => {
   async function register(username, password, displayName) {
     const local = localAppearance();
     try {
-      // Server contract (game-server/src/app.ts + players.ts): register takes
-      // id/handle/password, and returns the player record — no token. The
-      // handle must be 3-24 chars of a-z, 0-9 or _, while the id allows
-      // hyphens too — so derive the handle by stripping anything the
-      // handle rule rejects (e.g. player-1 -> player1); the server's
-      // 400/409 still surfaces for names that cannot become a handle.
-      // Sign in right after to obtain the token.
       const r = await api('/auth/register', {
         method: 'POST',
         body: JSON.stringify({
-          id: username,
-          handle: username.toLowerCase().replace(/[^a-z0-9_]/g, ''),
+          username,
           password,
           ...(displayName ? { displayName } : {}),
         })
       });
-      state.error = '';
-      if (r && r.id) state.player = r;
-      const signed = await login(username, password);
+      await adoptToken(r.token);
       // A new account inherits the character the player just created here.
       if (local) {
         try { await saveAppearance(local, true); } catch (e) {}
       }
-      return signed;
+      return r;
     } catch (e) {
       state.error = e.message;
       emit();
       throw e;
     }
+  }
+
+  async function loadProviders() {
+    try {
+      const r = await api('/auth/providers');
+      state.providers = (r && r.providers) || [];
+      state.providersConfigured = !!(r && r.configured);
+    } catch (e) {
+      state.providers = [];
+      state.providersConfigured = false;
+    }
+    emit();
+    return state.providers;
+  }
+
+  // Opens the provider consent screen in a popup. The callback page posts the
+  // token back to this window; if the popup is blocked we fall back to a full
+  // navigation and the callback redirects back with #oauth_token=…
+  function oauth(providerId) {
+    if (!providerId) return;
+    const returnTo = location.origin + location.pathname + location.search;
+    const provider = (state.providers || []).find((p) => p.id === providerId);
+    const start = (provider && provider.startUrl)
+      ? provider.startUrl
+      : base + '/auth/oauth/' + encodeURIComponent(providerId) + '/start';
+    const url = start + (start.indexOf('?') >= 0 ? '&' : '?') +
+      'returnTo=' + encodeURIComponent(returnTo);
+    // The callback page is served by the OAuth base origin, which may differ
+    // from the API URL the panel is configured with (localhost vs 127.0.0.1).
+    let startOrigin = '';
+    try { startOrigin = new URL(start, location.href).origin; } catch (e) {}
+    let popup = null;
+    try {
+      popup = window.open(url, 'devworld_oauth',
+        'width=520,height=700,menubar=no,toolbar=no');
+    } catch (e) { popup = null; }
+    if (!popup) {
+      location.href = url;
+      return;
+    }
+
+    let settled = false;
+    let poll = null;
+    let timeout = null;
+    const cleanup = () => {
+      window.removeEventListener('message', onMessage);
+      if (poll) clearInterval(poll);
+      if (timeout) clearTimeout(timeout);
+    };
+    const onMessage = async (ev) => {
+      if (!startOrigin || ev.origin !== startOrigin) return;
+      const data = ev.data || {};
+      if (data.type !== 'devworld-oauth') return;
+      settled = true;
+      cleanup();
+      try { popup.close(); } catch (e) {}
+      if (data.error) {
+        state.error = data.error;
+        emit();
+        return;
+      }
+      try {
+        await adoptToken(data.token, data.providerName || 'your provider');
+      } catch (e) {
+        state.error = e.message || 'Sign-in failed.';
+        emit();
+      }
+    };
+    window.addEventListener('message', onMessage);
+    poll = setInterval(() => {
+      if (!popup.closed || settled) return;
+      settled = true;
+      cleanup();
+      state.error = 'Sign-in was cancelled.';
+      emit();
+    }, 700);
+    timeout = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      try { popup.close(); } catch (e) {}
+      state.error = 'Sign-in timed out. Please try again.';
+      emit();
+    }, 180000);
+  }
+
+  // Full-page fallback: the callback leaves the session token in the fragment.
+  function consumeOAuthHash() {
+    const hash = location.hash || '';
+    const match = hash.match(/[#&]oauth_token=([^&]+)/);
+    if (!match) return false;
+    let nextToken = '';
+    try { nextToken = decodeURIComponent(match[1]); } catch (e) { return false; }
+    try {
+      history.replaceState(null, '', location.pathname + location.search);
+    } catch (e) { location.hash = ''; }
+    if (!nextToken) return false;
+    adoptToken(nextToken, 'your provider').catch((e) => {
+      state.error = e.message || 'Sign-in failed.';
+      emit();
+    });
+    return true;
   }
 
   function reset() {
@@ -1770,6 +1886,7 @@ DW.cloud = (() => {
     base = v;
     localStorage.setItem(LS_BASE, base);
     if (token) connectWs();
+    loadProviders().catch(() => {});
     emit();
   }
 
@@ -1900,6 +2017,7 @@ DW.cloud = (() => {
   function openPanel() {
     cppEvent('panel_opened');
     DW.ui.show('cloud', snapshot());
+    loadProviders().catch(() => {});
     if (panelOff) panelOff();
     panelOff = onChange(() => {
       const ov = document.getElementById('ov-cloud');
@@ -1926,6 +2044,9 @@ DW.cloud = (() => {
     setBase,
     login,
     register,
+    oauth,
+    loadProviders,
+    consumeOAuthHash,
     logout,
     clearToken,
     refresh,
@@ -2149,7 +2270,8 @@ DW.computer = (() => {
         DW.phone.open();
       }
     });
-    if (DW.cloud.hasToken()) {
+    const adoptedOAuth = DW.cloud.consumeOAuthHash();
+    if (!adoptedOAuth && DW.cloud.hasToken()) {
       DW.cloud.refresh()
         .then(() => DW.cloud.connectWs())
         .catch((e) => { if (e && e.status === 401) DW.cloud.clearToken(); });

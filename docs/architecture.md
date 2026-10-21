@@ -131,8 +131,12 @@ instances, so a player can step off the street without being followed.
   phone, IDE or mission board does not look like logging off. `/world/players`
   exposes the same list for non-WebSocket clients.
 - **Accounts are real.** Registration and login are username/password
-  (PBKDF2-HMAC-SHA256) with opaque session tokens. A player record in Kvrocks
-  holds the durable identity, level inputs, appearance and `homeUnit`; no
+  (PBKDF2-HMAC-SHA256) **or OAuth 2.0/OIDC** (Google, GitHub, Facebook, Discord,
+  GitLab, Microsoft and configurable OIDC), both ending in the same opaque
+  session token. OAuth uses PKCE where supported, single-use state bound to an
+  HttpOnly cookie, and links providers to one account only when the provider
+  asserts a verified email. A player record in Kvrocks holds the durable
+  identity, linked identities, level inputs, appearance and `homeUnit`; no
   seeded or demo humans appear in the town. NPC contacts stay explicitly
   labelled as NPCs.
 - **Every account has an address.** The first login assigns a Home Row unit

@@ -43,6 +43,7 @@ Config Config::fromEnv() {
   c.contentDir = env("CONTENT_DIR", c.contentDir);
   c.sessionTtlSec = envInt("SESSION_TTL_SEC", c.sessionTtlSec);
   c.balanceCacheTtlSec = envInt("BALANCE_CACHE_TTL_SEC", c.balanceCacheTtlSec);
+  c.oauth = OAuthConfig::fromEnv();
   return c;
 }
 

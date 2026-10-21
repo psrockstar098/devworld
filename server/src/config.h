@@ -4,6 +4,7 @@
 #include <string>
 
 #include "clickhouse.h"
+#include "oauth.h"
 
 namespace dw {
 
@@ -22,6 +23,8 @@ struct Config {
   std::string contentDir = "../game-shell/content";
   int sessionTtlSec = 604800;
   int balanceCacheTtlSec = 15;
+
+  OAuthConfig oauth;
 
   static Config fromEnv();
 };
