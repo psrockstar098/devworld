@@ -15,6 +15,7 @@ import { PlayerError, PlayerStore, validatePlayerId } from "./players";
 import { PresenceStore } from "./presence";
 import { EventStore } from "./events";
 import { FriendStore } from "./friends";
+import { AuthError, AuthStore, validatePassword } from "./auth";
 import { SessionStore } from "./sessions";
 import { loadMissionCatalog, summarize, assessTestsFor, type MissionDef } from "./missions";
 import { levelFromTotal, progressionView } from "./progression";
@@ -91,6 +92,7 @@ export function createApp(deps: AppDeps): { fetch: (req: Request) => Promise<Res
   const presence = new PresenceStore(deps.cache);
   const events = new EventStore(deps.kv);
   const friends = new FriendStore(deps.kv);
+  const auth = new AuthStore(deps.kv);
   const balanceTtl = deps.balanceCacheTtlSec ?? 15;
 
   const json = (body: unknown, status = 200): Response =>
@@ -183,8 +185,30 @@ export function createApp(deps: AppDeps): { fetch: (req: Request) => Promise<Res
     const playerId = String(body.playerId ?? "");
     if (!playerId) throw new ApiError(400, "playerId is required");
     if (!(await players.get(playerId))) return err(404, "no such player");
+    const password = body.password;
+    if (typeof password !== "string" || password.length === 0) throw new ApiError(400, "password is required");
+    if (!(await auth.verify(playerId, password))) return err(401, "wrong password");
     const issued = await sessions.create(playerId);
     return json(issued);
+  }
+
+  async function handleRegister(req: Request): Promise<Response> {
+    const body = await readJson(req);
+    const id = String(body.id ?? "");
+    const handle = String(body.handle ?? "");
+    const displayName = body.displayName != null ? String(body.displayName) : undefined;
+    const password = validatePassword(body.password);
+    const existing = await players.get(id);
+    if (existing) {
+      if (await auth.hasPassword(id)) throw new AuthError(409, "already registered");
+      await auth.setPassword(id, password);
+      return json({ id: existing.id, handle: existing.handle, displayName: existing.displayName, createdAt: existing.createdAt }, 201);
+    }
+    const rec = await players.create({ id, handle, displayName });
+    await auth.setPassword(rec.id, password);
+    await deps.history.insertEvents([{ playerId: rec.id, event: "player.created", service: "game-server" }]);
+    await events.record({ type: "player.joined", title: `${rec.handle} joined the world`, actorId: rec.id });
+    return json({ id: rec.id, handle: rec.handle, displayName: rec.displayName, createdAt: rec.createdAt }, 201);
   }
 
   async function handleLogout(req: Request): Promise<Response> {
@@ -479,6 +503,7 @@ export function createApp(deps: AppDeps): { fetch: (req: Request) => Promise<Res
     }
 
     if (path === "/players" && method === "POST") return handleCreatePlayer(req);
+    if (path === "/auth/register" && method === "POST") return handleRegister(req);
     if (path === "/auth/login" && method === "POST") return handleLogin(req);
     if (path === "/auth/logout" && method === "POST") return handleLogout(req);
 
@@ -517,6 +542,7 @@ export function createApp(deps: AppDeps): { fetch: (req: Request) => Promise<Res
     } catch (e) {
       if (e instanceof ApiError) return err(e.status, e.message);
       if (e instanceof PlayerError) return err(e.status, e.message);
+      if (e instanceof AuthError) return err(e.status, e.message);
       if (e instanceof LedgerError) return err(e.status, e.message);
       if (e instanceof AssessUnavailableError) return err(e.status, e.message);
       return err(500, "internal error");

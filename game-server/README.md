@@ -37,14 +37,15 @@ cd game-server && docker compose up -d --build
 
 ## API
 
-Auth is `Authorization: Bearer <token>` from `POST /auth/login`.
+Auth is `Authorization: Bearer <token>` from `POST /auth/login`. Passwords are Argon2id hashes, stored separately from player records.
 
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/health` | Checks ClickHouse, Kvrocks and Redis; `503` if any is down. |
-| POST | `/players` | `{ id, handle, displayName? }` — creates the record + handle reservation. |
+| POST | `/players` | `{ id, handle, displayName? }` — creates the record + handle reservation, without login credentials. |
 | GET | `/players/:id` | Public subset (no flags/PII). |
-| POST | `/auth/login` | `{ playerId }` → `{ token, expiresInSec }` (Redis TTL). |
+| POST | `/auth/register` | `{ id, handle, displayName?, password }` — creates the account (or claims a passwordless one) with an 8–128 char password. |
+| POST | `/auth/login` | `{ playerId, password }` → `{ token, expiresInSec }` (Redis TTL). |
 | POST | `/auth/logout` | Invalidates the token. |
 | GET | `/me` · `/progression/me` | Profile + progression + balance. |
 | GET | `/missions` | Catalogue; **hidden tests carry no data**. |

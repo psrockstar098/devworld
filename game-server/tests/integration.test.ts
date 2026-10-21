@@ -102,10 +102,18 @@ d("full API flow against live stores", () => {
     });
     expect(created.status).toBe(201);
 
+    // Claim the passwordless account, then log in with the password.
+    const claimed = await call("/auth/register", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id, handle: `it_${run}`, password: "correct horse battery" }),
+    });
+    expect(claimed.status).toBe(201);
+
     const login = await call("/auth/login", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ playerId: id }),
+      body: JSON.stringify({ playerId: id, password: "correct horse battery" }),
     });
     const { token } = (await login.json()) as { token: string };
 

@@ -77,8 +77,8 @@ function harness(over: Partial<AppDeps> = {}) {
     call(path, { headers: token ? { authorization: `Bearer ${token}` } : {} });
 
   async function signUp(id = "player-1", handle = "starter") {
-    await post("/players", { id, handle });
-    const res = await post("/auth/login", { playerId: id });
+    await post("/auth/register", { id, handle, password: "correct horse battery" });
+    const res = await post("/auth/login", { playerId: id, password: "correct horse battery" });
     const { token } = (await res.json()) as { token: string };
     return token;
   }

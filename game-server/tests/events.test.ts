@@ -26,8 +26,8 @@ function harness(adminKey = "secret") {
     call(path, { headers: token ? { authorization: `Bearer ${token}` } : {} });
 
   async function signUp(id = "player-1", handle = "starter") {
-    await post("/players", { id, handle });
-    const res = await post("/auth/login", { playerId: id });
+    await post("/auth/register", { id, handle, password: "correct horse battery" });
+    const res = await post("/auth/login", { playerId: id, password: "correct horse battery" });
     const { token } = (await res.json()) as { token: string };
     return token;
   }
@@ -131,8 +131,8 @@ describe("world events", () => {
     const get = (path: string, token?: string) =>
       call(path, { headers: token ? { authorization: `Bearer ${token}` } : {} });
 
-    await post("/players", { id: "player-1", handle: "starter" });
-    const login = await post("/auth/login", { playerId: "player-1" });
+    await post("/auth/register", { id: "player-1", handle: "starter", password: "correct horse battery" });
+    const login = await post("/auth/login", { playerId: "player-1", password: "correct horse battery" });
     const { token } = (await login.json()) as { token: string };
     const submit = await post("/missions/m01/submit", { files: [{ path: "main.py", content: "print('Hello')" }] }, token);
     expect(submit.status).toBe(200);
