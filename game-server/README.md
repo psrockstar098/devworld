@@ -54,6 +54,8 @@ Auth is `Authorization: Bearer <token>` from `POST /auth/login`.
 | GET | `/stats/missions` | Attempts/passes per mission from `mv_mission_pass`. |
 | POST | `/presence/heartbeat` | `{ city, map? }` — reports the caller's location; entries expire after 120 s without a heartbeat. |
 | GET | `/presence/online` | Players online now, with handle, city, map and `lastSeenMs`. |
+| POST | `/events` | `x-admin-key`; records a world event `{ type, title, detail?, actorId?, city? }`. |
+| GET | `/events` | World event log, newest-first; `?type=` filter, `?limit=` (max 100). |
 
 ### Submission flow
 

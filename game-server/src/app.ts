@@ -13,6 +13,7 @@ import type { EventSink } from "./history";
 import type { KvStore } from "./kv";
 import { PlayerError, PlayerStore, validatePlayerId } from "./players";
 import { PresenceStore } from "./presence";
+import { EventStore } from "./events";
 import { SessionStore } from "./sessions";
 import { loadMissionCatalog, summarize, assessTestsFor, type MissionDef } from "./missions";
 import { levelFromTotal, progressionView } from "./progression";
@@ -87,6 +88,7 @@ export function createApp(deps: AppDeps): { fetch: (req: Request) => Promise<Res
   const players = new PlayerStore(deps.kv);
   const sessions = new SessionStore(deps.cache, deps.sessionTtlSec ?? 60 * 60 * 24 * 7);
   const presence = new PresenceStore(deps.cache);
+  const events = new EventStore(deps.kv);
   const balanceTtl = deps.balanceCacheTtlSec ?? 15;
 
   const json = (body: unknown, status = 200): Response =>
@@ -364,6 +366,40 @@ export function createApp(deps: AppDeps): { fetch: (req: Request) => Promise<Res
     return json({ players: listed });
   }
 
+  const EVENT_TYPE_RE = /^[A-Za-z0-9_.-]{1,64}$/;
+
+  async function handleRecordEvent(req: Request): Promise<Response> {
+    if (!deps.adminKey) return err(404, "not found");
+    if (req.headers.get("x-admin-key") !== deps.adminKey) return err(401, "unauthorized");
+    const body = await readJson(req);
+    const type = String(body.type ?? "");
+    const title = String(body.title ?? "");
+    const detail = body.detail != null ? String(body.detail) : "";
+    const actorId = body.actorId != null ? String(body.actorId) : null;
+    const city = body.city != null ? String(body.city) : null;
+    if (!EVENT_TYPE_RE.test(type)) throw new ApiError(400, "type must be 1-64 chars [A-Za-z0-9_.-]");
+    if (title.length < 1 || title.length > 200) throw new ApiError(400, "title must be 1-200 chars");
+    if (detail.length > 2000) throw new ApiError(400, "detail must be at most 2000 chars");
+    if (actorId !== null && actorId.length > 64) throw new ApiError(400, "actorId must be at most 64 chars");
+    if (city !== null && city.length > 64) throw new ApiError(400, "city must be at most 64 chars");
+    const event = await events.record({ type, title, detail, actorId, city });
+    return json(event, 201);
+  }
+
+  async function handleListEvents(req: Request): Promise<Response> {
+    await requirePlayer(req);
+    const url = new URL(req.url);
+    const type = url.searchParams.get("type") ?? undefined;
+    const limitRaw = url.searchParams.get("limit");
+    const limit = limitRaw != null ? Number(limitRaw) : undefined;
+    if (limit !== undefined && (!Number.isFinite(limit) || limit < 1)) throw new ApiError(400, "limit must be a positive number");
+    if (type !== undefined && !EVENT_TYPE_RE.test(type)) throw new ApiError(400, "type must be 1-64 chars [A-Za-z0-9_.-]");
+    const opts: { type?: string; limit?: number } = {};
+    if (type !== undefined) opts.type = type;
+    if (limit !== undefined) opts.limit = limit;
+    return json({ events: await events.list(opts) });
+  }
+
   async function route(req: Request): Promise<Response> {
     const url = new URL(req.url);
     const path = url.pathname;
@@ -394,6 +430,9 @@ export function createApp(deps: AppDeps): { fetch: (req: Request) => Promise<Res
 
     if (path === "/presence/heartbeat" && method === "POST") return handlePresenceHeartbeat(req);
     if (path === "/presence/online" && method === "GET") return handlePresenceOnline(req);
+
+    if (path === "/events" && method === "POST") return handleRecordEvent(req);
+    if (path === "/events" && method === "GET") return handleListEvents(req);
 
     return err(404, "not found");
   }
