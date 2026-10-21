@@ -1678,7 +1678,8 @@ DW.cloud = (() => {
     try {
       const r = await api('/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ username, password })
+        // Server contract (game-server/src/app.ts): login takes playerId, not username.
+        body: JSON.stringify({ playerId: username, password })
       });
       token = r.token;
       localStorage.setItem(LS_TOKEN, token);
@@ -1698,22 +1699,30 @@ DW.cloud = (() => {
   async function register(username, password, displayName) {
     const local = localAppearance();
     try {
+      // Server contract (game-server/src/app.ts + players.ts): register takes
+      // id/handle/password, and returns the player record — no token. The
+      // handle must be 3-24 chars of a-z, 0-9 or _, while the id allows
+      // hyphens too — so derive the handle by stripping anything the
+      // handle rule rejects (e.g. player-1 -> player1); the server's
+      // 400/409 still surfaces for names that cannot become a handle.
+      // Sign in right after to obtain the token.
       const r = await api('/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ username, password, displayName: displayName || '' })
+        body: JSON.stringify({
+          id: username,
+          handle: username.toLowerCase().replace(/[^a-z0-9_]/g, ''),
+          password,
+          ...(displayName ? { displayName } : {}),
+        })
       });
-      token = r.token;
-      localStorage.setItem(LS_TOKEN, token);
       state.error = '';
-      if (r.player) state.player = r.player;
-      try { await refresh(); } catch (e) {}
+      if (r && r.id) state.player = r;
+      const signed = await login(username, password);
       // A new account inherits the character the player just created here.
       if (local) {
         try { await saveAppearance(local, true); } catch (e) {}
       }
-      connectWs();
-      emit();
-      return r;
+      return signed;
     } catch (e) {
       state.error = e.message;
       emit();
