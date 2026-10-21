@@ -252,6 +252,9 @@ is no longer the production API.
 - `docs/design/09-progression-engine.md` — the separate progression records, the
   unlock catalog and prerequisite engine, the meaningful-only XP rules, careers
   and respecialization
+- `docs/design/10-lifestyle-work-reputation.md` — freedom to rest, meaningful life
+  events, emergent friendships, evidence-based reputation & trust, and realistic
+  commuting & work choices
 - `infra/README.md` — the data tier: how to run ClickHouse, Kvrocks (RocksDB) and
   Redis, the ClickHouse schema, and the smoke tests
 - `server/README.md` — the C++ platform API: routes, auth, stores, tests and
