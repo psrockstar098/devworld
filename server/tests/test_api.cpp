@@ -1,5 +1,8 @@
 #include "doctest.h"
 
+#include <chrono>
+#include <thread>
+
 #include "api.h"
 #include "clickhouse.h"
 #include "json.h"
@@ -383,4 +386,70 @@ TEST_CASE("login with a bare player id is rejected") {
       "POST", "/auth/login",
       "{\"username\":\"alice\",\"password\":\"password123\"}"));
   CHECK(ok.status == 200);
+}
+
+TEST_CASE("auth endpoints are rate limited per ip and per account") {
+  Fixture f;
+  f.cfg.authRateLimitWindowSec = 60;
+  f.cfg.authRateLimitMaxPerIp = 3;
+  f.cfg.authRateLimitMaxPerAccount = 2;
+  Api api(&f.history, &f.kv, &f.cache, &f.players, &f.sessions, &f.missions,
+          nullptr, f.cfg);
+
+  auto authed = [&](const std::string& path, const std::string& body,
+                    const std::string& peer) {
+    HttpRequest r = req("POST", path, body);
+    r.peer = peer;
+    return api.handle(r);
+  };
+
+  // Per-IP: three registrations from one IP pass, the fourth is limited.
+  for (int i = 0; i < 3; ++i) {
+    HttpResponse res = authed("/auth/register",
+        "{\"username\":\"user" + std::to_string(i) + "\",\"password\":\"password123\"}",
+        "1.2.3.4:1000");
+    CHECK(res.status == 201);
+  }
+  HttpResponse limited = authed("/auth/register",
+      "{\"username\":\"user9\",\"password\":\"password123\"}", "1.2.3.4:1000");
+  CHECK(limited.status == 429);
+  CHECK(limited.headers.count("retry-after") == 1);
+
+  // A different IP is unaffected.
+  HttpResponse other = authed("/auth/register",
+      "{\"username\":\"u10\",\"password\":\"password123\"}", "5.6.7.8:2000");
+  CHECK(other.status == 201);
+
+  // Per-account: the register counts once, so one wrong login passes and the
+  // next is limited, even from a fresh IP.
+  HttpResponse reg = authed("/auth/register",
+      "{\"username\":\"victim\",\"password\":\"password123\"}", "5.6.7.9:2000");
+  REQUIRE(reg.status == 201);
+  HttpResponse first = authed("/auth/login",
+      "{\"username\":\"victim\",\"password\":\"wrong\"}", "9.9.9.9:3000");
+  CHECK(first.status == 401);
+  HttpResponse third = authed("/auth/login",
+      "{\"username\":\"victim\",\"password\":\"wrong\"}", "9.9.9.10:3000");
+  CHECK(third.status == 429);
+}
+
+TEST_CASE("auth rate limit window resets") {
+  Fixture f;
+  f.cfg.authRateLimitWindowSec = 1;
+  f.cfg.authRateLimitMaxPerIp = 1;
+  f.cfg.authRateLimitMaxPerAccount = 10;
+  Api api(&f.history, &f.kv, &f.cache, &f.players, &f.sessions, &f.missions,
+          nullptr, f.cfg);
+
+  auto reg = [&](const std::string& user) {
+    HttpRequest r = req("POST", "/auth/register",
+        "{\"username\":\"" + user + "\",\"password\":\"password123\"}");
+    r.peer = "7.7.7.7:1000";
+    return api.handle(r);
+  };
+
+  CHECK(reg("win0").status == 201);
+  CHECK(reg("win1").status == 429);
+  std::this_thread::sleep_for(std::chrono::milliseconds(1200));
+  CHECK(reg("win2").status == 201);
 }

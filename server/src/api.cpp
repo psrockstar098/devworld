@@ -154,7 +154,10 @@ Api::Api(History* history, KvStore* kv, KvStore* cache, PlayerStore* players,
          ApiConfig cfg)
     : history_(history), kv_(kv), cache_(cache), players_(players),
       sessions_(sessions), missions_(missions), assess_(assess),
-      cfg_(std::move(cfg)), oauth_(cfg_.oauth, cache, players, sessions),
+      cfg_(std::move(cfg)),
+      ipLimiter_(cfg_.authRateLimitWindowSec * 1000, cfg_.authRateLimitMaxPerIp),
+      accountLimiter_(cfg_.authRateLimitWindowSec * 1000, cfg_.authRateLimitMaxPerAccount),
+      oauth_(cfg_.oauth, cache, players, sessions),
       friends_(kv), presence_(cache), events_(kv) {}
 
 Api::~Api() = default;
@@ -307,10 +310,27 @@ HttpResponse Api::handleHealth() {
   return jsonRes(v, ok ? 200 : 503);
 }
 
+bool Api::authAllowed(const HttpRequest& req, const std::string& account,
+                      HttpResponse* limited) {
+  int retryAfter = 0;
+  std::string ip = clientIpFromPeer(req.peer);
+  if (ip.empty()) ip = "unknown";
+  if (!ipLimiter_.allow("ip:" + ip, &retryAfter) ||
+      (!account.empty() && !accountLimiter_.allow("account:" + account, &retryAfter))) {
+    *limited = HttpResponse::error(429, "too many attempts, try again later");
+    limited->headers["retry-after"] = std::to_string(retryAfter > 0 ? retryAfter : 1);
+    return false;
+  }
+  return true;
+}
+
 HttpResponse Api::handleRegister(const HttpRequest& req) {
   JVal body;
   HttpResponse bad;
   if (!readObject(req, &body, &bad)) return bad;
+
+  HttpResponse limited;
+  if (!authAllowed(req, body.s("username"), &limited)) return limited;
 
   std::string username = body.s("username");
   std::string password = body.s("password");
@@ -351,6 +371,9 @@ HttpResponse Api::handleLogin(const HttpRequest& req) {
   JVal body;
   HttpResponse bad;
   if (!readObject(req, &body, &bad)) return bad;
+
+  HttpResponse limited;
+  if (!authAllowed(req, body.s("username"), &limited)) return limited;
 
   std::string username = body.s("username");
   std::string password = body.s("password");

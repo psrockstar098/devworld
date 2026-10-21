@@ -16,6 +16,7 @@
 #include "oauth.h"
 #include "players.h"
 #include "presence.h"
+#include "ratelimit.h"
 #include "sessions.h"
 #include "ws.h"
 
@@ -26,6 +27,10 @@ struct ApiConfig {
   int sessionTtlSec = 604800;
   int balanceCacheTtlSec = 15;
   OAuthConfig oauth;
+  // Auth rate limiting: fixed windows shared by /auth/register and /auth/login.
+  int authRateLimitWindowSec = 60;
+  int authRateLimitMaxPerIp = 30;
+  int authRateLimitMaxPerAccount = 10;
 };
 
 class Api {
@@ -53,6 +58,9 @@ class Api {
   HttpResponse handleHealth();
   HttpResponse handleRegister(const HttpRequest& req);
   HttpResponse handleLogin(const HttpRequest& req);
+  // False when the auth attempt is rate limited; limited holds the 429.
+  bool authAllowed(const HttpRequest& req, const std::string& account,
+                   HttpResponse* limited);
   HttpResponse handleLogout(const HttpRequest& req);
   HttpResponse handleOAuthProviders();
   HttpResponse handleOAuthStart(const HttpRequest& req, const std::string& provider);
@@ -96,6 +104,8 @@ class Api {
   MissionCatalog* missions_;
   AssessClient* assess_;
   ApiConfig cfg_;
+  RateLimiter ipLimiter_;
+  RateLimiter accountLimiter_;
   OAuthService oauth_;
   WsHub hub_;
   FriendStore friends_;

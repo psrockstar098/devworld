@@ -22,6 +22,7 @@ struct HttpRequest {
   std::map<std::string, std::string> headers;  // lower-case keys
   std::map<std::string, std::string> params;   // decoded query params
   std::string body;
+  std::string peer;  // "ip:port" of the TCP peer, empty when unknown (unit tests)
 
   std::string header(const std::string& name,
                      const std::string& fallback = "") const;
@@ -66,7 +67,7 @@ class HttpServer {
 
  private:
   void acceptLoop();
-  void serveConnection(Socket sock);
+  void serveConnection(Socket sock, std::string peer);
   void track(int fd);
   void untrack(int fd);
 

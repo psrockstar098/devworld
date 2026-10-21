@@ -333,13 +333,13 @@ void HttpServer::acceptLoop() {
       continue;
     }
     client.setTimeouts(30000, 30000);
-    workers_.emplace_back([this, c = std::move(client)]() mutable {
-      serveConnection(std::move(c));
+    workers_.emplace_back([this, c = std::move(client), peer]() mutable {
+      serveConnection(std::move(c), peer);
     });
   }
 }
 
-void HttpServer::serveConnection(Socket sock) {
+void HttpServer::serveConnection(Socket sock, std::string peer) {
   track(sock.fd());
   struct Guard {
     HttpServer* server;
@@ -361,6 +361,7 @@ void HttpServer::serveConnection(Socket sock) {
       return;
     }
 
+    req.peer = peer;
     HttpResponse res;
     try {
       res = handler_ ? handler_(req) : HttpResponse::error(404, "not found");
