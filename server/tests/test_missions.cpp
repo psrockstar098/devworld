@@ -126,9 +126,13 @@ TEST_CASE("the shipped content loads") {
   }
   CHECK(cat.size() == 59);
   CHECK(cat.get("m01") != nullptr);
-  // Every shipped mission is still the default format (no content changed).
-  for (const auto& kv : cat.all())
-    CHECK(kv.second.format == "write-from-spec");
+  // Every shipped mission uses a known Stage-4 format. m57-m59 are the
+  // first missions that are not the default (predict, complete, debug).
+  for (const auto& kv : cat.all()) {
+    const auto& formats = missionFormats();
+    CHECK(std::find(formats.begin(), formats.end(), kv.second.format) !=
+          formats.end());
+  }
   // Every referenced prerequisite exists.
   for (const auto& kv : cat.all()) {
     for (const auto& r : kv.second.requires) CHECK(cat.get(r) != nullptr);

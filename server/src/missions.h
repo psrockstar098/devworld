@@ -22,7 +22,8 @@ struct MissionDef {
   std::string title;
   std::string language = "python";
   // One of missionFormats() (Stage 4, doc 08 §4.2). Absent in content means
-  // "write-from-spec" — the format every shipped mission uses today.
+  // "write-from-spec" — the default format; m57-m59 use predict, complete,
+  // and debug. See missionFormats() for the full Stage-4 list.
   std::string format = "write-from-spec";
   std::string file;  // IDE path, e.g. missions/m01_first_boot.py
   int level = 1;
