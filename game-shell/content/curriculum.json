@@ -20,7 +20,8 @@
     { "id": "game", "title": "Game Development", "summary": "Worlds that respond: movement, collision, and the scores that keep players playing." },
     { "id": "embedded", "title": "Embedded Systems", "summary": "Small machines, tight resources: bits, bytes, and signals you can trust." },
     { "id": "cloud", "title": "Cloud & DevOps", "summary": "Services that stay up: config, scaling, and health." },
-    { "id": "compilers", "title": "Compilers", "summary": "From text to meaning: tokens, structure, and values." }
+    { "id": "compilers", "title": "Compilers", "summary": "From text to meaning: tokens, structure, and values." },
+    { "id": "os", "title": "OS & Distributed Systems", "summary": "Many things at once, safely: scheduling, locks, and agreement." }
   ],
   "topics": [
     {
@@ -1047,6 +1048,63 @@
         }
       ],
       "missions": ["m44"],
+      "projects": []
+    },
+    {
+      "id": "os.scheduling",
+      "area": "os",
+      "title": "Scheduling",
+      "summary": "Order work by shortest burst first.",
+      "difficulty": 3,
+      "prerequisites": ["data.sorting_selection", "variables.numeric_math"],
+      "objectives": ["Sort jobs by burst time", "Break ties by input order"],
+      "misconceptions": [
+        {
+          "id": "os.scheduling.mc1",
+          "text": "Run jobs in the order they arrive.",
+          "remedy": "Arrival order is fair but slow: shortest-job-first finishes more work sooner, and ties still keep arrival order.",
+          "probes": ["m45"]
+        }
+      ],
+      "missions": ["m45"],
+      "projects": []
+    },
+    {
+      "id": "os.mutex",
+      "area": "os",
+      "title": "Mutual Exclusion",
+      "summary": "One lock, one holder, and rules for every event.",
+      "difficulty": 4,
+      "prerequisites": ["os.scheduling", "control_flow.conditionals"],
+      "objectives": ["Track who holds a lock", "Answer every lock and unlock event by the rules"],
+      "misconceptions": [
+        {
+          "id": "os.mutex.mc1",
+          "text": "Unlocking always succeeds.",
+          "remedy": "Only the holder can unlock. Unlocking a free lock, or one someone else holds, is a conflict, not a release.",
+          "probes": ["m46"]
+        }
+      ],
+      "missions": ["m46"],
+      "projects": []
+    },
+    {
+      "id": "os.quorum",
+      "area": "os",
+      "title": "Quorum",
+      "summary": "Commit only on a strict majority.",
+      "difficulty": 4,
+      "prerequisites": ["os.mutex", "variables.numeric_math"],
+      "objectives": ["Count yes votes against the total", "Treat a tie as abort, never as commit"],
+      "misconceptions": [
+        {
+          "id": "os.quorum.mc1",
+          "text": "Half the votes are enough.",
+          "remedy": "Half is a tie, and two halves can disagree forever. A quorum is STRICTLY more than half, so only one side can ever hold it.",
+          "probes": ["m47"]
+        }
+      ],
+      "missions": ["m47"],
       "projects": []
     }
   ]

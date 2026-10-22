@@ -1551,6 +1551,117 @@
    ],
    "title": "Run the Expression",
    "xpReward": 750
+  },
+  {
+   "briefing": "Junie says the shortest job goes first. Your program reads jobs and their burst times, then prints the job names in shortest-job-first order.",
+   "creditReward": 160,
+   "file": "missions/m45_shortest_job_first.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m45",
+   "language": "python",
+   "level": 13,
+   "requires": [
+    "m44"
+   ],
+   "starter": "# Mission 45: Shortest Job First\n# Input: lines like 'A 5' (job name, burst time).\n# Print the job names, shortest burst first. Ties go to the job listed\n# earliest.\n",
+   "tests": [
+    {
+     "expected": "B\nA\nC",
+     "hidden": false,
+     "name": "shortest first",
+     "stdin": "A 5\nB 2\nC 8"
+    },
+    {
+     "expected": "Z\nX\nY",
+     "hidden": true,
+     "name": "ties keep input order",
+     "stdin": "X 3\nY 3\nZ 1"
+    },
+    {
+     "expected": "P",
+     "hidden": true,
+     "name": "a single job",
+     "stdin": "P 10"
+    }
+   ],
+   "title": "Shortest Job First",
+   "xpReward": 750
+  },
+  {
+   "briefing": "Junie hands you one lock and two processes. Your program replays lock and unlock events and answers each one: OK when the rules hold, CONFLICT when they break.",
+   "creditReward": 160,
+   "file": "missions/m46_one_lock_one_writer.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m46",
+   "language": "python",
+   "level": 13,
+   "requires": [
+    "m45"
+   ],
+   "starter": "# Mission 46: One Lock, One Writer\n# Input: lines like 'A lock' or 'B unlock'.\n# Rules: locking a free lock is OK and takes it; locking a held lock is\n# CONFLICT; unlocking the lock you hold is OK and frees it; unlocking a\n# lock you do not hold (or a free lock) is CONFLICT.\n# Print OK or CONFLICT for each line, in order.\n",
+   "tests": [
+    {
+     "expected": "OK\nCONFLICT\nOK\nOK",
+     "hidden": false,
+     "name": "takeover after release",
+     "stdin": "A lock\nB lock\nA unlock\nB lock"
+    },
+    {
+     "expected": "CONFLICT",
+     "hidden": true,
+     "name": "unlocking a free lock",
+     "stdin": "A unlock"
+    },
+    {
+     "expected": "OK\nOK\nCONFLICT",
+     "hidden": true,
+     "name": "double unlock",
+     "stdin": "A lock\nA unlock\nA unlock"
+    }
+   ],
+   "title": "One Lock, One Writer",
+   "xpReward": 750
+  },
+  {
+   "briefing": "Junie says a distributed decision needs a majority, not a tie. Your program counts yes votes and prints COMMIT only when they are strictly more than half the nodes.",
+   "creditReward": 170,
+   "file": "missions/m47_quorum_or_nothing.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m47",
+   "language": "python",
+   "level": 14,
+   "requires": [
+    "m46"
+   ],
+   "starter": "# Mission 47: Quorum or Nothing\n# Input: first line is the total number of nodes. The rest are lines\n# like 'A yes' or 'B no'.\n# Print COMMIT if yes votes are strictly more than half the nodes,\n# otherwise print ABORT. A tie is not a quorum.\n",
+   "tests": [
+    {
+     "expected": "COMMIT",
+     "hidden": false,
+     "name": "three of five commit",
+     "stdin": "5\nA yes\nB yes\nC no\nD yes\nE no"
+    },
+    {
+     "expected": "ABORT",
+     "hidden": true,
+     "name": "two of four is a tie, not a quorum",
+     "stdin": "4\nA yes\nB yes\nC no\nD no"
+    },
+    {
+     "expected": "ABORT",
+     "hidden": true,
+     "name": "nobody agrees",
+     "stdin": "3\nA no\nB no\nC no"
+    }
+   ],
+   "title": "Quorum or Nothing",
+   "xpReward": 800
   }
   ]
 }
