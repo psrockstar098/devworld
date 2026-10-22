@@ -1,0 +1,224 @@
+{
+  "languages": [
+    {
+      "id": "python",
+      "name": "Python",
+      "tier": "runs-now",
+      "blurb": "The all-rounder: services, data, automation and AI.",
+      "disciplines": [
+        "full_stack",
+        "data",
+        "ai_ml",
+        "general"
+      ]
+    },
+    {
+      "id": "javascript",
+      "name": "JavaScript",
+      "tier": "runs-now",
+      "blurb": "The web's language: interfaces, services and tools.",
+      "disciplines": [
+        "full_stack",
+        "general"
+      ]
+    },
+    {
+      "id": "typescript",
+      "name": "TypeScript",
+      "tier": "runs-now",
+      "blurb": "JavaScript with types: large apps that stay maintainable.",
+      "disciplines": [
+        "full_stack"
+      ]
+    },
+    {
+      "id": "sql",
+      "name": "SQL",
+      "tier": "runs-now",
+      "blurb": "Asking databases precise questions.",
+      "disciplines": [
+        "data"
+      ]
+    },
+    {
+      "id": "lua",
+      "name": "Lua",
+      "tier": "runs-now",
+      "blurb": "Small, fast, embeddable: games and tools.",
+      "disciplines": [
+        "game",
+        "general"
+      ]
+    },
+    {
+      "id": "ruby",
+      "name": "Ruby",
+      "tier": "runs-now",
+      "blurb": "Web apps with a focus on developer happiness.",
+      "disciplines": [
+        "full_stack"
+      ]
+    },
+    {
+      "id": "php",
+      "name": "PHP",
+      "tier": "runs-now",
+      "blurb": "The web's workhorse: server-rendered sites and APIs.",
+      "disciplines": [
+        "full_stack"
+      ]
+    },
+    {
+      "id": "r",
+      "name": "R",
+      "tier": "soon",
+      "blurb": "Statistics and data analysis.",
+      "disciplines": [
+        "data",
+        "ai_ml"
+      ]
+    },
+    {
+      "id": "c",
+      "name": "C",
+      "tier": "sandbox",
+      "blurb": "Close to the machine: systems, firmware and performance.",
+      "disciplines": [
+        "os_distributed",
+        "embedded",
+        "compilers",
+        "game"
+      ]
+    },
+    {
+      "id": "cpp",
+      "name": "C++",
+      "tier": "sandbox",
+      "blurb": "Systems and games where performance is the product.",
+      "disciplines": [
+        "game",
+        "os_distributed",
+        "embedded"
+      ]
+    },
+    {
+      "id": "csharp",
+      "name": "C#",
+      "tier": "sandbox",
+      "blurb": "Services, desktop and games on .NET.",
+      "disciplines": [
+        "full_stack",
+        "game"
+      ]
+    },
+    {
+      "id": "java",
+      "name": "Java",
+      "tier": "sandbox",
+      "blurb": "Services and Android apps at production scale.",
+      "disciplines": [
+        "full_stack",
+        "mobile_desktop"
+      ]
+    },
+    {
+      "id": "go",
+      "name": "Go",
+      "tier": "sandbox",
+      "blurb": "Services and infrastructure that stay simple under load.",
+      "disciplines": [
+        "cloud_devops",
+        "networking"
+      ]
+    },
+    {
+      "id": "rust",
+      "name": "Rust",
+      "tier": "sandbox",
+      "blurb": "Systems without garbage collection or data races.",
+      "disciplines": [
+        "os_distributed",
+        "embedded",
+        "cloud_devops"
+      ]
+    },
+    {
+      "id": "zig",
+      "name": "Zig",
+      "tier": "sandbox",
+      "blurb": "Systems programming with explicit control and no hidden costs.",
+      "disciplines": [
+        "os_distributed",
+        "embedded",
+        "compilers"
+      ]
+    },
+    {
+      "id": "kotlin",
+      "name": "Kotlin",
+      "tier": "sandbox",
+      "blurb": "Android apps and modern JVM services.",
+      "disciplines": [
+        "mobile_desktop",
+        "full_stack"
+      ]
+    },
+    {
+      "id": "swift",
+      "name": "Swift",
+      "tier": "sandbox",
+      "blurb": "iOS and macOS apps.",
+      "disciplines": [
+        "mobile_desktop"
+      ]
+    },
+    {
+      "id": "dart",
+      "name": "Dart",
+      "tier": "sandbox",
+      "blurb": "Cross-platform mobile apps with Flutter.",
+      "disciplines": [
+        "mobile_desktop"
+      ]
+    },
+    {
+      "id": "julia",
+      "name": "Julia",
+      "tier": "sandbox",
+      "blurb": "Fast numerical computing and data science.",
+      "disciplines": [
+        "ai_ml",
+        "data"
+      ]
+    },
+    {
+      "id": "scala",
+      "name": "Scala",
+      "tier": "sandbox",
+      "blurb": "Data pipelines and services on the JVM.",
+      "disciplines": [
+        "data",
+        "ai_ml"
+      ]
+    },
+    {
+      "id": "haskell",
+      "name": "Haskell",
+      "tier": "sandbox",
+      "blurb": "Pure functional programming, taught by the type system.",
+      "disciplines": [
+        "compilers",
+        "general"
+      ]
+    },
+    {
+      "id": "gdscript",
+      "name": "GDScript",
+      "tier": "editor-only",
+      "blurb": "Godot's game scripting language.",
+      "disciplines": [
+        "game"
+      ]
+    }
+  ]
+}

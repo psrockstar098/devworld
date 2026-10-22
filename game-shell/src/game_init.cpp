@@ -71,6 +71,7 @@ void Game::loadContent() {
   achievementCatalog_.load(parseJson(readFile("content/achievements.json")));
   careers_.load(parseJson(readFile("content/careers.json")));
   frameworks_.load(parseJson(readFile("content/frameworks.json")));
+  languages_.load(parseJson(readFile("content/languages.json")));
   loadShop(parseJson(readFile("content/shop.json")));
   dungeons_.load(parseJson(readFile("content/dungeons.json")));
   housing_.load(parseJson(readFile("content/housing.json")));

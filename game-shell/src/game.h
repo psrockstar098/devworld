@@ -28,6 +28,7 @@
 #include "achievements.h"
 #include "careers.h"
 #include "frameworks.h"
+#include "languages.h"
 #include "rewards.h"
 #include "critters.h"
 #include "json.h"
@@ -97,6 +98,7 @@ class Game {
   AchievementCatalog achievementCatalog_;    // achievement rules (design 09)
   Careers careers_;                          // career paths (design 09 §5.5)
   Frameworks frameworks_;                    // framework catalog (design 13 §6.2)
+  Languages languages_;                      // language catalog (design 13)
   std::string curMap_ = "town";
   Vec2 cam_{0, 0};
   float dayT_ = 0.72f;          // warm dusk at start (world spec vibe)

@@ -10,6 +10,7 @@
 #include "curriculum.h"
 #include "frameworks.h"
 #include "json.h"
+#include "languages.h"
 #include "progression.h"
 #include "regions.h"
 #include "unlocks.h"
@@ -911,6 +912,42 @@ TEST_CASE("the shipped framework catalog resolves its references") {
     for (const auto& s : f.skills) {
       INFO("skill " << s);
       CHECK(c.topic(s) != nullptr);
+    }
+  }
+}
+
+TEST_CASE("the shipped language catalog matches the IDE list") {
+  Frameworks fw;
+  fw.load(loadContent("frameworks.json"));
+  Languages ls;
+  ls.load(loadContent("languages.json"));
+  for (const auto& e : ls.validate()) INFO(e);
+  CHECK(ls.validate().empty());
+  CHECK(ls.all().size() >= 22);
+
+  std::ifstream langFile("../game-ide/classic/languages.json");
+  REQUIRE_MESSAGE(langFile, "missing ../game-ide/classic/languages.json");
+  std::stringstream langSs;
+  langSs << langFile.rdbuf();
+  std::map<std::string, std::string> runById;
+  for (const auto& l : parseJson(langSs.str()).arr)
+    runById[l.s("id")] = l.s("run");
+  // The IDE run field maps to the catalog tier; a drift fails here.
+  std::map<std::string, std::string> tierByRun = {
+      {"wasm", "runs-now"},
+      {"planned", "soon"},
+      {"server", "sandbox"},
+      {"highlight", "editor-only"},
+  };
+
+  for (const auto& d : ls.all()) {
+    INFO("language " << d.id);
+    auto it = runById.find(d.id);
+    REQUIRE(it != runById.end());
+    CHECK(d.tier == tierByRun[it->second]);
+    for (const auto& disc : d.disciplines) {
+      INFO("discipline " << disc);
+      CHECK(fw.disciplines().count(disc) == 1);
     }
   }
 }
