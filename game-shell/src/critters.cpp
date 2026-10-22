@@ -69,7 +69,7 @@ std::vector<Critter> spawnCritters(
   uint32_t rng = hashStr(mapId) * 31u + seed;
   // Scales with map size but stays sparse: ~1 critter per 40x40 tiles of
   // ground, capped so large cities do not turn into a petting zoo.
-  int count = (int)std::sqrtf((mapW / 32.0f) * (mapH / 32.0f) / 40.0f);
+  int count = (int)std::sqrt((mapW / 32.0f) * (mapH / 32.0f) / 40.0f);
   if (count < 3) count = 3;
   if (count > 10) count = 10;
 
@@ -109,7 +109,7 @@ void updateCritters(std::vector<Critter>& critters, float dt, float dayT,
       } else {
         c.pos.x += d.x / dist * step;
         c.pos.y += d.y / dist * step;
-        if (std::fabsf(d.x) > 0.5f * std::fabsf(d.y)) c.facingLeft = d.x < 0;
+        if (std::fabs(d.x) > 0.5f * std::fabs(d.y)) c.facingLeft = d.x < 0;
         c.phase += dt * (c.kind == "butterfly" ? 18.0f : 9.0f);
       }
       continue;
@@ -120,8 +120,8 @@ void updateCritters(std::vector<Critter>& critters, float dt, float dayT,
     for (int attempt = 0; attempt < 8; attempt++) {
       float ang = randRange(&c.rng, 0.0f, 6.2831853f);
       float rad = randRange(&c.rng, 24.0f, t.roamRadius);
-      float x = c.home.x + std::cosf(ang) * rad;
-      float y = c.home.y + std::sinf(ang) * rad;
+      float x = c.home.x + std::cos(ang) * rad;
+      float y = c.home.y + std::sin(ang) * rad;
       if (x < 16 || y < 16) continue;
       if (walkable && !walkable(x, y)) continue;
       c.target = {x, y};
