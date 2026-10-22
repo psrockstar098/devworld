@@ -768,6 +768,123 @@
    ],
    "title": "Ten Times Faster",
    "xpReward": 400
+  },
+  {
+   "briefing": "Junie says the town gate checks every visitor. Your program is the gate: only let clean usernames through.",
+   "creditReward": 90,
+   "file": "missions/m24_trust_no_input.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m24",
+   "language": "python",
+   "level": 6,
+   "requires": [
+    "m15"
+   ],
+   "starter": "# Mission 24: Trust No Input\n# Read a username from stdin.\n# Print OK if it is 3-16 characters of letters, digits or underscore.\n# Otherwise print REJECT.\n#\n# Hint: a name is clean when every character is allowed and the length fits.\n",
+   "tests": [
+    {
+     "expected": "OK",
+     "hidden": false,
+     "name": "clean name passes",
+     "stdin": "dev_99"
+    },
+    {
+     "expected": "REJECT",
+     "hidden": true,
+     "name": "too short is rejected",
+     "stdin": "a"
+    },
+    {
+     "expected": "REJECT",
+     "hidden": true,
+     "name": "spaces and punctuation are rejected",
+     "stdin": "bad name!"
+    },
+    {
+     "expected": "REJECT",
+     "hidden": true,
+     "name": "empty input is rejected",
+     "stdin": ""
+    }
+   ],
+   "title": "Trust No Input",
+   "xpReward": 400
+  },
+  {
+   "briefing": "Junie says a password written down is a password stolen. Your program stores only the hash: print the SHA-256 of the password it reads.",
+   "creditReward": 90,
+   "file": "missions/m25_hash_dont_store.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m25",
+   "language": "python",
+   "level": 6,
+   "requires": [
+    "m24"
+   ],
+   "starter": "# Mission 25: Hash, Don't Store\n# Read a password from stdin and print its SHA-256 hex digest.\n# Never print the password itself.\n#\n# Hint: hashlib.sha256(password.encode()).hexdigest()\n",
+   "tests": [
+    {
+     "expected": "f52fbd32b2b3b86ff88ef6c490628285f482af15ddcb29541f94bcf526a3f6c7",
+     "hidden": false,
+     "name": "hashes a password",
+     "stdin": "hunter2"
+    },
+    {
+     "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "hidden": true,
+     "name": "empty password has a hash too",
+     "stdin": ""
+    },
+    {
+     "expected": "4104d36f8da2c254349f85836793ebe029e0c957063a34c91c2e9203187b5631",
+     "hidden": true,
+     "name": "spaces are part of the password",
+     "stdin": "correct horse"
+    }
+   ],
+   "title": "Hash, Don't Store",
+   "xpReward": 400
+  },
+  {
+   "briefing": "Junie shows you a query built by gluing a username into SQL text. Your program does it the safe way: print the query with a placeholder, then the username as data.",
+   "creditReward": 100,
+   "file": "missions/m26_stop_the_injection.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m26",
+   "language": "python",
+   "level": 7,
+   "requires": [
+    "m25"
+   ],
+   "starter": "# Mission 26: Stop the Injection\n# Read a username from stdin.\n# Print exactly two lines:\n#   SELECT * FROM users WHERE name = ?\n#   <the username, unchanged>\n# The username is data, never part of the query text.\n",
+   "tests": [
+    {
+     "expected": "SELECT * FROM users WHERE name = ?\ndev",
+     "hidden": false,
+     "name": "plain name is a parameter",
+     "stdin": "dev"
+    },
+    {
+     "expected": "SELECT * FROM users WHERE name = ?\nx' OR '1'='1",
+     "hidden": true,
+     "name": "injection string stays data",
+     "stdin": "x' OR '1'='1"
+    },
+    {
+     "expected": "SELECT * FROM users WHERE name = ?\nada_lovelace",
+     "hidden": true,
+     "name": "underscores pass through",
+     "stdin": "ada_lovelace"
+    }
+   ],
+   "title": "Stop the Injection",
+   "xpReward": 450
   }
- ]
+  ]
 }

@@ -13,7 +13,8 @@
     { "id": "debugging", "title": "Debugging", "summary": "Finding out why it does not work." },
     { "id": "tooling", "title": "Tooling & Version Control", "summary": "The professional's workbench: shell and history." },
     { "id": "engineering", "title": "Software Engineering", "summary": "Building things that other people can live with." },
-    { "id": "systems", "title": "Systems & Performance", "summary": "How machines behave under load and at scale." }
+    { "id": "systems", "title": "Systems & Performance", "summary": "How machines behave under load and at scale." },
+    { "id": "security", "title": "Defensive Security", "summary": "Keeping software and its users safe: validate input, guard secrets, fail closed." }
   ],
   "topics": [
     {
@@ -641,6 +642,63 @@
         }
       ],
       "missions": ["m23"],
+      "projects": []
+    },
+    {
+      "id": "security.input_validation",
+      "area": "security",
+      "title": "Input Validation",
+      "summary": "Check every value at the boundary, before you trust it.",
+      "difficulty": 2,
+      "prerequisites": ["control_flow.conditionals", "variables.values_types"],
+      "objectives": ["Reject input that breaks the contract", "Check shape before you use a value"],
+      "misconceptions": [
+        {
+          "id": "security.input_validation.mc1",
+          "text": "If it runs, the input was fine.",
+          "remedy": "Valid code can still act on hostile input. Check every value at the boundary, before you trust it.",
+          "probes": ["m24"]
+        }
+      ],
+      "missions": ["m24"],
+      "projects": []
+    },
+    {
+      "id": "security.secrets_handling",
+      "area": "security",
+      "title": "Secrets Handling",
+      "summary": "Secrets live in the environment; only hashes live in storage.",
+      "difficulty": 3,
+      "prerequisites": ["security.input_validation", "tooling.command_line"],
+      "objectives": ["Store a hash, never a password", "Keep secrets out of code and logs"],
+      "misconceptions": [
+        {
+          "id": "security.secrets_handling.mc1",
+          "text": "A password in code is fine if the repo is private.",
+          "remedy": "Repos leak, logs leak, screenshots leak. Secrets live in the environment, and only hashes live in storage.",
+          "probes": ["m25"]
+        }
+      ],
+      "missions": ["m25"],
+      "projects": []
+    },
+    {
+      "id": "security.injection_defense",
+      "area": "security",
+      "title": "Injection Defense",
+      "summary": "Pass user input as data, never as code.",
+      "difficulty": 4,
+      "prerequisites": ["security.input_validation", "sql.select_where"],
+      "objectives": ["Pass user input as data, never as code", "Use placeholders for every query value"],
+      "misconceptions": [
+        {
+          "id": "security.injection_defense.mc1",
+          "text": "Escaping quotes makes a query safe.",
+          "remedy": "Escaping is a patch over a hole. Parameterize: the query and the data travel separately, so data can never become code.",
+          "probes": ["m26"]
+        }
+      ],
+      "missions": ["m26"],
       "projects": []
     }
   ]
