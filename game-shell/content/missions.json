@@ -885,6 +885,117 @@
    ],
    "title": "Stop the Injection",
    "xpReward": 450
+  },
+  {
+   "briefing": "Junie hands you four bytes off a real IPv4 header. Your program reads them and reports what they say: version, header size, total length.",
+   "creditReward": 100,
+   "file": "missions/m27_read_the_header.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m27",
+   "language": "python",
+   "level": 7,
+   "requires": [
+    "m26"
+   ],
+   "starter": "# Mission 27: Read the Header\n# Input: four hex bytes of an IPv4 header, separated by spaces.\n#   byte 0: version in the top 4 bits, header length in the bottom 4 bits\n#   byte 1: type of service (ignore it)\n#   bytes 2-3: total length, big-endian\n# Print: version {v}, header {ihl*4} bytes, total {total} bytes\n#\n# Hint: int('45', 16) is 69. The top 4 bits are b >> 4, the bottom 4 are b & 15.\n",
+   "tests": [
+    {
+     "expected": "version 4, header 20 bytes, total 60 bytes",
+     "hidden": false,
+     "name": "plain IPv4 header",
+     "stdin": "45 00 00 3c"
+    },
+    {
+     "expected": "version 4, header 60 bytes, total 256 bytes",
+     "hidden": true,
+     "name": "long header, longer packet",
+     "stdin": "4f 00 01 00"
+    },
+    {
+     "expected": "version 4, header 20 bytes, total 65535 bytes",
+     "hidden": true,
+     "name": "maximum total length",
+     "stdin": "45 00 ff ff"
+    }
+   ],
+   "title": "Read the Header",
+   "xpReward": 450
+  },
+  {
+   "briefing": "Junie shows you a routing table: several networks, one destination. Your program picks the next hop of the longest matching prefix, the way real routers do.",
+   "creditReward": 100,
+   "file": "missions/m28_longest_prefix_wins.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m28",
+   "language": "python",
+   "level": 7,
+   "requires": [
+    "m27"
+   ],
+   "starter": "# Mission 28: Longest Prefix Wins\n# Input: first line is a destination address. The rest are routes:\n#   <network>/<prefix-length> <next-hop>\n# Print the next hop of the route whose prefix matches the destination\n# with the longest prefix length. 0.0.0.0/0 matches everything.\n#\n# Hint: compare the first N bits of the destination and the network.\n",
+   "tests": [
+    {
+     "expected": "B",
+     "hidden": false,
+     "name": "more specific route wins",
+     "stdin": "10.1.2.3\n10.0.0.0/8 A\n10.1.0.0/16 B\n0.0.0.0/0 C"
+    },
+    {
+     "expected": "A",
+     "hidden": true,
+     "name": "falls back to the wider route",
+     "stdin": "10.2.0.1\n10.0.0.0/8 A\n10.1.0.0/16 B\n0.0.0.0/0 C"
+    },
+    {
+     "expected": "C",
+     "hidden": true,
+     "name": "default route catches the rest",
+     "stdin": "8.8.8.8\n10.0.0.0/8 A\n10.1.0.0/16 B\n0.0.0.0/0 C"
+    }
+   ],
+   "title": "Longest Prefix Wins",
+   "xpReward": 450
+  },
+  {
+   "briefing": "Junie says a packet too big for the wire must be split. Your program works out how many fragments a payload needs and how big the last one is.",
+   "creditReward": 110,
+   "file": "missions/m29_split_the_packet.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m29",
+   "language": "python",
+   "level": 8,
+   "requires": [
+    "m28"
+   ],
+   "starter": "# Mission 29: Split the Packet\n# Input: two integers, MTU and payload size.\n# Each fragment carries a 20-byte IP header, so it holds MTU-20 bytes of data.\n# Print: {n} fragments, last {last} bytes (or '1 fragment, ...' for a single fragment)\n#\n# Hint: fragments = payload rounded UP divided by the data per fragment.\n",
+   "tests": [
+    {
+     "expected": "3 fragments, last 1040 bytes",
+     "hidden": false,
+     "name": "big payload over Ethernet",
+     "stdin": "1500 4000"
+    },
+    {
+     "expected": "1 fragment, last 1480 bytes",
+     "hidden": true,
+     "name": "exactly one fragment",
+     "stdin": "1500 1480"
+    },
+    {
+     "expected": "3 fragments, last 240 bytes",
+     "hidden": true,
+     "name": "small wire, same math",
+     "stdin": "500 1200"
+    }
+   ],
+   "title": "Split the Packet",
+   "xpReward": 500
   }
   ]
 }

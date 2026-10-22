@@ -187,7 +187,7 @@ transfer evidence is meaningful.
 |---|---|
 | Knowledge graph loader + DAG algorithms | `game-shell/src/curriculum.{h,cpp}` |
 | Evidence + mastery model | `game-shell/src/mastery.{h,cpp}` |
-| The shipped graph (13 areas, 41 topics, mapped to `m01`–`m26`) | `game-shell/content/curriculum.json` |
+| The shipped graph (14 areas, 44 topics, mapped to `m01`–`m29`) | `game-shell/content/curriculum.json` |
 | Unit + content tests | `game-shell/tests/test_curriculum.cpp`, `test_mastery.cpp`, `test_content.cpp` |
 | In-game skill panel | `Game::skillsJson()` + the `skilltree` panel |
 | Failure coaching from authored misconceptions | `Game::completeMission` |

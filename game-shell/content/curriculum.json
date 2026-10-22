@@ -14,7 +14,8 @@
     { "id": "tooling", "title": "Tooling & Version Control", "summary": "The professional's workbench: shell and history." },
     { "id": "engineering", "title": "Software Engineering", "summary": "Building things that other people can live with." },
     { "id": "systems", "title": "Systems & Performance", "summary": "How machines behave under load and at scale." },
-    { "id": "security", "title": "Defensive Security", "summary": "Keeping software and its users safe: validate input, guard secrets, fail closed." }
+    { "id": "security", "title": "Defensive Security", "summary": "Keeping software and its users safe: validate input, guard secrets, fail closed." },
+    { "id": "networking", "title": "Networking & Telecom", "summary": "Moving data between machines: packets, routes, and the checks that catch corruption." }
   ],
   "topics": [
     {
@@ -699,6 +700,63 @@
         }
       ],
       "missions": ["m26"],
+      "projects": []
+    },
+    {
+      "id": "networking.packets",
+      "area": "networking",
+      "title": "Packets and Headers",
+      "summary": "Read the fields of a packet header: version, size, and where it is going.",
+      "difficulty": 3,
+      "prerequisites": ["foundations.stdin_reading", "variables.values_types"],
+      "objectives": ["Parse a header field by field", "Read a multi-byte value in big-endian order"],
+      "misconceptions": [
+        {
+          "id": "networking.packets.mc1",
+          "text": "A packet is just its payload.",
+          "remedy": "The header is the packet's envelope: without it, no machine knows where the data goes or how big it is.",
+          "probes": ["m27"]
+        }
+      ],
+      "missions": ["m27"],
+      "projects": []
+    },
+    {
+      "id": "networking.routing",
+      "area": "networking",
+      "title": "Routing",
+      "summary": "Send each packet toward the most specific route that matches it.",
+      "difficulty": 4,
+      "prerequisites": ["networking.packets", "control_flow.conditionals"],
+      "objectives": ["Match an address against a prefix", "Pick the longest matching prefix, not the first"],
+      "misconceptions": [
+        {
+          "id": "networking.routing.mc1",
+          "text": "The first matching route is the right one.",
+          "remedy": "Routers take the LONGEST match. A /16 beats a /8 for the same destination, and the default route only catches what nothing else claims.",
+          "probes": ["m28"]
+        }
+      ],
+      "missions": ["m28"],
+      "projects": []
+    },
+    {
+      "id": "networking.reliability",
+      "area": "networking",
+      "title": "Fragmentation",
+      "summary": "Split data that is too big for the wire, and account for every byte.",
+      "difficulty": 4,
+      "prerequisites": ["networking.routing", "variables.numeric_math"],
+      "objectives": ["Account for header overhead in every fragment", "Round up: a partial fragment is still a fragment"],
+      "misconceptions": [
+        {
+          "id": "networking.reliability.mc1",
+          "text": "A 1500-byte wire carries 1500 bytes of data.",
+          "remedy": "Every fragment pays for its own header. The data per fragment is MTU minus the header, and the last fragment holds only what is left.",
+          "probes": ["m29"]
+        }
+      ],
+      "missions": ["m29"],
       "projects": []
     }
   ]

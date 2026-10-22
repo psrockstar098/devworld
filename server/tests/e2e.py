@@ -137,7 +137,7 @@ def main():
     ok += 1
 
     st, missions = call("GET", "/missions")
-    assert st == 200 and len(missions["missions"]) == 26
+    assert st == 200 and len(missions["missions"]) == 29
     hidden = [t for m in missions["missions"] for t in m["tests"] if t["hidden"]]
     assert hidden and all("expected" not in t for t in hidden)
     print("missions: %d, hidden tests leak nothing" % len(missions["missions"]))
