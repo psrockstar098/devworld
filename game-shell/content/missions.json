@@ -1884,6 +1884,117 @@
    ],
    "title": "Breakpoints",
    "xpReward": 900
+  },
+  {
+   "briefing": "Junie says two sounds at once are one sum, but never louder than the wire allows. Your program mixes two sample lines and clamps every result to -100..100.",
+   "creditReward": 190,
+   "file": "missions/m54_mix_the_samples.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m54",
+   "language": "python",
+   "level": 16,
+   "requires": [
+    "m53"
+   ],
+   "starter": "# Mission 54: Mix the Samples\n# Input: two lines of samples, same length, separated by spaces.\n# Add them pairwise. Clamp each sum into -100..100: above 100 becomes\n# 100, below -100 becomes -100. Print the mixed samples on one line.\n",
+   "tests": [
+    {
+     "expected": "15 25 35",
+     "hidden": false,
+     "name": "clean mix, no clipping",
+     "stdin": "10 20 30\n5 5 5"
+    },
+    {
+     "expected": "100 100",
+     "hidden": true,
+     "name": "loud mix clips high",
+     "stdin": "90 80\n30 40"
+    },
+    {
+     "expected": "-100 -100",
+     "hidden": true,
+     "name": "quiet mix clips low",
+     "stdin": "-90 -80\n-30 -40"
+    }
+   ],
+   "title": "Mix the Samples",
+   "xpReward": 900
+  },
+  {
+   "briefing": "Junie says every frame has a budget. Your program reads a frame rate and prints the milliseconds each frame may take, rounded down.",
+   "creditReward": 190,
+   "file": "missions/m55_frame_budget.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m55",
+   "language": "python",
+   "level": 16,
+   "requires": [
+    "m54"
+   ],
+   "starter": "# Mission 55: Frame Budget\n# Input: one integer, frames per second.\n# Print 1000 divided by it, rounded DOWN: the whole milliseconds each\n# frame gets. 60 fps gives 16, not 17.\n",
+   "tests": [
+    {
+     "expected": "16",
+     "hidden": false,
+     "name": "sixty frames",
+     "stdin": "60"
+    },
+    {
+     "expected": "33",
+     "hidden": true,
+     "name": "thirty frames",
+     "stdin": "30"
+    },
+    {
+     "expected": "8",
+     "hidden": true,
+     "name": "fast display",
+     "stdin": "120"
+    }
+   ],
+   "title": "Frame Budget",
+   "xpReward": 900
+  },
+  {
+   "briefing": "Junie layers one color over another. Your program blends a foreground and a background color by an opacity percent and prints the result.",
+   "creditReward": 200,
+   "file": "missions/m56_blend_the_colors.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m56",
+   "language": "python",
+   "level": 17,
+   "requires": [
+    "m55"
+   ],
+   "starter": "# Mission 56: Blend the Colors\n# Input: seven integers: foreground r g b, background r g b, opacity\n# percent (0-100). Each output channel is\n# (fg * opacity + bg * (100 - opacity)) / 100, rounded DOWN.\n# Print the three channels separated by spaces.\n",
+   "tests": [
+    {
+     "expected": "127 0 127",
+     "hidden": false,
+     "name": "half red over blue",
+     "stdin": "255 0 0 0 0 255 50"
+    },
+    {
+     "expected": "255 255 255",
+     "hidden": true,
+     "name": "full opacity hides the background",
+     "stdin": "255 255 255 0 0 0 100"
+    },
+    {
+     "expected": "62 75 87",
+     "hidden": true,
+     "name": "quarter opacity blend",
+     "stdin": "100 150 200 50 50 50 25"
+    }
+   ],
+   "title": "Blend the Colors",
+   "xpReward": 950
   }
   ]
 }

@@ -23,7 +23,8 @@
     { "id": "compilers", "title": "Compilers", "summary": "From text to meaning: tokens, structure, and values." },
     { "id": "os", "title": "OS & Distributed Systems", "summary": "Many things at once, safely: scheduling, locks, and agreement." },
     { "id": "robotics", "title": "Robotics", "summary": "Machines that move, sense, and find their way." },
-    { "id": "mobile", "title": "Mobile & Desktop", "summary": "Screens of every size: layouts that fit, targets you can tap, and breakpoints that adapt." }
+    { "id": "mobile", "title": "Mobile & Desktop", "summary": "Screens of every size: layouts that fit, targets you can tap, and breakpoints that adapt." },
+    { "id": "media", "title": "Audio, Video & Graphics", "summary": "Sound, motion, and color: samples, frames, and blends." }
   ],
   "topics": [
     {
@@ -1221,6 +1222,63 @@
         }
       ],
       "missions": ["m53"],
+      "projects": []
+    },
+    {
+      "id": "media.mixing",
+      "area": "media",
+      "title": "Sample Mixing",
+      "summary": "Add sounds together, and clip what exceeds the range.",
+      "difficulty": 3,
+      "prerequisites": ["variables.numeric_math", "data.lists"],
+      "objectives": ["Add sample lines pairwise", "Clamp every sum into -100..100"],
+      "misconceptions": [
+        {
+          "id": "media.mixing.mc1",
+          "text": "Louder sums are fine; the wire handles them.",
+          "remedy": "A sum past the range is not louder, it is broken: clipping wraps or distorts. Clamp into range and the mix stays clean.",
+          "probes": ["m54"]
+        }
+      ],
+      "missions": ["m54"],
+      "projects": []
+    },
+    {
+      "id": "media.timing",
+      "area": "media",
+      "title": "Frame Budgets",
+      "summary": "Turn a frame rate into milliseconds per frame.",
+      "difficulty": 3,
+      "prerequisites": ["media.mixing", "variables.numeric_math"],
+      "objectives": ["Divide 1000 by the frame rate", "Round down: a frame gets whole milliseconds only"],
+      "misconceptions": [
+        {
+          "id": "media.timing.mc1",
+          "text": "Round the frame budget to nearest.",
+          "remedy": "A budget is a limit, not an estimate: 1000/60 is 16 whole milliseconds, and spending a 17th breaks the frame.",
+          "probes": ["m55"]
+        }
+      ],
+      "missions": ["m55"],
+      "projects": []
+    },
+    {
+      "id": "media.blending",
+      "area": "media",
+      "title": "Alpha Blending",
+      "summary": "Mix two colors by an opacity percent.",
+      "difficulty": 4,
+      "prerequisites": ["media.timing", "variables.numeric_math"],
+      "objectives": ["Weight foreground and background by opacity", "Round each channel down after blending"],
+      "misconceptions": [
+        {
+          "id": "media.blending.mc1",
+          "text": "Average the two colors and call it blended.",
+          "remedy": "A plain average is only 50% opacity. Real blending weights each color by the opacity: foreground times opacity plus background times the rest.",
+          "probes": ["m56"]
+        }
+      ],
+      "missions": ["m56"],
       "projects": []
     }
   ]
