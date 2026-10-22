@@ -76,6 +76,8 @@ class Api {
   HttpResponse handleGetPlayer(const std::string& id);
   HttpResponse handleMissions();
   HttpResponse handleMissionStats();
+  HttpResponse handleRecordEvidence(const HttpRequest& req);
+  HttpResponse handleSkillsMe(const HttpRequest& req);
   HttpResponse handleSubmit(const HttpRequest& req, const std::string& id);
   HttpResponse handleBalance(const HttpRequest& req);
   HttpResponse handleAdminLedger(const HttpRequest& req);

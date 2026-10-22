@@ -9,7 +9,9 @@
 #include "crypto.h"
 #include "json.h"
 #include "ledger.h"
+#include "mastery.h"
 #include "progression.h"
+#include "skills.h"
 #include "util.h"
 
 namespace dw {
@@ -259,6 +261,9 @@ HttpResponse Api::dispatch(const HttpRequest& req) {
       return handleMe(req);
     if (path == "/missions" && method == "GET") return handleMissions();
     if (path == "/stats/missions" && method == "GET") return handleMissionStats();
+    if (path == "/skills/evidence" && method == "POST")
+      return handleRecordEvidence(req);
+    if (path == "/skills/me" && method == "GET") return handleSkillsMe(req);
     if (path == "/ledger/balance" && method == "GET") return handleBalance(req);
     if (path == "/admin/ledger" && method == "POST") return handleAdminLedger(req);
     if (path == "/events" && method == "POST") return handleRecordEvent(req);
@@ -972,6 +977,55 @@ HttpResponse Api::handleListEvents(const HttpRequest& req) {
 }
 
 HttpResponse Api::handleMissions() { return jsonRes(missions_->listJson()); }
+
+// POST /skills/evidence — record one mastery observation for the caller.
+// The caller is always the authenticated player: a body playerId, if any,
+// is ignored. Score must be present and inside [0,1] — parseEvidence
+// clamps, and silently clamping a client bug into a perfect score would be
+// worse than rejecting it. /skills/trees waits on the curriculum catalog
+// (unlock-engine port): the tree needs the area/topic structure.
+HttpResponse Api::handleRecordEvidence(const HttpRequest& req) {
+  Auth a = requirePlayer(req);
+  if (!a.ok) return a.response;
+  JVal body;
+  HttpResponse errRes;
+  if (!readObject(req, &body, &errRes)) return errRes;
+  std::string skill = body.s("skill");
+  if (skill.empty()) return HttpResponse::error(400, "skill is required");
+  EvidenceKind kind = EvidenceKind::AutomatedTest;
+  if (!evidenceKindFromString(body.s("kind"), kind))
+    return HttpResponse::error(400, "unknown evidence kind: " + body.s("kind"));
+  if (body.at("score").type != JVal::NUM)
+    return HttpResponse::error(400, "score is required");
+  double score = body.n("score", 0);
+  if (score < 0 || score > 1)
+    return HttpResponse::error(400, "score must be between 0 and 1");
+  int64_t atMs = (int64_t)body.n("atMs", 0);
+  if (atMs <= 0) atMs = nowMs();
+  Evidence e = makeEvidence(a.playerId, skill, kind, score, atMs,
+                            body.s("source"), body.s("detail"));
+  std::vector<Evidence> updated;
+  bool duplicate = false;
+  std::string err;
+  if (!recordEvidence(kv_, e, &duplicate, &updated, &err))
+    return HttpResponse::error(503, "evidence store unavailable");
+  MasteryConfig cfg;
+  JVal v = skillMasteryJson(
+      summarizeSkill(skill, updated, cfg, nowMs()));
+  jset(v, "duplicate", jbool(duplicate));
+  return jsonRes(v, duplicate ? 200 : 201);
+}
+
+HttpResponse Api::handleSkillsMe(const HttpRequest& req) {
+  Auth a = requirePlayer(req);
+  if (!a.ok) return a.response;
+  std::vector<Evidence> all;
+  std::string err;
+  if (!loadEvidence(kv_, a.playerId, &all, &err))
+    return HttpResponse::error(503, "evidence store unavailable");
+  MasteryConfig cfg;
+  return jsonRes(skillsMeJson(a.playerId, all, cfg, nowMs()));
+}
 
 HttpResponse Api::handleMissionStats() {
   std::vector<MissionStat> stats;
