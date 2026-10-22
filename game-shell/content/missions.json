@@ -1440,6 +1440,117 @@
    ],
    "title": "Healthy or Not",
    "xpReward": 700
+  },
+  {
+   "briefing": "Junie says a compiler starts by reading. Your program splits an arithmetic expression into tokens: numbers become INT:n, symbols become OP:c, one token per line.",
+   "creditReward": 150,
+   "file": "missions/m42_split_the_tokens.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m42",
+   "language": "python",
+   "level": 12,
+   "requires": [
+    "m41"
+   ],
+   "starter": "# Mission 42: Split the Tokens\n# Input: one arithmetic expression, like '12 + 34 * 2'.\n# Print one token per line: a run of digits becomes 'INT:<digits>',\n# each other symbol becomes 'OP:<symbol>'. Ignore whitespace.\n",
+   "tests": [
+    {
+     "expected": "INT:12\nOP:+\nINT:34\nOP:*\nINT:2",
+     "hidden": false,
+     "name": "numbers and operators",
+     "stdin": "12 + 34 * 2"
+    },
+    {
+     "expected": "INT:7\nOP:-\nINT:3",
+     "hidden": true,
+     "name": "no spaces needed",
+     "stdin": "7-3"
+    },
+    {
+     "expected": "INT:100",
+     "hidden": true,
+     "name": "a lone number",
+     "stdin": "100"
+    }
+   ],
+   "title": "Split the Tokens",
+   "xpReward": 700
+  },
+  {
+   "briefing": "Junie says a parser's first job is balance. Your program reads a string of brackets and prints OK when every opener finds its closer in order, MISMATCH otherwise.",
+   "creditReward": 150,
+   "file": "missions/m43_check_the_brackets.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m43",
+   "language": "python",
+   "level": 12,
+   "requires": [
+    "m42"
+   ],
+   "starter": "# Mission 43: Check the Brackets\n# Input: a string of '(' and ')' characters.\n# Print OK if the brackets balance (every closer matches an opener, and\n# none closes before it opens). Otherwise print MISMATCH.\n# An empty string balances.\n",
+   "tests": [
+    {
+     "expected": "OK",
+     "hidden": false,
+     "name": "nested and balanced",
+     "stdin": "(()())"
+    },
+    {
+     "expected": "MISMATCH",
+     "hidden": true,
+     "name": "opener left hanging",
+     "stdin": "(()"
+    },
+    {
+     "expected": "MISMATCH",
+     "hidden": true,
+     "name": "closer before opener",
+     "stdin": ")("
+    }
+   ],
+   "title": "Check the Brackets",
+   "xpReward": 700
+  },
+  {
+   "briefing": "Junie says a calculator that gets precedence wrong is a liar. Your program evaluates an expression with + and *, doing multiplication before addition, and prints the result.",
+   "creditReward": 160,
+   "file": "missions/m44_run_the_expression.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m44",
+   "language": "python",
+   "level": 13,
+   "requires": [
+    "m43"
+   ],
+   "starter": "# Mission 44: Run the Expression\n# Input: one expression with integers, + and *, spaces optional.\n# Multiplication binds tighter than addition: 2 + 3 * 4 is 14, not 20.\n# Print the integer result.\n#\n# Hint: fold all the multiplications first, then add what is left.\n",
+   "tests": [
+    {
+     "expected": "14",
+     "hidden": false,
+     "name": "multiplication first",
+     "stdin": "2 + 3 * 4"
+    },
+    {
+     "expected": "25",
+     "hidden": true,
+     "name": "multiplication then addition",
+     "stdin": "10 * 2 + 5"
+    },
+    {
+     "expected": "24",
+     "hidden": true,
+     "name": "only multiplication",
+     "stdin": "2 * 3 * 4"
+    }
+   ],
+   "title": "Run the Expression",
+   "xpReward": 750
   }
   ]
 }

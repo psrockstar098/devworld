@@ -19,7 +19,8 @@
     { "id": "ai_ml", "title": "AI & Machine Learning", "summary": "Programs that learn from data: classify, predict, and prove it works." },
     { "id": "game", "title": "Game Development", "summary": "Worlds that respond: movement, collision, and the scores that keep players playing." },
     { "id": "embedded", "title": "Embedded Systems", "summary": "Small machines, tight resources: bits, bytes, and signals you can trust." },
-    { "id": "cloud", "title": "Cloud & DevOps", "summary": "Services that stay up: config, scaling, and health." }
+    { "id": "cloud", "title": "Cloud & DevOps", "summary": "Services that stay up: config, scaling, and health." },
+    { "id": "compilers", "title": "Compilers", "summary": "From text to meaning: tokens, structure, and values." }
   ],
   "topics": [
     {
@@ -989,6 +990,63 @@
         }
       ],
       "missions": ["m41"],
+      "projects": []
+    },
+    {
+      "id": "compilers.lexing",
+      "area": "compilers",
+      "title": "Lexing",
+      "summary": "Split source text into tokens.",
+      "difficulty": 3,
+      "prerequisites": ["foundations.stdin_reading", "control_flow.conditionals"],
+      "objectives": ["Group digit runs into number tokens", "Turn each symbol into its own token"],
+      "misconceptions": [
+        {
+          "id": "compilers.lexing.mc1",
+          "text": "Split the input on spaces.",
+          "remedy": "Spaces are not tokens and not every token has spaces around it. Read character by character: digits gather into numbers, symbols stand alone.",
+          "probes": ["m42"]
+        }
+      ],
+      "missions": ["m42"],
+      "projects": []
+    },
+    {
+      "id": "compilers.parsing",
+      "area": "compilers",
+      "title": "Parsing",
+      "summary": "Check that a token stream has valid structure.",
+      "difficulty": 4,
+      "prerequisites": ["compilers.lexing", "data.lists"],
+      "objectives": ["Track depth with a counter", "Reject a closer that arrives before its opener"],
+      "misconceptions": [
+        {
+          "id": "compilers.parsing.mc1",
+          "text": "Equal counts of openers and closers mean balance.",
+          "remedy": "Order matters as much as count: ')(' has equal counts and is still broken. A closer before its opener fails at once, whatever follows.",
+          "probes": ["m43"]
+        }
+      ],
+      "missions": ["m43"],
+      "projects": []
+    },
+    {
+      "id": "compilers.evaluation",
+      "area": "compilers",
+      "title": "Evaluation",
+      "summary": "Compute a value from tokens, respecting precedence.",
+      "difficulty": 4,
+      "prerequisites": ["compilers.parsing", "variables.numeric_math"],
+      "objectives": ["Fold multiplications before additions", "Evaluate a token stream left to right within each pass"],
+      "misconceptions": [
+        {
+          "id": "compilers.evaluation.mc1",
+          "text": "Evaluate strictly left to right.",
+          "remedy": "Left to right gives 20 for 2 + 3 * 4. Precedence is a rule, not a suggestion: multiplication folds first, then addition.",
+          "probes": ["m44"]
+        }
+      ],
+      "missions": ["m44"],
       "projects": []
     }
   ]
