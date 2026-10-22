@@ -1773,6 +1773,117 @@
    ],
    "title": "Shortest Path Home",
    "xpReward": 850
+  },
+  {
+   "briefing": "Junie says a row holds what fits, nothing more. Your program reads a screen width and a row of item widths, then prints how many items fit in the first row.",
+   "creditReward": 180,
+   "file": "missions/m51_fit_the_screen.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m51",
+   "language": "python",
+   "level": 15,
+   "requires": [
+    "m50"
+   ],
+   "starter": "# Mission 51: Fit the Screen\n# Input: first line is the screen width. Second line is item widths\n# separated by spaces. Pack items left to right; stop at the first item\n# that would overflow the screen. Print how many items fit.\n",
+   "tests": [
+    {
+     "expected": "3",
+     "hidden": false,
+     "name": "three fit, fourth overflows",
+     "stdin": "360\n100 120 80 150"
+    },
+    {
+     "expected": "3",
+     "hidden": true,
+     "name": "narrow screen, same rule",
+     "stdin": "320\n100 100 100 100"
+    },
+    {
+     "expected": "2",
+     "hidden": true,
+     "name": "wide screen, two fit",
+     "stdin": "500\n200 200 200"
+    }
+   ],
+   "title": "Fit the Screen",
+   "xpReward": 850
+  },
+  {
+   "briefing": "Junie says a finger is not a mouse: every tap target must be at least 48 by 48. Your program reads target sizes and prints OK if all pass, TOO SMALL if any fails.",
+   "creditReward": 180,
+   "file": "missions/m52_big_enough_to_tap.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m52",
+   "language": "python",
+   "level": 15,
+   "requires": [
+    "m51"
+   ],
+   "starter": "# Mission 52: Big Enough to Tap\n# Input: lines like 'width height', one target per line.\n# A target passes when BOTH sides are at least 48.\n# Print OK if every target passes, TOO SMALL otherwise.\n",
+   "tests": [
+    {
+     "expected": "TOO SMALL",
+     "hidden": false,
+     "name": "short target fails",
+     "stdin": "48 48\n64 32"
+    },
+    {
+     "expected": "OK",
+     "hidden": true,
+     "name": "all targets pass",
+     "stdin": "48 48\n56 56"
+    },
+    {
+     "expected": "TOO SMALL",
+     "hidden": true,
+     "name": "narrow target fails",
+     "stdin": "47 100"
+    }
+   ],
+   "title": "Big Enough to Tap",
+   "xpReward": 850
+  },
+  {
+   "briefing": "Junie says one layout cannot serve every screen. Your program reads a screen width and prints the column count: 1 below 600, 2 below 900, 3 otherwise.",
+   "creditReward": 190,
+   "file": "missions/m53_breakpoints.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m53",
+   "language": "python",
+   "level": 16,
+   "requires": [
+    "m52"
+   ],
+   "starter": "# Mission 53: Breakpoints\n# Input: one integer, the screen width.\n# Print 1 if the width is below 600, 2 if below 900, 3 otherwise.\n",
+   "tests": [
+    {
+     "expected": "1",
+     "hidden": false,
+     "name": "phone width",
+     "stdin": "360"
+    },
+    {
+     "expected": "2",
+     "hidden": true,
+     "name": "tablet width",
+     "stdin": "700"
+    },
+    {
+     "expected": "3",
+     "hidden": true,
+     "name": "desktop width",
+     "stdin": "1200"
+    }
+   ],
+   "title": "Breakpoints",
+   "xpReward": 900
   }
   ]
 }

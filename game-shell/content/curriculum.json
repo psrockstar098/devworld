@@ -22,7 +22,8 @@
     { "id": "cloud", "title": "Cloud & DevOps", "summary": "Services that stay up: config, scaling, and health." },
     { "id": "compilers", "title": "Compilers", "summary": "From text to meaning: tokens, structure, and values." },
     { "id": "os", "title": "OS & Distributed Systems", "summary": "Many things at once, safely: scheduling, locks, and agreement." },
-    { "id": "robotics", "title": "Robotics", "summary": "Machines that move, sense, and find their way." }
+    { "id": "robotics", "title": "Robotics", "summary": "Machines that move, sense, and find their way." },
+    { "id": "mobile", "title": "Mobile & Desktop", "summary": "Screens of every size: layouts that fit, targets you can tap, and breakpoints that adapt." }
   ],
   "topics": [
     {
@@ -1163,6 +1164,63 @@
         }
       ],
       "missions": ["m50"],
+      "projects": []
+    },
+    {
+      "id": "mobile.layout",
+      "area": "mobile",
+      "title": "Row Fitting",
+      "summary": "Pack a row until the next item would overflow.",
+      "difficulty": 2,
+      "prerequisites": ["foundations.stdin_reading", "variables.numeric_math"],
+      "objectives": ["Add widths greedily until the screen fills", "Stop at the first overflow, do not skip it"],
+      "misconceptions": [
+        {
+          "id": "mobile.layout.mc1",
+          "text": "Skip the overflowing item and keep packing.",
+          "remedy": "A row ends at the first overflow. Skipping ahead breaks the order the user reads in; the next row starts fresh.",
+          "probes": ["m51"]
+        }
+      ],
+      "missions": ["m51"],
+      "projects": []
+    },
+    {
+      "id": "mobile.touch",
+      "area": "mobile",
+      "title": "Touch Targets",
+      "summary": "Size every tappable thing for a finger, not a cursor.",
+      "difficulty": 3,
+      "prerequisites": ["mobile.layout", "control_flow.conditionals"],
+      "objectives": ["Check both sides against the 48 minimum", "Fail the whole screen on one small target"],
+      "misconceptions": [
+        {
+          "id": "mobile.touch.mc1",
+          "text": "One side at 48 is enough.",
+          "remedy": "A target is a rectangle: width AND height must reach 48. A 64-wide, 32-tall button is still too small to tap.",
+          "probes": ["m52"]
+        }
+      ],
+      "missions": ["m52"],
+      "projects": []
+    },
+    {
+      "id": "mobile.breakpoints",
+      "area": "mobile",
+      "title": "Breakpoints",
+      "summary": "Change the column count at screen-width thresholds.",
+      "difficulty": 3,
+      "prerequisites": ["mobile.touch", "control_flow.conditionals"],
+      "objectives": ["Map a width to a column count", "Apply the higher band at exactly a threshold"],
+      "misconceptions": [
+        {
+          "id": "mobile.breakpoints.mc1",
+          "text": "Breakpoints are suggestions the layout can ignore.",
+          "remedy": "A breakpoint is a rule: below 600 is one column, below 900 is two, otherwise three. Exactly at a threshold, the higher band already applies.",
+          "probes": ["m53"]
+        }
+      ],
+      "missions": ["m53"],
       "projects": []
     }
   ]
