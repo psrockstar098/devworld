@@ -1329,6 +1329,117 @@
    ],
    "title": "Debounce the Button",
    "xpReward": 650
+  },
+  {
+   "briefing": "Junie hands you a config file and a key to look up. Your program reads the key, then the KEY=VALUE lines, and prints the matching value.",
+   "creditReward": 140,
+   "file": "missions/m39_read_the_config.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m39",
+   "language": "python",
+   "level": 11,
+   "requires": [
+    "m38"
+   ],
+   "starter": "# Mission 39: Read the Config\n# Input: first line is the key to look up. The rest are lines like\n# 'PORT=8080'. Print the value for the key, or NOT FOUND if no line\n# has that key. A value may itself contain '='.\n",
+   "tests": [
+    {
+     "expected": "8080",
+     "hidden": false,
+     "name": "finds the port",
+     "stdin": "PORT\nHOST=localhost\nPORT=8080\nDEBUG=true"
+    },
+    {
+     "expected": "NOT FOUND",
+     "hidden": true,
+     "name": "missing key is honest",
+     "stdin": "MISSING\nHOST=localhost\nPORT=8080"
+    },
+    {
+     "expected": "true",
+     "hidden": true,
+     "name": "finds a boolean value",
+     "stdin": "DEBUG\nHOST=localhost\nPORT=8080\nDEBUG=true"
+    }
+   ],
+   "title": "Read the Config",
+   "xpReward": 650
+  },
+  {
+   "briefing": "Junie says traffic does not wait. Your program works out how many servers a load needs: divide, and always round up, because a fraction of a server serves nobody.",
+   "creditReward": 140,
+   "file": "missions/m40_scale_the_fleet.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m40",
+   "language": "python",
+   "level": 11,
+   "requires": [
+    "m39"
+   ],
+   "starter": "# Mission 40: Scale the Fleet\n# Input: two integers, requests per second and capacity per server.\n# Print the number of servers needed, rounding UP. Zero requests need\n# zero servers.\n",
+   "tests": [
+    {
+     "expected": "4",
+     "hidden": false,
+     "name": "exact division",
+     "stdin": "1000 250"
+    },
+    {
+     "expected": "5",
+     "hidden": true,
+     "name": "one extra request needs one more server",
+     "stdin": "1001 250"
+    },
+    {
+     "expected": "0",
+     "hidden": true,
+     "name": "no traffic, no servers",
+     "stdin": "0 250"
+    }
+   ],
+   "title": "Scale the Fleet",
+   "xpReward": 650
+  },
+  {
+   "briefing": "Junie watches three services blink. Your program reads their health lines and reports the whole system: HEALTHY if all are up, DOWN if none are, DEGRADED in between.",
+   "creditReward": 150,
+   "file": "missions/m41_healthy_or_not.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m41",
+   "language": "python",
+   "level": 12,
+   "requires": [
+    "m40"
+   ],
+   "starter": "# Mission 41: Healthy or Not\n# Input: lines like 'api:up' or 'db:down', one service per line.\n# Print HEALTHY if every service is up, DOWN if none is, and DEGRADED\n# for anything in between.\n",
+   "tests": [
+    {
+     "expected": "HEALTHY",
+     "hidden": false,
+     "name": "all services up",
+     "stdin": "api:up\ndb:up"
+    },
+    {
+     "expected": "DEGRADED",
+     "hidden": true,
+     "name": "one service down",
+     "stdin": "api:up\ndb:down"
+    },
+    {
+     "expected": "DOWN",
+     "hidden": true,
+     "name": "everything down",
+     "stdin": "api:down\ndb:down"
+    }
+   ],
+   "title": "Healthy or Not",
+   "xpReward": 700
   }
   ]
 }

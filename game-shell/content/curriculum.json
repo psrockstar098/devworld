@@ -18,7 +18,8 @@
     { "id": "networking", "title": "Networking & Telecom", "summary": "Moving data between machines: packets, routes, and the checks that catch corruption." },
     { "id": "ai_ml", "title": "AI & Machine Learning", "summary": "Programs that learn from data: classify, predict, and prove it works." },
     { "id": "game", "title": "Game Development", "summary": "Worlds that respond: movement, collision, and the scores that keep players playing." },
-    { "id": "embedded", "title": "Embedded Systems", "summary": "Small machines, tight resources: bits, bytes, and signals you can trust." }
+    { "id": "embedded", "title": "Embedded Systems", "summary": "Small machines, tight resources: bits, bytes, and signals you can trust." },
+    { "id": "cloud", "title": "Cloud & DevOps", "summary": "Services that stay up: config, scaling, and health." }
   ],
   "topics": [
     {
@@ -931,6 +932,63 @@
         }
       ],
       "missions": ["m38"],
+      "projects": []
+    },
+    {
+      "id": "cloud.config",
+      "area": "cloud",
+      "title": "Configuration",
+      "summary": "Read settings from KEY=VALUE lines, and say so when a key is missing.",
+      "difficulty": 2,
+      "prerequisites": ["foundations.stdin_reading", "data.mapping_keys"],
+      "objectives": ["Split a line on the first '='", "Report a missing key instead of guessing"],
+      "misconceptions": [
+        {
+          "id": "cloud.config.mc1",
+          "text": "Split on every '=' in the line.",
+          "remedy": "Values can contain '='. Split on the FIRST one only: the key is everything before it, the value everything after.",
+          "probes": ["m39"]
+        }
+      ],
+      "missions": ["m39"],
+      "projects": []
+    },
+    {
+      "id": "cloud.scaling",
+      "area": "cloud",
+      "title": "Scaling",
+      "summary": "Size a fleet by dividing load by capacity, rounding up.",
+      "difficulty": 3,
+      "prerequisites": ["cloud.config", "variables.numeric_math"],
+      "objectives": ["Divide load by per-server capacity", "Round up: a fraction of a server serves nobody"],
+      "misconceptions": [
+        {
+          "id": "cloud.scaling.mc1",
+          "text": "Round the server count down, or to nearest.",
+          "remedy": "Rounding down leaves requests unserved. Scaling always rounds UP: 1001 requests at 250 each need 5 servers, not 4.",
+          "probes": ["m40"]
+        }
+      ],
+      "missions": ["m40"],
+      "projects": []
+    },
+    {
+      "id": "cloud.health",
+      "area": "cloud",
+      "title": "Health Checks",
+      "summary": "Roll many service signals into one system verdict.",
+      "difficulty": 3,
+      "prerequisites": ["cloud.scaling", "control_flow.conditionals"],
+      "objectives": ["Count how many services are up", "Report HEALTHY, DEGRADED, or DOWN from the count"],
+      "misconceptions": [
+        {
+          "id": "cloud.health.mc1",
+          "text": "One healthy service means a healthy system.",
+          "remedy": "Health is all-or-nothing at the edges: all up is HEALTHY, none up is DOWN, and anything between is DEGRADED, not healthy.",
+          "probes": ["m41"]
+        }
+      ],
+      "missions": ["m41"],
       "projects": []
     }
   ]
