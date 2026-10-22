@@ -21,6 +21,9 @@ struct MissionDef {
   std::string id;
   std::string title;
   std::string language = "python";
+  // One of missionFormats() (Stage 4, doc 08 §4.2). Absent in content means
+  // "write-from-spec" — the format every shipped mission uses today.
+  std::string format = "write-from-spec";
   std::string file;  // IDE path, e.g. missions/m01_first_boot.py
   int level = 1;
   std::vector<std::string> requires;
@@ -29,6 +32,24 @@ struct MissionDef {
   bool gate = false;
   std::vector<MissionTest> tests;
 };
+
+// The 12 mission formats, in doc order. Content for the 11 non-default
+// formats comes with the authoring slice; the catalogue validates the
+// field today so bad content fails at load, not at play time.
+inline const std::vector<std::string>& missionFormats() {
+  static const std::vector<std::string> kFormats = {
+    "predict", "complete", "write-from-spec", "debug", "refactor",
+    "explain-failure", "optimize", "modify-unfamiliar", "design-first",
+    "incomplete-requirements", "review-peer", "transfer-skill",
+  };
+  return kFormats;
+}
+
+inline bool isValidMissionFormat(const std::string& f) {
+  for (const auto& x : missionFormats())
+    if (x == f) return true;
+  return false;
+}
 
 class MissionCatalog {
  public:

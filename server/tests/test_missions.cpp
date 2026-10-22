@@ -88,6 +88,35 @@ TEST_CASE("grading summary requires all public and hidden tests") {
   CHECK_FALSE(g2.results.arr[1].s("actual").size());
 }
 
+TEST_CASE("mission formats validate and default") {
+  MissionCatalog cat;
+  std::string err;
+  // All 12 formats load (ids are index-based: format names contain '-',
+  // which mission ids do not allow).
+  std::string json = "{\"missions\":[";
+  for (size_t i = 0; i < missionFormats().size(); i++) {
+    if (i) json += ",";
+    json += "{\"id\":\"f" + std::to_string(i) + "\",\"format\":\"" +
+            missionFormats()[i] +
+            "\",\"tests\":[{\"name\":\"t\",\"stdin\":\"\",\"expected\":\"z\",\"hidden\":false}]}";
+  }
+  json += "]}";
+  REQUIRE(cat.loadFromJson(parseJson(json), &err));
+  CHECK(cat.size() == 12);
+  CHECK(cat.get("f0")->format == "predict");
+  CHECK(cat.get("f2")->format == "write-from-spec");
+  CHECK(cat.get("f11")->format == "transfer-skill");
+  // An unknown format is rejected, naming the bad value.
+  JVal bad = parseJson(
+      R"({"missions":[{"id":"x","format":"teleport","tests":[{"name":"t","stdin":"","expected":"z","hidden":false}]}]})");
+  CHECK_FALSE(cat.loadFromJson(bad, &err));
+  CHECK(err.find("teleport") != std::string::npos);
+  // Absent format defaults to write-from-spec and shows in public JSON.
+  REQUIRE(cat.loadFromJson(parseJson(kContent), &err));
+  CHECK(cat.get("m01")->format == "write-from-spec");
+  CHECK(cat.publicJson(*cat.get("m01")).s("format") == "write-from-spec");
+}
+
 TEST_CASE("the shipped content loads") {
   MissionCatalog cat;
   std::string err;
@@ -97,6 +126,9 @@ TEST_CASE("the shipped content loads") {
   }
   CHECK(cat.size() == 23);
   CHECK(cat.get("m01") != nullptr);
+  // Every shipped mission is still the default format (no content changed).
+  for (const auto& kv : cat.all())
+    CHECK(kv.second.format == "write-from-spec");
   // Every referenced prerequisite exists.
   for (const auto& kv : cat.all()) {
     for (const auto& r : kv.second.requires) CHECK(cat.get(r) != nullptr);

@@ -42,6 +42,11 @@ bool MissionCatalog::loadFromJson(const JVal& j, std::string* err) {
     }
     m.title = raw.s("title", m.id);
     m.language = raw.s("language", "python");
+    m.format = raw.s("format", "write-from-spec");
+    if (!isValidMissionFormat(m.format)) {
+      if (err) *err = "mission " + m.id + " has unknown format: " + m.format;
+      return false;
+    }
     m.file = raw.s("file");
     m.level = raw.i("level", 1);
     m.xpReward = raw.i("xpReward", 0);
@@ -97,6 +102,7 @@ JVal MissionCatalog::publicJson(const MissionDef& m) const {
   jset(j, "id", jstr(m.id));
   jset(j, "title", jstr(m.title));
   jset(j, "language", jstr(m.language));
+  jset(j, "format", jstr(m.format));
   jset(j, "level", jnum(m.level));
   jset(j, "gate", jbool(m.gate));
   jset(j, "xpReward", jnum(m.xpReward));
