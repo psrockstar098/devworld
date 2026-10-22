@@ -12,6 +12,7 @@
 #include "friends.h"
 #include "http.h"
 #include "kv.h"
+#include "market.h"
 #include "missions.h"
 #include "oauth.h"
 #include "players.h"
@@ -37,7 +38,7 @@ class Api {
  public:
   Api(History* history, KvStore* kv, KvStore* cache, PlayerStore* players,
       SessionStore* sessions, MissionCatalog* missions, AssessClient* assess,
-      ApiConfig cfg);
+      ApiConfig cfg, const MarketCatalog* markets = nullptr);
   ~Api();
 
   HttpResponse handle(const HttpRequest& req);
@@ -87,6 +88,10 @@ class Api {
   HttpResponse handleFriendRemove(const std::string& id, const HttpRequest& req);
   HttpResponse handleRecordEvent(const HttpRequest& req);
   HttpResponse handleListEvents(const HttpRequest& req);
+  HttpResponse handleMarketList(const HttpRequest& req);
+  HttpResponse handleMarketBuy(const HttpRequest& req);
+  HttpResponse handleMarketInventory(const HttpRequest& req);
+  HttpResponse handleMarketRestock(const HttpRequest& req);
 
   void ensureHome(PlayerRecord* rec);
   JVal friendView(const std::string& playerId);
@@ -111,6 +116,12 @@ class Api {
   FriendStore friends_;
   PresenceStore presence_;
   EventStore events_;
+  MarketStore markets_;
+  const MarketCatalog* marketCatalog_;
+  // Serializes market buys and restocks: demand, inventory and the ledger
+  // move together per process, so two concurrent buys cannot both pay the
+  // pre-purchase price for the same demand level.
+  std::mutex marketMu_;
   // Recent world chat, kept in memory so a fresh connection sees context.
   // Every message is also written to the history store.
   std::mutex chatMu_;

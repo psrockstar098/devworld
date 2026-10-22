@@ -151,14 +151,15 @@ std::string safeBrand(const std::string& brand) {
 
 Api::Api(History* history, KvStore* kv, KvStore* cache, PlayerStore* players,
          SessionStore* sessions, MissionCatalog* missions, AssessClient* assess,
-         ApiConfig cfg)
+         ApiConfig cfg, const MarketCatalog* markets)
     : history_(history), kv_(kv), cache_(cache), players_(players),
       sessions_(sessions), missions_(missions), assess_(assess),
       cfg_(std::move(cfg)),
       ipLimiter_(cfg_.authRateLimitWindowSec * 1000, cfg_.authRateLimitMaxPerIp),
       accountLimiter_(cfg_.authRateLimitWindowSec * 1000, cfg_.authRateLimitMaxPerAccount),
       oauth_(cfg_.oauth, cache, players, sessions),
-      friends_(kv), presence_(cache), events_(kv) {}
+      friends_(kv), presence_(cache), events_(kv), markets_(kv),
+      marketCatalog_(markets) {}
 
 Api::~Api() = default;
 
@@ -262,6 +263,10 @@ HttpResponse Api::dispatch(const HttpRequest& req) {
     if (path == "/admin/ledger" && method == "POST") return handleAdminLedger(req);
     if (path == "/events" && method == "POST") return handleRecordEvent(req);
     if (path == "/events" && method == "GET") return handleListEvents(req);
+    if (path == "/market" && method == "GET") return handleMarketList(req);
+    if (path == "/market/buy" && method == "POST") return handleMarketBuy(req);
+    if (path == "/market/inventory" && method == "GET") return handleMarketInventory(req);
+    if (path == "/market/restock" && method == "POST") return handleMarketRestock(req);
     if (path == "/me/appearance" && (method == "PUT" || method == "POST"))
       return handleUpdateAppearance(req);
     if (path == "/world/players" && method == "GET")
@@ -1428,6 +1433,181 @@ void Api::handleUpgrade(Socket& sock, const HttpRequest& req) {
     jset(ev, "playerId", jstr(pid));
     hub_.broadcast(dumpJson(ev));
   }
+}
+
+HttpResponse Api::handleMarketList(const HttpRequest& req) {
+  if (!marketCatalog_) return HttpResponse::error(404, "market not configured");
+  std::string regionId = req.param("region");
+  if (regionId.empty()) return HttpResponse::error(400, "region is required");
+  const MarketRegion* region = marketCatalog_->region(regionId);
+  if (!region) return HttpResponse::error(400, "unknown region");
+  std::string err;
+  JVal v = jobj();
+  JVal rj = jobj();
+  jset(rj, "id", jstr(region->id));
+  jset(rj, "name", jstr(region->name));
+  jset(rj, "livingCost", jnum((double)region->livingCost));
+  jset(rj, "marketBias", jnum((double)region->marketBias));
+  jset(v, "region", rj);
+  JVal goods = jarr();
+  for (const auto& [id, good] : marketCatalog_->goods()) {
+    int64_t demand = 0;
+    if (!markets_.demand(id, &demand, &err))
+      return HttpResponse::error(503, "market store unavailable");
+    JVal g = jobj();
+    jset(g, "id", jstr(good.id));
+    jset(g, "name", jstr(good.name));
+    jset(g, "category", jstr(good.category));
+    jset(g, "basePrice", jnum((double)good.basePrice));
+    jset(g, "price", jnum((double)MarketCatalog::priceFor(good, *region, demand)));
+    jset(g, "demand", jnum((double)demand));
+    jset(g, "discontinued", jbool(good.discontinued));
+    jset(g, "replacedBy", jstr(good.replacedBy));
+    goods.arr.push_back(g);
+  }
+  jset(v, "goods", goods);
+  return jsonRes(v);
+}
+
+HttpResponse Api::handleMarketBuy(const HttpRequest& req) {
+  Auth a = requirePlayer(req);
+  if (!a.ok) return a.response;
+  if (!marketCatalog_) return HttpResponse::error(404, "market not configured");
+  JVal body;
+  HttpResponse bad;
+  if (!readObject(req, &body, &bad)) return bad;
+  std::string goodId = body.s("goodId");
+  std::string regionId = body.s("region");
+  int64_t qty = (int64_t)body.n("quantity", 1);
+  if (goodId.empty()) return HttpResponse::error(400, "goodId is required");
+  if (regionId.empty()) return HttpResponse::error(400, "region is required");
+  if (qty < 1 || qty > 100) return HttpResponse::error(400, "quantity must be 1-100");
+  const MarketGood* good = marketCatalog_->good(goodId);
+  if (!good) return HttpResponse::error(404, "no such good");
+  const MarketRegion* region = marketCatalog_->region(regionId);
+  if (!region) return HttpResponse::error(400, "unknown region");
+  if (good->discontinued) {
+    std::string msg = "discontinued";
+    if (!good->replacedBy.empty()) msg += ", replaced by " + good->replacedBy;
+    return HttpResponse::error(400, msg);
+  }
+
+  // One buy is one atomic step per process: price, payment, demand and
+  // inventory move under one lock. If the ledger write fails, the demand
+  // and inventory changes roll back so nobody is charged without goods and
+  // nobody gets goods without paying.
+  std::lock_guard<std::mutex> lock(marketMu_);
+  std::string err;
+  int64_t demand = 0;
+  if (!markets_.demand(goodId, &demand, &err))
+    return HttpResponse::error(503, "market store unavailable");
+  int64_t unit = MarketCatalog::priceFor(*good, *region, demand);
+  int64_t total = unit * qty;
+  int64_t balance = 0;
+  if (!balanceOf(a.playerId, &balance, &err))
+    return HttpResponse::error(503, "history store unavailable");
+  if (balance < total) return HttpResponse::error(400, "insufficient balance");
+  if (!markets_.addDemand(goodId, qty, &err) ||
+      !markets_.addInventory(a.playerId, goodId, qty, &err))
+    return HttpResponse::error(503, "market store unavailable");
+
+  std::string ref = "market:" + goodId + ":" + a.playerId + ":" + std::to_string(nowMs());
+  std::vector<LedgerEntry> entries = {
+      {ref, a.playerId, "wallet", -total, "credits", "buy " + goodId},
+      {ref, a.playerId, "system", total, "credits", "buy " + goodId},
+  };
+  if (!validateTransaction(entries, &err)) {
+    markets_.addDemand(goodId, -qty, &err);
+    markets_.addInventory(a.playerId, goodId, -qty, &err);
+    return HttpResponse::error(400, err);
+  }
+  std::vector<LedgerRow> rows;
+  for (const auto& e : entries)
+    rows.push_back({e.ref, e.playerId, e.account, e.amount, e.currency, e.memo});
+  if (!history_->insertLedger(rows, &err)) {
+    markets_.addDemand(goodId, -qty, &err);
+    markets_.addInventory(a.playerId, goodId, -qty, &err);
+    return HttpResponse::error(503, "ledger store unavailable");
+  }
+  cache_->del("balance:" + a.playerId + ":credits", &err);
+
+  PlayerRecord rec;
+  bool found = false;
+  std::string handle = a.playerId;
+  if (players_->get(a.playerId, &rec, &found, &err) && found) handle = rec.handle;
+  WorldEvent ev;
+  ev.type = "market.purchase";
+  ev.title = handle + " bought " + good->name;
+  ev.actorId = a.playerId;
+  ev.city = regionId;
+  events_.record(ev, nullptr, &err);
+
+  int64_t newBalance = 0;
+  if (!balanceOf(a.playerId, &newBalance, &err))
+    return HttpResponse::error(503, "history store unavailable");
+  JVal v = jobj();
+  jset(v, "goodId", jstr(goodId));
+  jset(v, "quantity", jnum((double)qty));
+  jset(v, "unitPrice", jnum((double)unit));
+  jset(v, "total", jnum((double)total));
+  jset(v, "balance", jnum((double)newBalance));
+  return jsonRes(v);
+}
+
+HttpResponse Api::handleMarketInventory(const HttpRequest& req) {
+  Auth a = requirePlayer(req);
+  if (!a.ok) return a.response;
+  if (!marketCatalog_) return HttpResponse::error(404, "market not configured");
+  std::string err;
+  std::vector<InventoryItem> items;
+  if (!markets_.inventory(a.playerId, &items, &err))
+    return HttpResponse::error(503, "market store unavailable");
+  JVal v = jobj();
+  JVal arr = jarr();
+  for (const auto& it : items) {
+    const MarketGood* good = marketCatalog_->good(it.goodId);
+    if (!good) continue;
+    JVal o = jobj();
+    jset(o, "goodId", jstr(it.goodId));
+    jset(o, "name", jstr(good->name));
+    jset(o, "qty", jnum((double)it.qty));
+    arr.arr.push_back(o);
+  }
+  jset(v, "items", arr);
+  return jsonRes(v);
+}
+
+HttpResponse Api::handleMarketRestock(const HttpRequest& req) {
+  if (cfg_.adminKey.empty()) return HttpResponse::error(404, "not found");
+  if (req.header("x-admin-key") != cfg_.adminKey)
+    return HttpResponse::error(401, "unauthorized");
+  if (!marketCatalog_) return HttpResponse::error(404, "market not configured");
+  JVal body;
+  HttpResponse bad;
+  if (!readObject(req, &body, &bad)) return bad;
+  std::string goodId = body.s("goodId");
+  int64_t supply = (int64_t)body.n("supply", 0);
+  if (goodId.empty()) return HttpResponse::error(400, "goodId is required");
+  if (supply < 1) return HttpResponse::error(400, "supply must be at least 1");
+  const MarketGood* good = marketCatalog_->good(goodId);
+  if (!good) return HttpResponse::error(404, "no such good");
+  std::string err;
+  {
+    std::lock_guard<std::mutex> lock(marketMu_);
+    if (!markets_.addDemand(goodId, -supply, &err))
+      return HttpResponse::error(503, "market store unavailable");
+  }
+  WorldEvent ev;
+  ev.type = "market.restocked";
+  ev.title = "New supply of " + good->name;
+  events_.record(ev, nullptr, &err);
+  int64_t demand = 0;
+  if (!markets_.demand(goodId, &demand, &err))
+    return HttpResponse::error(503, "market store unavailable");
+  JVal v = jobj();
+  jset(v, "goodId", jstr(goodId));
+  jset(v, "demand", jnum((double)demand));
+  return jsonRes(v);
 }
 
 }  // namespace dw

@@ -14,6 +14,7 @@
 #include "config.h"
 #include "http.h"
 #include "kv.h"
+#include "market.h"
 #include "missions.h"
 #include "players.h"
 #include "sessions.h"
@@ -51,6 +52,13 @@ int main() {
     return 1;
   }
 
+  MarketCatalog markets;
+  std::string marketPath = cfg.contentDir + "/market.json";
+  if (!markets.loadFromFile(marketPath, &err)) {
+    std::fprintf(stderr, "content: %s\n", err.c_str());
+    return 1;
+  }
+
   AssessClient assess(cfg.workerUrl, cfg.workerApiKey);
   ApiConfig apiCfg;
   apiCfg.adminKey = cfg.adminKey;
@@ -59,7 +67,7 @@ int main() {
   apiCfg.oauth = cfg.oauth;
 
   Api api(&history, &kv, &cache, &players, &sessions, &missions,
-          assess.configured() ? &assess : nullptr, apiCfg);
+          assess.configured() ? &assess : nullptr, apiCfg, &markets);
 
   HttpServer server(
       cfg.host, cfg.port,

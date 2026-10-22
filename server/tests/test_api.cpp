@@ -453,3 +453,95 @@ TEST_CASE("auth rate limit window resets") {
   std::this_thread::sleep_for(std::chrono::milliseconds(1200));
   CHECK(reg("win2").status == 201);
 }
+
+TEST_CASE("market: list, buy, inventory, restock") {
+  Fixture f;
+  MarketCatalog catalog;
+  std::string err;
+  REQUIRE(catalog.loadFromJson(parseJson(R"({
+    "regions": [
+      {"id": "starter_town", "name": "Starter Town", "livingCost": 0, "marketBias": 0},
+      {"id": "startup_city", "name": "Startup City", "livingCost": 25, "marketBias": 20}
+    ],
+    "goods": [
+      {"id": "cable-kit", "name": "Cable Kit", "category": "component", "basePrice": 8},
+      {"id": "gpu-rtx", "name": "RTX GPU", "category": "component", "basePrice": 250},
+      {"id": "old-phone", "name": "Old Phone", "category": "equipment", "basePrice": 30, "status": "discontinued", "replacedBy": "new-phone"},
+      {"id": "new-phone", "name": "New Phone", "category": "equipment", "basePrice": 60}
+    ]
+  })"), &err));
+  Api api(&f.history, &f.kv, &f.cache, &f.players, &f.sessions, &f.missions,
+          nullptr, f.cfg, &catalog);
+
+  std::string token = issueToken(api, "buyer");
+  HttpResponse me = api.handle(req("GET", "/me", "", token));
+  REQUIRE(me.status == 200);
+  std::string pid = parseJson(me.body).s("id");
+
+  // Fund the buyer with 100 credits through the admin ledger.
+  HttpRequest fund = req(
+      "POST", "/admin/ledger",
+      "{\"entries\":["
+      "{\"ref\":\"fund-1\",\"playerId\":\"" + pid + "\",\"account\":\"system\",\"amount\":-100},"
+      "{\"ref\":\"fund-1\",\"playerId\":\"" + pid + "\",\"account\":\"wallet\",\"amount\":100}]}");
+  fund.headers["x-admin-key"] = "test_admin";
+  REQUIRE(api.handle(fund).status == 200);
+
+  auto marketPrice = [&](const std::string& goodId) {
+    HttpRequest r = req("GET", "/market", "", "");
+    r.params["region"] = "startup_city";
+    HttpResponse res = api.handle(r);
+    REQUIRE(res.status == 200);
+    JVal body = parseJson(res.body);
+    for (const auto& g : body.at("goods").arr) {
+      if (g.s("id") == goodId) return (int64_t)g.n("price", -1);
+    }
+    return (int64_t)-1;
+  };
+  auto buy = [&](const std::string& body) {
+    return api.handle(req("POST", "/market/buy", body, token));
+  };
+
+  // Startup City bias is +20%: cable-kit lists at 10, not its base 8.
+  CHECK(marketPrice("cable-kit") == 10);
+
+  HttpResponse b1 = buy("{\"goodId\":\"cable-kit\",\"region\":\"startup_city\"}");
+  REQUIRE(b1.status == 200);
+  CHECK(parseJson(b1.body).n("total", -1) == 10);
+  CHECK(parseJson(b1.body).n("balance", -1) == 90);
+  // Demand 1 lifts the price only to 10.08, still 10 rounded.
+  HttpResponse b2 = buy("{\"goodId\":\"cable-kit\",\"region\":\"startup_city\"}");
+  REQUIRE(b2.status == 200);
+  CHECK(parseJson(b2.body).n("total", -1) == 10);
+  CHECK(parseJson(b2.body).n("balance", -1) == 80);
+  // Demand 2 lifts it to 11.
+  HttpResponse b3 = buy("{\"goodId\":\"cable-kit\",\"region\":\"startup_city\"}");
+  REQUIRE(b3.status == 200);
+  CHECK(parseJson(b3.body).n("total", -1) == 11);
+  CHECK(parseJson(b3.body).n("balance", -1) == 69);
+  CHECK(marketPrice("cable-kit") == 11);
+
+  HttpResponse inv = api.handle(req("GET", "/market/inventory", "", token));
+  REQUIRE(inv.status == 200);
+  JVal items = parseJson(inv.body).at("items");
+  REQUIRE(items.arr.size() == 1);
+  CHECK(items.arr[0].s("goodId") == "cable-kit");
+  CHECK(items.arr[0].n("qty", -1) == 3);
+
+  // A 300-credit GPU is out of reach at balance 69.
+  CHECK(buy("{\"goodId\":\"gpu-rtx\",\"region\":\"startup_city\"}").status == 400);
+  // Discontinued goods cannot be bought, and bad regions/goods are rejected.
+  CHECK(buy("{\"goodId\":\"old-phone\",\"region\":\"startup_city\"}").status == 400);
+  CHECK(buy("{\"goodId\":\"cable-kit\",\"region\":\"nowhere\"}").status == 400);
+  CHECK(buy("{\"goodId\":\"nope\",\"region\":\"startup_city\"}").status == 404);
+
+  // Restock is admin-only and drops the price back.
+  HttpRequest restock = req("POST", "/market/restock",
+                            "{\"goodId\":\"cable-kit\",\"supply\":3}");
+  CHECK(api.handle(restock).status == 401);
+  restock.headers["x-admin-key"] = "test_admin";
+  HttpResponse restocked = api.handle(restock);
+  REQUIRE(restocked.status == 200);
+  CHECK(parseJson(restocked.body).n("demand", -1) == 0);
+  CHECK(marketPrice("cable-kit") == 10);
+}
