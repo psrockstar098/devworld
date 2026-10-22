@@ -54,6 +54,46 @@ const TEMPLATES = [
     },
     open: 'schema.sql',
   },
+  {
+    id: 'typescript-script',
+    name: 'TypeScript script',
+    desc: 'A single TypeScript program. Transpiled and run locally today.',
+    files: {
+      'main.ts': 'function greet(name: string): string {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet("DevWorld"));\nconsole.log(2 + 3);\n',
+      'README.md': '# TypeScript project\n\nRun `main.ts` with the Run button.\n',
+    },
+    open: 'main.ts',
+  },
+  {
+    id: 'lua-script',
+    name: 'Lua script',
+    desc: 'A single Lua program. Runs locally today.',
+    files: {
+      'main.lua': 'print("Hello, DevWorld!")\nprint(2 + 3)\n',
+      'README.md': '# Lua project\n\nRun `main.lua` with the Run button.\n',
+    },
+    open: 'main.lua',
+  },
+  {
+    id: 'ruby-script',
+    name: 'Ruby script',
+    desc: 'A single Ruby program. Runs locally today.',
+    files: {
+      'main.rb': 'puts "Hello, DevWorld!"\nputs 2 + 3\n',
+      'README.md': '# Ruby project\n\nRun `main.rb` with the Run button.\n',
+    },
+    open: 'main.rb',
+  },
+  {
+    id: 'php-script',
+    name: 'PHP script',
+    desc: 'A single PHP program. Runs locally today.',
+    files: {
+      'main.php': '<?php\necho "Hello, DevWorld!\\n";\necho (2 + 3) . "\\n";\n',
+      'README.md': '# PHP project\n\nRun `main.php` with the Run button.\n',
+    },
+    open: 'main.php',
+  },
 ];
 
 const TemplatesUI = {
