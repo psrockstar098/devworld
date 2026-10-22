@@ -1107,6 +1107,117 @@
    ],
    "title": "Count the Score",
    "xpReward": 550
+  },
+  {
+   "briefing": "Junie puts a sprite on a grid. Your program reads its start square and a list of moves, then prints where it ends up.",
+   "creditReward": 120,
+   "file": "missions/m33_move_the_sprite.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m33",
+   "language": "python",
+   "level": 9,
+   "requires": [
+    "m32"
+   ],
+   "starter": "# Mission 33: Move the Sprite\n# Input: first line is the start square 'x y'. The rest are moves,\n# one per line: U (y-1), D (y+1), L (x-1), R (x+1).\n# Print the final square as 'x y'.\n",
+   "tests": [
+    {
+     "expected": "4 2",
+     "hidden": false,
+     "name": "up then right twice",
+     "stdin": "2 3\nU\nR\nR"
+    },
+    {
+     "expected": "-1 2",
+     "hidden": true,
+     "name": "down twice, left once",
+     "stdin": "0 0\nD\nD\nL"
+    },
+    {
+     "expected": "5 5",
+     "hidden": true,
+     "name": "no moves, no movement",
+     "stdin": "5 5"
+    }
+   ],
+   "title": "Move the Sprite",
+   "xpReward": 550
+  },
+  {
+   "briefing": "Junie builds walls around the grid. Your program moves the sprite, but any step that would leave the grid is ignored: walls stop you, they do not break you.",
+   "creditReward": 120,
+   "file": "missions/m34_walls_stop_you.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m34",
+   "language": "python",
+   "level": 9,
+   "requires": [
+    "m33"
+   ],
+   "starter": "# Mission 34: Walls Stop You\n# Input: first line is the start square 'x y', second line is the grid\n# size 'W H', then moves (U, D, L, R), one per line.\n# A move that would leave the 0..W-1 by 0..H-1 grid is ignored.\n# Print the final square as 'x y'.\n",
+   "tests": [
+    {
+     "expected": "1 1",
+     "hidden": false,
+     "name": "walls eat the first two moves",
+     "stdin": "0 0\n3 3\nL\nU\nR\nD"
+    },
+    {
+     "expected": "2 2",
+     "hidden": true,
+     "name": "cornered sprite stays put",
+     "stdin": "2 2\n3 3\nR\nD\nR"
+    },
+    {
+     "expected": "0 0",
+     "hidden": true,
+     "name": "up twice, only one counts",
+     "stdin": "1 1\n5 5\nU\nU\nL"
+    }
+   ],
+   "title": "Walls Stop You",
+   "xpReward": 550
+  },
+  {
+   "briefing": "Junie says hits are worth more in a row. Your program scores a run of events: each hit pays 10 times the current combo, and a miss resets the combo to zero.",
+   "creditReward": 130,
+   "file": "missions/m35_score_the_combo.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m35",
+   "language": "python",
+   "level": 10,
+   "requires": [
+    "m34"
+   ],
+   "starter": "# Mission 35: Score the Combo\n# Input: lines saying 'hit' or 'miss', one event per line.\n# Score starts at 0 and the combo starts at 0.\n#   hit:  combo += 1, score += 10 * combo\n#   miss: combo = 0\n# Print the final score.\n",
+   "tests": [
+    {
+     "expected": "60",
+     "hidden": false,
+     "name": "three hits build the combo",
+     "stdin": "hit\nhit\nhit"
+    },
+    {
+     "expected": "20",
+     "hidden": true,
+     "name": "miss breaks the combo",
+     "stdin": "hit\nmiss\nhit"
+    },
+    {
+     "expected": "0",
+     "hidden": true,
+     "name": "all misses, no score",
+     "stdin": "miss\nmiss"
+    }
+   ],
+   "title": "Score the Combo",
+   "xpReward": 600
   }
   ]
 }

@@ -16,7 +16,8 @@
     { "id": "systems", "title": "Systems & Performance", "summary": "How machines behave under load and at scale." },
     { "id": "security", "title": "Defensive Security", "summary": "Keeping software and its users safe: validate input, guard secrets, fail closed." },
     { "id": "networking", "title": "Networking & Telecom", "summary": "Moving data between machines: packets, routes, and the checks that catch corruption." },
-    { "id": "ai_ml", "title": "AI & Machine Learning", "summary": "Programs that learn from data: classify, predict, and prove it works." }
+    { "id": "ai_ml", "title": "AI & Machine Learning", "summary": "Programs that learn from data: classify, predict, and prove it works." },
+    { "id": "game", "title": "Game Development", "summary": "Worlds that respond: movement, collision, and the scores that keep players playing." }
   ],
   "topics": [
     {
@@ -815,6 +816,63 @@
         }
       ],
       "missions": ["m32"],
+      "projects": []
+    },
+    {
+      "id": "game.movement",
+      "area": "game",
+      "title": "Grid Movement",
+      "summary": "Move a character on a grid, one step at a time.",
+      "difficulty": 2,
+      "prerequisites": ["foundations.stdin_reading", "variables.numeric_math"],
+      "objectives": ["Turn a direction into a coordinate change", "Track a position across many moves"],
+      "misconceptions": [
+        {
+          "id": "game.movement.mc1",
+          "text": "Up means adding to y.",
+          "remedy": "On a screen, y grows downward: up subtracts, down adds. Pick one convention and hold it for every move.",
+          "probes": ["m33"]
+        }
+      ],
+      "missions": ["m33"],
+      "projects": []
+    },
+    {
+      "id": "game.collision",
+      "area": "game",
+      "title": "Collision and Bounds",
+      "summary": "Stop movement that would leave the world.",
+      "difficulty": 3,
+      "prerequisites": ["game.movement", "control_flow.conditionals"],
+      "objectives": ["Test a move before applying it", "Ignore moves that leave the grid"],
+      "misconceptions": [
+        {
+          "id": "game.collision.mc1",
+          "text": "Clamp the position after moving.",
+          "remedy": "Clamping after the fact lets the sprite touch the wall first. Test the next square BEFORE you move, and skip the move if it is out of bounds.",
+          "probes": ["m34"]
+        }
+      ],
+      "missions": ["m34"],
+      "projects": []
+    },
+    {
+      "id": "game.scoring",
+      "area": "game",
+      "title": "Combo Scoring",
+      "summary": "Reward streaks, and reset them on a miss.",
+      "difficulty": 3,
+      "prerequisites": ["game.collision", "loops.accumulators"],
+      "objectives": ["Keep running state across events", "Reset a streak when the run breaks"],
+      "misconceptions": [
+        {
+          "id": "game.scoring.mc1",
+          "text": "Every hit is worth the same.",
+          "remedy": "A combo multiplies later hits: the third hit in a row pays triple the first. And a miss wipes the multiplier, not the score.",
+          "probes": ["m35"]
+        }
+      ],
+      "missions": ["m35"],
       "projects": []
     }
   ]

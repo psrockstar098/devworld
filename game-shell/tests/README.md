@@ -66,8 +66,8 @@ here before it is considered done.
   the game preloads only `content/`.
 
 Current totals: **176 test cases / 5,839 assertions** natively and in WASM,
-**32/32 missions** verified (m01-m32, including the Level 5 gate, the three
-dungeon challenges and six Tier-2 skill missions), and all 47 curriculum topics
+**35/35 missions** verified (m01-m35, including the Level 5 gate, the three
+dungeon challenges and six Tier-2 skill missions), and all 50 curriculum topics
 have at least one shipped mission.
 
 ## Adding a feature
