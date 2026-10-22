@@ -1,5 +1,7 @@
 #include "doctest.h"
 
+#include <algorithm>
+
 #include "missions.h"
 #include "util.h"
 
