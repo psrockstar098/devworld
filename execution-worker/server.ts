@@ -68,6 +68,9 @@ const app = createApp({
   runtimes,
   runner: new DockerCliRunner({
     submissionsDir: process.env.SUBMISSIONS_DIR ?? "/submissions",
+    // Podman is CLI-compatible for the flags the runner uses; set
+    // DOCKER_BIN=podman on hosts without Docker (verified 2026-10-22).
+    ...(process.env.DOCKER_BIN ? { dockerBin: process.env.DOCKER_BIN } : {}),
   }),
   quotaPerHour: numEnv("EXEC_QUOTA_PER_HOUR", 60),
   maxConcurrent: Math.floor(numEnv("EXEC_MAX_CONCURRENT", 4)),
