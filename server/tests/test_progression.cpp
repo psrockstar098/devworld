@@ -49,3 +49,32 @@ TEST_CASE("titles and progression view") {
   CHECK(v.i("xpIntoLevel") == 350);
   CHECK(v.i("xpForNextLevel") == 400);
 }
+
+TEST_CASE("mission gating over the completed set") {
+  MissionDef m1, m2, m3;
+  m1.id = "m01";
+  m2.id = "m02";
+  m2.requires = {"m01"};
+  m3.id = "m03";
+  m3.requires = {"m01", "m02"};
+  std::map<std::string, MissionDef> missions = {{"m01", m1}, {"m02", m2}, {"m03", m3}};
+
+  CHECK(requirementsMet(m1, {}));
+  CHECK_FALSE(requirementsMet(m2, {}));
+  CHECK(requirementsMet(m2, {"m01"}));
+  CHECK_FALSE(requirementsMet(m3, {"m01"}));
+
+  // Nothing completed: only the requirement-free mission is startable.
+  auto open0 = eligibleUnlocks(missions, {});
+  CHECK(open0.size() == 1);
+  CHECK(open0[0] == "m01");
+
+  // m01 done: m02 opens, m03 still gated on m02, m01 excluded.
+  auto open1 = eligibleUnlocks(missions, {"m01"});
+  CHECK(open1.size() == 1);
+  CHECK(open1[0] == "m02");
+
+  // Chain complete: nothing left to unlock.
+  auto openAll = eligibleUnlocks(missions, {"m01", "m02", "m03"});
+  CHECK(openAll.empty());
+}

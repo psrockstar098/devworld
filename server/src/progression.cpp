@@ -1,5 +1,7 @@
 #include "progression.h"
 
+#include <algorithm>
+
 namespace dw {
 
 int64_t xpForLevel(int level) {
@@ -53,6 +55,24 @@ JVal progressionView(int64_t totalXp) {
   jset(v, "xpForNextLevel", jnum((double)xpForLevel(s.level)));
   jset(v, "title", jstr(titleForLevel(s.level)));
   return v;
+}
+
+bool requirementsMet(const MissionDef& mission, const std::set<std::string>& completed) {
+  for (const auto& req : mission.requires)
+    if (!completed.count(req)) return false;
+  return true;
+}
+
+std::vector<std::string> eligibleUnlocks(const std::map<std::string, MissionDef>& missions,
+                                         const std::set<std::string>& completed) {
+  std::vector<std::string> out;
+  for (const auto& kv : missions) {
+    if (completed.count(kv.first)) continue;
+    if (!requirementsMet(kv.second, completed)) continue;
+    out.push_back(kv.first);
+  }
+  std::sort(out.begin(), out.end());
+  return out;
 }
 
 }  // namespace dw
