@@ -21,14 +21,14 @@ echo "== building native tests =="
   tests/test_unlocks.cpp \
   tests/test_achievements.cpp \
   tests/test_rewards.cpp \
-  tests/test_careers.cpp \
+  tests/test_careers.cpp tests/test_frameworks.cpp tests/test_languages.cpp \
   tests/test_content.cpp \
   src/progression.cpp src/world_model.cpp src/ambience.cpp src/critters.cpp \
   src/equipment.cpp src/profile.cpp src/settings.cpp \
   src/regions.cpp src/dungeons.cpp src/housing.cpp \
   src/social.cpp src/company.cpp src/portfolio.cpp \
   src/curriculum.cpp src/mastery.cpp src/capability.cpp src/unlocks.cpp \
-  src/achievements.cpp src/rewards.cpp src/careers.cpp \
+  src/achievements.cpp src/rewards.cpp src/careers.cpp src/frameworks.cpp src/languages.cpp \
   -o "$OUT/tests"
 
 echo "== running native tests =="
