@@ -996,6 +996,117 @@
    ],
    "title": "Split the Packet",
    "xpReward": 500
+  },
+  {
+   "briefing": "Junie shows you a scatter of labelled points and one mystery point. Your program finds the nearest labelled point and answers with its label: the simplest classifier there is.",
+   "creditReward": 110,
+   "file": "missions/m30_nearest_neighbor.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m30",
+   "language": "python",
+   "level": 8,
+   "requires": [
+    "m29"
+   ],
+   "starter": "# Mission 30: Nearest Neighbor\n# Input: training lines like '2 3 X' (x, y, label), then a final line\n# starting with '?' holding the point to classify, like '? 3 4'.\n# Print the label of the training point nearest the query point.\n# Ties go to the earliest point. Compare squared distances: no sqrt needed.\n",
+   "tests": [
+    {
+     "expected": "A",
+     "hidden": false,
+     "name": "nearer point wins",
+     "stdin": "0 0 A\n10 0 B\n? 1 0"
+    },
+    {
+     "expected": "B",
+     "hidden": true,
+     "name": "vertical case",
+     "stdin": "0 0 A\n0 10 B\n? 0 9"
+    },
+    {
+     "expected": "X",
+     "hidden": true,
+     "name": "three points, one winner",
+     "stdin": "2 3 X\n5 7 Y\n9 1 Z\n? 3 4"
+    }
+   ],
+   "title": "Nearest Neighbor",
+   "xpReward": 500
+  },
+  {
+   "briefing": "Junie says one point can mislead, but a crowd rarely does. Your program averages each label's points into a centroid, then classifies the query by the nearest centroid.",
+   "creditReward": 110,
+   "file": "missions/m31_centroid_classifier.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m31",
+   "language": "python",
+   "level": 8,
+   "requires": [
+    "m30"
+   ],
+   "starter": "# Mission 31: The Centroid Decides\n# Input: training lines like '2 0 A', then a final line starting with '?'\n# holding the point to classify.\n# Average each label's points into a centroid, then print the label whose\n# centroid is nearest the query point.\n",
+   "tests": [
+    {
+     "expected": "A",
+     "hidden": false,
+     "name": "crowd beats the outlier",
+     "stdin": "0 0 A\n2 0 A\n10 10 B\n? 2 1"
+    },
+    {
+     "expected": "B",
+     "hidden": true,
+     "name": "far side of the map",
+     "stdin": "0 0 A\n2 0 A\n10 10 B\n? 9 9"
+    },
+    {
+     "expected": "A",
+     "hidden": true,
+     "name": "middle ground",
+     "stdin": "0 0 A\n2 0 A\n10 10 B\n? 5 5"
+    }
+   ],
+   "title": "The Centroid Decides",
+   "xpReward": 500
+  },
+  {
+   "briefing": "Junie says a model is only as good as its score. Your program reads predicted and actual labels, counts the matches, and reports the score plainly.",
+   "creditReward": 120,
+   "file": "missions/m32_count_the_score.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m32",
+   "language": "python",
+   "level": 9,
+   "requires": [
+    "m31"
+   ],
+   "starter": "# Mission 32: Count the Score\n# Input: lines like 'A B' meaning predicted A, actually B.\n# Print: {correct} correct out of {total}\n# A line counts as correct when the two labels match.\n",
+   "tests": [
+    {
+     "expected": "2 correct out of 3",
+     "hidden": false,
+     "name": "two out of three",
+     "stdin": "A A\nA B\nB B"
+    },
+    {
+     "expected": "2 correct out of 2",
+     "hidden": true,
+     "name": "perfect score",
+     "stdin": "A A\nB B"
+    },
+    {
+     "expected": "0 correct out of 2",
+     "hidden": true,
+     "name": "every guess wrong",
+     "stdin": "A B\nB A"
+    }
+   ],
+   "title": "Count the Score",
+   "xpReward": 550
   }
   ]
 }

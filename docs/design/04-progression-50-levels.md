@@ -11,9 +11,9 @@ Jobs/contracts · Equipment/property · New tech · Rewards/progression ·
 Assessment.
 
 **Phase 1 build status:** the slice that ships is Levels 1–5 plus the early
-Tier-2 arrival content — 29 missions (`m01`–`m29`, including the three hidden
+Tier-2 arrival content — 32 missions (`m01`–`m32`, including the three hidden
 dungeon challenges in `dungeons.json` and six Tier-2 skill missions for the
-control-flow, debugging, tooling and performance topics, plus three defensive-security missions for the security area and three networking missions for the networking area), all four cities,
+control-flow, debugging, tooling and performance topics, plus three defensive-security missions for the security area, three networking missions for the networking area, and three machine-learning missions for the AI area), all four cities,
 regional economies, decoratable homes and a local contacts/company/portfolio
 layer. Levels 6–50
 describe the target curve; XP values are illustrative until playtest tuning.

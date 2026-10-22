@@ -15,7 +15,8 @@
     { "id": "engineering", "title": "Software Engineering", "summary": "Building things that other people can live with." },
     { "id": "systems", "title": "Systems & Performance", "summary": "How machines behave under load and at scale." },
     { "id": "security", "title": "Defensive Security", "summary": "Keeping software and its users safe: validate input, guard secrets, fail closed." },
-    { "id": "networking", "title": "Networking & Telecom", "summary": "Moving data between machines: packets, routes, and the checks that catch corruption." }
+    { "id": "networking", "title": "Networking & Telecom", "summary": "Moving data between machines: packets, routes, and the checks that catch corruption." },
+    { "id": "ai_ml", "title": "AI & Machine Learning", "summary": "Programs that learn from data: classify, predict, and prove it works." }
   ],
   "topics": [
     {
@@ -757,6 +758,63 @@
         }
       ],
       "missions": ["m29"],
+      "projects": []
+    },
+    {
+      "id": "ai_ml.nearest_neighbor",
+      "area": "ai_ml",
+      "title": "Nearest Neighbor",
+      "summary": "Classify a point by the labelled point nearest to it.",
+      "difficulty": 3,
+      "prerequisites": ["variables.numeric_math", "data.lists"],
+      "objectives": ["Measure distance between points", "Classify by the nearest labelled example"],
+      "misconceptions": [
+        {
+          "id": "ai_ml.nearest_neighbor.mc1",
+          "text": "The classifier needs a formula for the boundary.",
+          "remedy": "Nearest neighbor has no boundary formula: it keeps the examples and asks which one is closest. The data IS the model.",
+          "probes": ["m30"]
+        }
+      ],
+      "missions": ["m30"],
+      "projects": []
+    },
+    {
+      "id": "ai_ml.centroids",
+      "area": "ai_ml",
+      "title": "Centroids",
+      "summary": "Average each class into one representative point, then classify by it.",
+      "difficulty": 4,
+      "prerequisites": ["ai_ml.nearest_neighbor", "loops.accumulators"],
+      "objectives": ["Average a set of points into a centroid", "Classify by the nearest centroid"],
+      "misconceptions": [
+        {
+          "id": "ai_ml.centroids.mc1",
+          "text": "One loud example should decide the answer.",
+          "remedy": "A centroid averages the whole class, so one odd example cannot drag the answer away. Crowds beat outliers.",
+          "probes": ["m31"]
+        }
+      ],
+      "missions": ["m31"],
+      "projects": []
+    },
+    {
+      "id": "ai_ml.evaluation",
+      "area": "ai_ml",
+      "title": "Evaluation",
+      "summary": "Score a model by counting what it got right.",
+      "difficulty": 4,
+      "prerequisites": ["ai_ml.centroids", "control_flow.conditionals"],
+      "objectives": ["Compare predictions against truth", "Report accuracy as correct out of total"],
+      "misconceptions": [
+        {
+          "id": "ai_ml.evaluation.mc1",
+          "text": "A model that fits training data is a good model.",
+          "remedy": "Fitting training data proves nothing. Score it on answers it has not seen: correct out of total, counted honestly.",
+          "probes": ["m32"]
+        }
+      ],
+      "missions": ["m32"],
       "projects": []
     }
   ]
