@@ -124,7 +124,7 @@ TEST_CASE("the shipped content loads") {
     MESSAGE("skipping shipped content: " << err);
     return;
   }
-  CHECK(cat.size() == 47);
+  CHECK(cat.size() == 50);
   CHECK(cat.get("m01") != nullptr);
   // Every shipped mission is still the default format (no content changed).
   for (const auto& kv : cat.all())

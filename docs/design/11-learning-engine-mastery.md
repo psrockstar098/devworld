@@ -107,8 +107,8 @@ players who independently understand and apply the underlying concept.
 **Already built (Phase 1, local):** the knowledge-graph loader and DAG
 algorithms (`game-shell/src/curriculum.*`), the evidence + mastery model
 (`game-shell/src/mastery.*`), the shipped graph
-(`game-shell/content/curriculum.json`: 20 areas, 62 topics, mapped to
-`m01`–`m47`), the in-game skill panel, misconception coaching, and practice
+(`game-shell/content/curriculum.json`: 21 areas, 65 topics, mapped to
+`m01`–`m50`), the in-game skill panel, misconception coaching, and practice
 re-runs emitting delayed-recall evidence.
 
 **New in Stage 4:**
@@ -116,7 +116,7 @@ re-runs emitting delayed-recall evidence.
 | Piece | State |
 |---|---|
 | Mastery model on the C++ server (Phase 2 authority) | Ported from the shell model; server computes, client displays. Evidence endpoints (`GET /skills/me`, `/skills/trees`) still to come. |
-| Curriculum reorganization into the 12 areas above | Spec only. The shipped 62 topics still sit in 08's areas. Migrating them is a content decision, not done by this doc. |
+| Curriculum reorganization into the 12 areas above | Spec only. The shipped 65 topics still sit in 08's areas. Migrating them is a content decision, not done by this doc. |
 | 12 mission formats (§4.2) | Only "write code from specifications" ships today. The rest need mission-type support in the catalog, the IDE, and grading. |
 | Authoring system / content editor (§4.5) | Not built. |
 | Skill analytics | Not built. |

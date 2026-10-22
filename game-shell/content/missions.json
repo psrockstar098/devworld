@@ -1662,6 +1662,117 @@
    ],
    "title": "Quorum or Nothing",
    "xpReward": 800
+  },
+  {
+   "briefing": "Junie parks a robot on a grid, facing a direction. Your program reads its start and a list of commands, then prints where it ends up and where it faces.",
+   "creditReward": 170,
+   "file": "missions/m48_move_the_arm.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m48",
+   "language": "python",
+   "level": 14,
+   "requires": [
+    "m47"
+   ],
+   "starter": "# Mission 48: Move the Arm\n# Input: first line is 'x y DIR' with DIR one of N, E, S, W.\n# The rest are commands, one per line: F moves one square forward,\n# L turns left, R turns right. North is y-1, east is x+1.\n# Print the final square and direction as 'x y DIR'.\n",
+   "tests": [
+    {
+     "expected": "3 1 E",
+     "hidden": false,
+     "name": "forward, turn, forward",
+     "stdin": "2 2 N\nF\nR\nF"
+    },
+    {
+     "expected": "1 0 N",
+     "hidden": true,
+     "name": "turn left then forward",
+     "stdin": "1 1 E\nL\nF"
+    },
+    {
+     "expected": "3 2 N",
+     "hidden": true,
+     "name": "two lefts reverse direction",
+     "stdin": "3 3 S\nL\nL\nF"
+    }
+   ],
+   "title": "Move the Arm",
+   "xpReward": 800
+  },
+  {
+   "briefing": "Junie says a robot that cannot stop will crash. Your program reads a distance threshold and a list of sensor readings, and prints STOP if any reading falls below it, CLEAR otherwise.",
+   "creditReward": 170,
+   "file": "missions/m49_stop_before_the_wall.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m49",
+   "language": "python",
+   "level": 14,
+   "requires": [
+    "m48"
+   ],
+   "starter": "# Mission 49: Stop Before the Wall\n# Input: first line is the threshold distance. The rest are sensor\n# readings, one per line. A reading exactly equal to the threshold is\n# safe: only strictly below it stops the robot.\n# Print STOP or CLEAR.\n",
+   "tests": [
+    {
+     "expected": "STOP",
+     "hidden": false,
+     "name": "a close reading stops it",
+     "stdin": "10\n15\n12\n8"
+    },
+    {
+     "expected": "CLEAR",
+     "hidden": true,
+     "name": "all readings clear",
+     "stdin": "10\n15\n12"
+    },
+    {
+     "expected": "CLEAR",
+     "hidden": true,
+     "name": "equal to threshold is safe",
+     "stdin": "5\n5\n5"
+    }
+   ],
+   "title": "Stop Before the Wall",
+   "xpReward": 800
+  },
+  {
+   "briefing": "Junie asks the robot to find its own way home. Your program reads a grid, searches it breadth-first from S, and prints the shortest path length to G, or NO PATH when the goal cannot be reached.",
+   "creditReward": 180,
+   "file": "missions/m50_shortest_path_home.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m50",
+   "language": "python",
+   "level": 15,
+   "requires": [
+    "m49"
+   ],
+   "starter": "# Mission 50: Shortest Path Home\n# Input: grid lines with '.' for free squares, '#' for walls, 'S' for\n# the start and 'G' for the goal. Moves go up, down, left, right.\n# Print the shortest path length in steps, or NO PATH.\n#\n# Hint: breadth-first search visits squares in order of distance, so\n# the first time you reach G, its distance is the shortest.\n",
+   "tests": [
+    {
+     "expected": "4",
+     "hidden": false,
+     "name": "open field",
+     "stdin": "S..\n...\n..G"
+    },
+    {
+     "expected": "4",
+     "hidden": true,
+     "name": "walls force a detour",
+     "stdin": "S#.\n.#.\n..G"
+    },
+    {
+     "expected": "NO PATH",
+     "hidden": true,
+     "name": "goal boxed in",
+     "stdin": "S#\n#G"
+    }
+   ],
+   "title": "Shortest Path Home",
+   "xpReward": 850
   }
   ]
 }

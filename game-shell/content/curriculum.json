@@ -21,7 +21,8 @@
     { "id": "embedded", "title": "Embedded Systems", "summary": "Small machines, tight resources: bits, bytes, and signals you can trust." },
     { "id": "cloud", "title": "Cloud & DevOps", "summary": "Services that stay up: config, scaling, and health." },
     { "id": "compilers", "title": "Compilers", "summary": "From text to meaning: tokens, structure, and values." },
-    { "id": "os", "title": "OS & Distributed Systems", "summary": "Many things at once, safely: scheduling, locks, and agreement." }
+    { "id": "os", "title": "OS & Distributed Systems", "summary": "Many things at once, safely: scheduling, locks, and agreement." },
+    { "id": "robotics", "title": "Robotics", "summary": "Machines that move, sense, and find their way." }
   ],
   "topics": [
     {
@@ -1105,6 +1106,63 @@
         }
       ],
       "missions": ["m47"],
+      "projects": []
+    },
+    {
+      "id": "robotics.motion",
+      "area": "robotics",
+      "title": "Oriented Motion",
+      "summary": "Move a robot that has a facing direction.",
+      "difficulty": 3,
+      "prerequisites": ["game.movement", "control_flow.conditionals"],
+      "objectives": ["Turn left and right without moving", "Move forward in the facing direction"],
+      "misconceptions": [
+        {
+          "id": "robotics.motion.mc1",
+          "text": "Turning also moves the robot.",
+          "remedy": "A turn changes only the facing, never the square. Forward is the only command that moves, and it moves toward wherever the robot faces.",
+          "probes": ["m48"]
+        }
+      ],
+      "missions": ["m48"],
+      "projects": []
+    },
+    {
+      "id": "robotics.sensing",
+      "area": "robotics",
+      "title": "Sensor Thresholds",
+      "summary": "Stop when a reading crosses a threshold.",
+      "difficulty": 3,
+      "prerequisites": ["robotics.motion", "variables.numeric_math"],
+      "objectives": ["Compare readings against a threshold", "Treat equal-to-threshold as safe"],
+      "misconceptions": [
+        {
+          "id": "robotics.sensing.mc1",
+          "text": "At the threshold, stop anyway to be safe.",
+          "remedy": "The rule is strictly below: equal is safe. Changing the rule changes every boundary case, so the boundary must be exact.",
+          "probes": ["m49"]
+        }
+      ],
+      "missions": ["m49"],
+      "projects": []
+    },
+    {
+      "id": "robotics.planning",
+      "area": "robotics",
+      "title": "Path Planning",
+      "summary": "Find the shortest path with breadth-first search.",
+      "difficulty": 4,
+      "prerequisites": ["robotics.sensing", "data.lists"],
+      "objectives": ["Search a grid breadth-first", "Report NO PATH when the goal is unreachable"],
+      "misconceptions": [
+        {
+          "id": "robotics.planning.mc1",
+          "text": "The first path found is the shortest.",
+          "remedy": "Depth-first finds A path, not the shortest. Breadth-first visits squares in distance order, so the first arrival at the goal is the shortest path.",
+          "probes": ["m50"]
+        }
+      ],
+      "missions": ["m50"],
       "projects": []
     }
   ]
