@@ -8,6 +8,7 @@
 
 #include "assess.h"
 #include "clickhouse.h"
+#include "curriculum.h"
 #include "events.h"
 #include "friends.h"
 #include "http.h"
@@ -38,7 +39,8 @@ class Api {
  public:
   Api(History* history, KvStore* kv, KvStore* cache, PlayerStore* players,
       SessionStore* sessions, MissionCatalog* missions, AssessClient* assess,
-      ApiConfig cfg, const MarketCatalog* markets = nullptr);
+      ApiConfig cfg, const MarketCatalog* markets = nullptr,
+      const Curriculum* curriculum = nullptr);
   ~Api();
 
   HttpResponse handle(const HttpRequest& req);
@@ -78,6 +80,7 @@ class Api {
   HttpResponse handleMissionStats();
   HttpResponse handleRecordEvidence(const HttpRequest& req);
   HttpResponse handleSkillsMe(const HttpRequest& req);
+  HttpResponse handleSkillsTrees();
   HttpResponse handleSubmit(const HttpRequest& req, const std::string& id);
   HttpResponse handleBalance(const HttpRequest& req);
   HttpResponse handleAdminLedger(const HttpRequest& req);
@@ -120,6 +123,7 @@ class Api {
   EventStore events_;
   MarketStore markets_;
   const MarketCatalog* marketCatalog_;
+  const Curriculum* curriculum_;
   // Serializes market buys and restocks: demand, inventory and the ledger
   // move together per process, so two concurrent buys cannot both pay the
   // pre-purchase price for the same demand level.

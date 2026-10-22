@@ -6,6 +6,8 @@
 #include <chrono>
 #include <csignal>
 #include <cstdio>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <thread>
 
@@ -59,6 +61,26 @@ int main() {
     return 1;
   }
 
+  // The skill tree is one endpoint, not the whole server: a missing or
+  // unreadable curriculum.json warns and leaves /skills/trees answering
+  // 503, rather than refusing to start.
+  Curriculum curriculum;
+  const Curriculum* curriculumPtr = nullptr;
+  {
+    std::ifstream in(cfg.contentDir + "/curriculum.json");
+    if (!in) {
+      std::fprintf(stderr, "content: curriculum.json not found, /skills/trees disabled\n");
+    } else {
+      std::stringstream ss;
+      ss << in.rdbuf();
+      curriculum.load(parseJson(ss.str()));
+      if (curriculum.empty())
+        std::fprintf(stderr, "content: curriculum.json empty, /skills/trees disabled\n");
+      else
+        curriculumPtr = &curriculum;
+    }
+  }
+
   AssessClient assess(cfg.workerUrl, cfg.workerApiKey);
   ApiConfig apiCfg;
   apiCfg.adminKey = cfg.adminKey;
@@ -67,7 +89,7 @@ int main() {
   apiCfg.oauth = cfg.oauth;
 
   Api api(&history, &kv, &cache, &players, &sessions, &missions,
-          assess.configured() ? &assess : nullptr, apiCfg, &markets);
+          assess.configured() ? &assess : nullptr, apiCfg, &markets, curriculumPtr);
 
   HttpServer server(
       cfg.host, cfg.port,

@@ -153,7 +153,7 @@ std::string safeBrand(const std::string& brand) {
 
 Api::Api(History* history, KvStore* kv, KvStore* cache, PlayerStore* players,
          SessionStore* sessions, MissionCatalog* missions, AssessClient* assess,
-         ApiConfig cfg, const MarketCatalog* markets)
+         ApiConfig cfg, const MarketCatalog* markets, const Curriculum* curriculum)
     : history_(history), kv_(kv), cache_(cache), players_(players),
       sessions_(sessions), missions_(missions), assess_(assess),
       cfg_(std::move(cfg)),
@@ -161,7 +161,7 @@ Api::Api(History* history, KvStore* kv, KvStore* cache, PlayerStore* players,
       accountLimiter_(cfg_.authRateLimitWindowSec * 1000, cfg_.authRateLimitMaxPerAccount),
       oauth_(cfg_.oauth, cache, players, sessions),
       friends_(kv), presence_(cache), events_(kv), markets_(kv),
-      marketCatalog_(markets) {}
+      marketCatalog_(markets), curriculum_(curriculum) {}
 
 Api::~Api() = default;
 
@@ -264,6 +264,7 @@ HttpResponse Api::dispatch(const HttpRequest& req) {
     if (path == "/skills/evidence" && method == "POST")
       return handleRecordEvidence(req);
     if (path == "/skills/me" && method == "GET") return handleSkillsMe(req);
+    if (path == "/skills/trees" && method == "GET") return handleSkillsTrees();
     if (path == "/ledger/balance" && method == "GET") return handleBalance(req);
     if (path == "/admin/ledger" && method == "POST") return handleAdminLedger(req);
     if (path == "/events" && method == "POST") return handleRecordEvent(req);
@@ -982,8 +983,7 @@ HttpResponse Api::handleMissions() { return jsonRes(missions_->listJson()); }
 // The caller is always the authenticated player: a body playerId, if any,
 // is ignored. Score must be present and inside [0,1] — parseEvidence
 // clamps, and silently clamping a client bug into a perfect score would be
-// worse than rejecting it. /skills/trees waits on the curriculum catalog
-// (unlock-engine port): the tree needs the area/topic structure.
+// worse than rejecting it.
 HttpResponse Api::handleRecordEvidence(const HttpRequest& req) {
   Auth a = requirePlayer(req);
   if (!a.ok) return a.response;
@@ -1025,6 +1025,45 @@ HttpResponse Api::handleSkillsMe(const HttpRequest& req) {
     return HttpResponse::error(503, "evidence store unavailable");
   MasteryConfig cfg;
   return jsonRes(skillsMeJson(a.playerId, all, cfg, nowMs()));
+}
+
+// GET /skills/trees — the skill tree: areas with their topics, in catalog
+// order. Public catalog data, like /missions: no player state, no auth.
+// Objectives and misconceptions are authoring detail, not tree structure,
+// so they stay out of this response.
+HttpResponse Api::handleSkillsTrees() {
+  if (!curriculum_ || curriculum_->empty())
+    return HttpResponse::error(503, "curriculum unavailable");
+  JVal areas = jarr();
+  for (const auto& area : curriculum_->areas()) {
+    JVal a = jobj();
+    jset(a, "id", jstr(area.id));
+    jset(a, "title", jstr(area.title));
+    jset(a, "summary", jstr(area.summary));
+    JVal topics = jarr();
+    for (const auto* t : curriculum_->topicsInArea(area.id)) {
+      JVal tj = jobj();
+      jset(tj, "id", jstr(t->id));
+      jset(tj, "title", jstr(t->title));
+      jset(tj, "summary", jstr(t->summary));
+      jset(tj, "difficulty", jnum(t->difficulty));
+      JVal prereqs = jarr();
+      for (const auto& p : t->prerequisites) prereqs.arr.push_back(jstr(p));
+      jset(tj, "prerequisites", prereqs);
+      JVal missions = jarr();
+      for (const auto& m : t->missions) missions.arr.push_back(jstr(m));
+      jset(tj, "missions", missions);
+      JVal projects = jarr();
+      for (const auto& p : t->projects) projects.arr.push_back(jstr(p));
+      jset(tj, "projects", projects);
+      topics.arr.push_back(tj);
+    }
+    jset(a, "topics", topics);
+    areas.arr.push_back(a);
+  }
+  JVal out = jobj();
+  jset(out, "areas", areas);
+  return jsonRes(out);
 }
 
 HttpResponse Api::handleMissionStats() {

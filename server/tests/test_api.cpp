@@ -29,6 +29,20 @@ const char* kContent = R"({
   ]
 })";
 
+const char* kCurriculum = R"({
+  "areas": [
+    {"id": "fundamentals", "title": "Fundamentals", "summary": "The basics"}
+  ],
+  "topics": [
+    {"id": "variables.expressions", "area": "fundamentals", "title": "Expressions",
+     "summary": "Values and operators", "difficulty": 1, "prerequisites": [],
+     "missions": ["m01"], "projects": []},
+    {"id": "variables.assignment", "area": "fundamentals", "title": "Assignment",
+     "summary": "Binding names", "difficulty": 2, "prerequisites": ["variables.expressions"],
+     "missions": [], "projects": ["calculator"]}
+  ]
+})";
+
 struct Fixture {
   MemoryKv kv;
   MemoryKv cache;
@@ -36,11 +50,13 @@ struct Fixture {
   PlayerStore players{&kv};
   SessionStore sessions{&cache, 3600};
   MissionCatalog missions;
+  Curriculum curriculum;
   ApiConfig cfg;
 
   Fixture() {
     std::string err;
     REQUIRE(missions.loadFromJson(parseJson(kContent), &err));
+    curriculum.load(parseJson(kCurriculum));
     cfg.adminKey = "test_admin";
     cfg.balanceCacheTtlSec = 0;
   }
@@ -544,4 +560,32 @@ TEST_CASE("market: list, buy, inventory, restock") {
   REQUIRE(restocked.status == 200);
   CHECK(parseJson(restocked.body).n("demand", -1) == 0);
   CHECK(marketPrice("cable-kit") == 10);
+}
+
+TEST_CASE("skills trees serve the area/topic structure") {
+  Fixture f;
+  Api api(&f.history, &f.kv, &f.cache, &f.players, &f.sessions, &f.missions,
+          nullptr, f.cfg, nullptr, &f.curriculum);
+  HttpResponse res = api.handle(req("GET", "/skills/trees"));
+  REQUIRE(res.status == 200);
+  JVal body = parseJson(res.body);
+  auto areas = body.at("areas").arr;
+  REQUIRE(areas.size() == 1);
+  CHECK(areas[0].s("id") == "fundamentals");
+  auto topics = areas[0].at("topics").arr;
+  REQUIRE(topics.size() == 2);
+  CHECK(topics[0].s("id") == "variables.expressions");
+  CHECK(topics[0].i("difficulty", -1) == 1);
+  CHECK(topics[0].at("missions").arr.size() == 1);
+  CHECK(topics[1].s("id") == "variables.assignment");
+  CHECK(topics[1].at("prerequisites").arr.size() == 1);
+  CHECK(topics[1].at("prerequisites").arr[0].str == "variables.expressions");
+  CHECK(topics[1].at("projects").arr.size() == 1);
+}
+
+TEST_CASE("skills trees without a curriculum answers 503") {
+  Fixture f;
+  Api api(&f.history, &f.kv, &f.cache, &f.players, &f.sessions, &f.missions,
+          nullptr, f.cfg);
+  CHECK(api.handle(req("GET", "/skills/trees")).status == 503);
 }
