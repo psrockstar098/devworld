@@ -877,5 +877,10 @@ TEST_CASE("the shipped careers are sound and every path has an entry requirement
       INFO("milestone " << ms);
       CHECK(ucat.milestone(ms) != nullptr);
     }
+    // Every shipped path carries the six project-ladder rungs in order.
+    INFO("ladder for " << d.id);
+    CHECK(d.ladder.size() == ladderRungKinds().size());
+    for (size_t i = 0; i < d.ladder.size() && i < ladderRungKinds().size(); i++)
+      CHECK(d.ladder[i].kind == ladderRungKinds()[i]);
   }
 }

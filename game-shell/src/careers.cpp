@@ -30,6 +30,16 @@ void Careers::load(const JVal& j) {
     d.language = p.s("language");
     d.blurb = p.s("blurb");
     d.entry = parseRequirement(p.at("entry"));
+    const JVal& lad = p.at("ladder");
+    if (lad.type == JVal::ARR) {
+      for (const auto& r : lad.arr) {
+        LadderRung rung;
+        rung.kind = r.s("kind");
+        rung.name = r.s("name", rung.kind);
+        rung.blurb = r.s("blurb");
+        d.ladder.push_back(rung);
+      }
+    }
     byId_[d.id] = defs_.size();
     defs_.push_back(d);
   }
@@ -71,10 +81,25 @@ bool Careers::choose(Player& player, const CareerDef& d, const PlayerCapability&
 std::vector<std::string> Careers::validate() const {
   std::vector<std::string> errs;
   std::set<std::string> seen;
+  const std::vector<std::string>& kinds = ladderRungKinds();
   for (const auto& d : defs_) {
     if (!seen.insert(d.id).second) errs.push_back("duplicate career id: " + d.id);
     if (d.title.empty()) errs.push_back("career " + d.id + " has no title");
     if (d.language.empty()) errs.push_back("career " + d.id + " has no language");
+    if (!d.ladder.empty()) {
+      if (d.ladder.size() != kinds.size()) {
+        errs.push_back("career " + d.id + " ladder must have " +
+                       std::to_string(kinds.size()) + " rungs");
+      } else {
+        for (size_t i = 0; i < kinds.size(); i++) {
+          if (d.ladder[i].kind != kinds[i]) {
+            errs.push_back("career " + d.id + " ladder rung " +
+                           std::to_string(i) + " must be " + kinds[i]);
+            break;
+          }
+        }
+      }
+    }
   }
   return errs;
 }

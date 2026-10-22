@@ -1,19 +1,224 @@
 {
   "paths": [
-    { "id": "python_backend", "title": "Backend Python", "language": "python",
+    {
       "blurb": "Services, APIs and business logic in Python.",
-      "entry": { "level": 5, "gates": ["m13"] } },
-    { "id": "data_sql", "title": "Data & SQL", "language": "sql",
+      "entry": {
+        "gates": [
+          "m13"
+        ],
+        "level": 5
+      },
+      "id": "python_backend",
+      "ladder": [
+        {
+          "blurb": "Follow a walkthrough that builds a small Python service end to end.",
+          "kind": "guided",
+          "name": "Guided exercise"
+        },
+        {
+          "blurb": "Ship one working component: an endpoint, a job, or a data import.",
+          "kind": "component",
+          "name": "Standalone component"
+        },
+        {
+          "blurb": "Combine routing, storage and auth into one working service.",
+          "kind": "multi-concept",
+          "name": "Multi-concept project"
+        },
+        {
+          "blurb": "Build a service from a written specification, tests included.",
+          "kind": "spec",
+          "name": "Spec-built project"
+        },
+        {
+          "blurb": "Build with others: split the service, review each other's code.",
+          "kind": "team",
+          "name": "Team project"
+        },
+        {
+          "blurb": "Design and ship an independent backend service from your own specification.",
+          "kind": "capstone",
+          "name": "Capstone"
+        }
+      ],
+      "language": "python",
+      "title": "Backend Python"
+    },
+    {
       "blurb": "Shape, query and move data reliably.",
-      "entry": { "level": 5, "skills": ["sql.select_where"] } },
-    { "id": "systems", "title": "Systems C", "language": "c",
+      "entry": {
+        "level": 5,
+        "skills": [
+          "sql.select_where"
+        ]
+      },
+      "id": "data_sql",
+      "ladder": [
+        {
+          "blurb": "Follow a walkthrough that answers real questions from a sample database.",
+          "kind": "guided",
+          "name": "Guided exercise"
+        },
+        {
+          "blurb": "Ship one working query set: a report, a migration, or a clean import.",
+          "kind": "component",
+          "name": "Standalone component"
+        },
+        {
+          "blurb": "Combine joins, aggregation and filtering into one analysis.",
+          "kind": "multi-concept",
+          "name": "Multi-concept project"
+        },
+        {
+          "blurb": "Build a dataset and its queries from a written specification.",
+          "kind": "spec",
+          "name": "Spec-built project"
+        },
+        {
+          "blurb": "Build with others: agree the schema, review each other's queries.",
+          "kind": "team",
+          "name": "Team project"
+        },
+        {
+          "blurb": "Design and ship an independent data project from your own specification.",
+          "kind": "capstone",
+          "name": "Capstone"
+        }
+      ],
+      "language": "sql",
+      "title": "Data & SQL"
+    },
+    {
       "blurb": "Get close to the machine: memory, performance, concurrency.",
-      "entry": { "level": 10, "skills": ["systems.performance"] } },
-    { "id": "web", "title": "Web & APIs", "language": "javascript",
+      "entry": {
+        "level": 10,
+        "skills": [
+          "systems.performance"
+        ]
+      },
+      "id": "systems",
+      "ladder": [
+        {
+          "blurb": "Follow a walkthrough that measures and improves a small C program.",
+          "kind": "guided",
+          "name": "Guided exercise"
+        },
+        {
+          "blurb": "Ship one working component: a cache, a parser, or a concurrent worker.",
+          "kind": "component",
+          "name": "Standalone component"
+        },
+        {
+          "blurb": "Combine memory, concurrency and measurement into one tool.",
+          "kind": "multi-concept",
+          "name": "Multi-concept project"
+        },
+        {
+          "blurb": "Build a systems tool from a written specification, benchmarks included.",
+          "kind": "spec",
+          "name": "Spec-built project"
+        },
+        {
+          "blurb": "Build with others: split the tool, review each other's code.",
+          "kind": "team",
+          "name": "Team project"
+        },
+        {
+          "blurb": "Design and ship an independent systems tool from your own specification.",
+          "kind": "capstone",
+          "name": "Capstone"
+        }
+      ],
+      "language": "c",
+      "title": "Systems C"
+    },
+    {
       "blurb": "Build the interfaces and services people actually use.",
-      "entry": { "level": 5, "missions": ["m14"] } },
-    { "id": "toolsmith", "title": "Toolsmith", "language": "python",
+      "entry": {
+        "level": 5,
+        "missions": [
+          "m14"
+        ]
+      },
+      "id": "web",
+      "ladder": [
+        {
+          "blurb": "Follow a walkthrough that builds a small interactive page with its API.",
+          "kind": "guided",
+          "name": "Guided exercise"
+        },
+        {
+          "blurb": "Ship one working component: a form, a list, or a live view.",
+          "kind": "component",
+          "name": "Standalone component"
+        },
+        {
+          "blurb": "Combine frontend, API and storage into one working app.",
+          "kind": "multi-concept",
+          "name": "Multi-concept project"
+        },
+        {
+          "blurb": "Build an app from a written specification, tests included.",
+          "kind": "spec",
+          "name": "Spec-built project"
+        },
+        {
+          "blurb": "Build with others: split the app, review each other's code.",
+          "kind": "team",
+          "name": "Team project"
+        },
+        {
+          "blurb": "Design and ship an independent web app from your own specification.",
+          "kind": "capstone",
+          "name": "Capstone"
+        }
+      ],
+      "language": "javascript",
+      "title": "Web & APIs"
+    },
+    {
       "blurb": "Build the tools other engineers build with.",
-      "entry": { "level": 5, "milestones": ["first_proof"] } }
+      "entry": {
+        "level": 5,
+        "milestones": [
+          "first_proof"
+        ]
+      },
+      "id": "toolsmith",
+      "ladder": [
+        {
+          "blurb": "Follow a walkthrough that builds a small developer tool.",
+          "kind": "guided",
+          "name": "Guided exercise"
+        },
+        {
+          "blurb": "Ship one working tool: a formatter, a checker, or a generator.",
+          "kind": "component",
+          "name": "Standalone component"
+        },
+        {
+          "blurb": "Combine parsing, output and packaging into one tool.",
+          "kind": "multi-concept",
+          "name": "Multi-concept project"
+        },
+        {
+          "blurb": "Build a tool from a written specification, tests included.",
+          "kind": "spec",
+          "name": "Spec-built project"
+        },
+        {
+          "blurb": "Build with others: split the tool, review each other's code.",
+          "kind": "team",
+          "name": "Team project"
+        },
+        {
+          "blurb": "Design and ship an independent developer tool from your own specification.",
+          "kind": "capstone",
+          "name": "Capstone"
+        }
+      ],
+      "language": "python",
+      "title": "Toolsmith"
+    }
   ]
 }

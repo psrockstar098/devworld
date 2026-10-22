@@ -76,3 +76,37 @@ TEST_CASE("validate rejects duplicates and missing fields") {
     {"id":"c","title":"C","entry":{}}]})"));
   CHECK(cs.validate().size() >= 3);
 }
+
+TEST_CASE("a ladder must be the six section 6.5 rungs in order") {
+  const char* kGood =
+      R"({"paths":[{"id":"a","title":"A","language":"python","entry":{},)"
+      R"("ladder":[{"kind":"guided"},{"kind":"component"},)"
+      R"({"kind":"multi-concept"},{"kind":"spec"},{"kind":"team"},)"
+      R"({"kind":"capstone"}]}]})";
+  Careers good;
+  good.load(parseJson(kGood));
+  CHECK(good.validate().empty());
+  REQUIRE(good.all().size() == 1);
+  CHECK(good.all()[0].ladder.size() == 6);
+  CHECK(good.all()[0].ladder[5].kind == "capstone");
+
+  Careers shortLadder;
+  shortLadder.load(parseJson(
+      R"({"paths":[{"id":"a","title":"A","language":"python","entry":{},)"
+      R"("ladder":[{"kind":"guided"},{"kind":"capstone"}]}]})"));
+  CHECK_FALSE(shortLadder.validate().empty());
+
+  Careers wrongOrder;
+  wrongOrder.load(parseJson(
+      R"({"paths":[{"id":"a","title":"A","language":"python","entry":{},)"
+      R"("ladder":[{"kind":"guided"},{"kind":"component"},)"
+      R"({"kind":"multi-concept"},{"kind":"spec"},{"kind":"capstone"},)"
+      R"({"kind":"team"}]}]})"));
+  CHECK_FALSE(wrongOrder.validate().empty());
+
+  // No ladder at all stays valid: older content is not broken by the field.
+  Careers none;
+  none.load(parseJson(
+      R"({"paths":[{"id":"a","title":"A","language":"python","entry":{}}]})"));
+  CHECK(none.validate().empty());
+}

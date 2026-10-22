@@ -25,10 +25,28 @@
 
 namespace dw {
 
+struct LadderRung {
+  std::string kind;  // one of ladderRungKinds(), in that order
+  std::string name;
+  std::string blurb;
+};
+
 struct CareerDef {
   std::string id, title, language, blurb;
   UnlockRequirement entry;
+  // The §6.5 project ladder: six rungs from guided exercise to capstone.
+  // A path with no ladder is not invalid (older content), but every
+  // shipped path carries one.
+  std::vector<LadderRung> ladder;
 };
+
+// The six project-ladder rungs, in order (design 13 §6.5).
+inline const std::vector<std::string>& ladderRungKinds() {
+  static const std::vector<std::string> kKinds = {
+    "guided", "component", "multi-concept", "spec", "team", "capstone",
+  };
+  return kKinds;
+}
 
 class Careers {
  public:
