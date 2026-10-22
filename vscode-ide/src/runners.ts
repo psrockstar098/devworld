@@ -82,7 +82,10 @@ export async function installPythonPackage(name: string): Promise<string> {
 function runJavaScript(code: string, h: RunHelpers): void {
   const logs: string[] = []
   const fakeConsole = { log: (...a: any[]) => logs.push(a.map(String).join(' ')) }
-  const fn = new Function('console', '"use strict";\n' + code)
+  // Same shebang rule as the classic runner: a leading #! line is valid at
+  // the top of a script but a syntax error inside a Function body.
+  const clean = code.replace(/^#!.*(?:\r?\n|$)/, '')
+  const fn = new Function('console', '"use strict";\n' + clean)
   fn(fakeConsole)
   logs.forEach((l) => h.print(l))
   if (!logs.length) h.print('(no output)', 'ok')
@@ -100,7 +103,8 @@ async function captureJavaScript(code: string, stdin: string): Promise<string> {
   const prompt = () => (li < lines.length ? lines[li++] : '')
   const AsyncFn = Object.getPrototypeOf(async function () {}).constructor
   try {
-    const fn = new AsyncFn('console', 'prompt', 'readline', '"use strict";\n' + code)
+    const clean = code.replace(/^#!.*(?:\r?\n|$)/, '')
+    const fn = new AsyncFn('console', 'prompt', 'readline', '"use strict";\n' + clean)
     await fn(fakeConsole, prompt, prompt)
   } catch (e: any) {
     out += 'Error: ' + ((e && e.message) || e) + '\n'
@@ -136,6 +140,7 @@ async function captureTypeScript(code: string, stdin: string): Promise<string> {
 
 /* ---------------- sql (sql.js) ---------------- */
 let sqlCtor: any = null
+let sqlDb: any = null // session-persistent database, shared by runSql runs
 async function ensureSqlJs(h: RunHelpers): Promise<any> {
   if (!sqlCtor) {
     h.setStatus('Loading SQL engine…')
@@ -153,19 +158,19 @@ async function ensureSqlJs(h: RunHelpers): Promise<any> {
 
 async function runSql(code: string, h: RunHelpers): Promise<void> {
   const SQL = await ensureSqlJs(h)
-  const db = new SQL.Database()
-  try {
-    const results = db.exec(code)
-    if (!results.length) { h.print('(no result sets)', 'ok'); return }
-    results.forEach((r: any) => {
-      h.print(r.columns.join(' | '), 'ok')
-      h.print('-'.repeat(r.columns.join(' | ').length))
-      r.values.forEach((row: any[]) => h.print(row.map((v) => String(v)).join(' | ')))
-      h.print('')
-    })
-  } finally {
-    try { db.close() } catch { /* ignore */ }
-  }
+  // One database for the whole session, like the classic runner: the SQL
+  // playground flow is schema.sql first, queries.sql after, and a fresh
+  // database per run would make every query fail with "no such table".
+  if (!sqlDb) sqlDb = new SQL.Database()
+  const db = sqlDb
+  const results = db.exec(code)
+  if (!results.length) { h.print('(no result sets)', 'ok'); return }
+  results.forEach((r: any) => {
+    h.print(r.columns.join(' | '), 'ok')
+    h.print('-'.repeat(r.columns.join(' | ').length))
+    r.values.forEach((row: any[]) => h.print(row.map((v) => String(v)).join(' | ')))
+    h.print('')
+  })
 }
 
 async function captureSql(code: string): Promise<string> {

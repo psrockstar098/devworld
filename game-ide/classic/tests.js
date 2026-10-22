@@ -56,7 +56,8 @@ const Capture = {
     const prompt = () => (li < lines.length ? lines[li++] : '');
     const AsyncFn = Object.getPrototypeOf(async function () {}).constructor;
     try {
-      const fn = new AsyncFn('console', 'prompt', 'readline', '"use strict";\n' + code);
+      const clean = code.replace(/^#!.*(?:\r?\n|$)/, '');
+      const fn = new AsyncFn('console', 'prompt', 'readline', '"use strict";\n' + clean);
       await fn(fakeConsole, prompt, prompt);
     } catch (e) {
       out += 'Error: ' + (e && e.message || e) + '\n';
