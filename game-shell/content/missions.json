@@ -1218,6 +1218,117 @@
    ],
    "title": "Score the Combo",
    "xpReward": 600
+  },
+  {
+   "briefing": "Junie hands you a control register: a mode in the top four bits, four flags below. Your program packs them into a single byte.",
+   "creditReward": 130,
+   "file": "missions/m36_pack_the_register.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m36",
+   "language": "python",
+   "level": 10,
+   "requires": [
+    "m35"
+   ],
+   "starter": "# Mission 36: Pack the Register\n# Input: five integers: a mode (0-15) and four flags (0 or 1).\n# Pack them into one byte: mode in the top four bits, flags in the\n# bottom four bits, in order. Print the byte value.\n#\n# Hint: (mode << 4) puts the mode on top; (a << 3) | (b << 2) | (c << 1) | d packs the flags.\n",
+   "tests": [
+    {
+     "expected": "91",
+     "hidden": false,
+     "name": "mode 5, flags 1011",
+     "stdin": "5 1 0 1 1"
+    },
+    {
+     "expected": "0",
+     "hidden": true,
+     "name": "everything zero",
+     "stdin": "0 0 0 0 0"
+    },
+    {
+     "expected": "255",
+     "hidden": true,
+     "name": "everything set",
+     "stdin": "15 1 1 1 1"
+    }
+   ],
+   "title": "Pack the Register",
+   "xpReward": 600
+  },
+  {
+   "briefing": "Junie says a wire that cannot check itself cannot be trusted. Your program adds up a message's bytes and prints the sum modulo 256: the simplest checksum there is.",
+   "creditReward": 130,
+   "file": "missions/m37_check_the_sum.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m37",
+   "language": "python",
+   "level": 10,
+   "requires": [
+    "m36"
+   ],
+   "starter": "# Mission 37: Check the Sum\n# Input: byte values (0-255) separated by spaces.\n# Print the sum of the bytes, modulo 256.\n",
+   "tests": [
+    {
+     "expected": "60",
+     "hidden": false,
+     "name": "small sum, no wrap",
+     "stdin": "10 20 30"
+    },
+    {
+     "expected": "44",
+     "hidden": true,
+     "name": "sum wraps past 255",
+     "stdin": "200 100"
+    },
+    {
+     "expected": "0",
+     "hidden": true,
+     "name": "wrap to exactly zero",
+     "stdin": "255 1"
+    }
+   ],
+   "title": "Check the Sum",
+   "xpReward": 600
+  },
+  {
+   "briefing": "Junie says a button bounces: one press looks like many. Your program debounces the signal: the state only changes after three identical readings in a row, and it prints how many real presses that leaves.",
+   "creditReward": 140,
+   "file": "missions/m38_debounce_the_button.py",
+   "gate": false,
+   "giver": "junie",
+   "hints": true,
+   "id": "m38",
+   "language": "python",
+   "level": 11,
+   "requires": [
+    "m37"
+   ],
+   "starter": "# Mission 38: Debounce the Button\n# Input: one reading per line, 0 or 1.\n# The debounced state starts at 0 and only changes after three readings\n# in a row that disagree with it. Count each change from 0 to 1 as one\n# press, and print the count.\n",
+   "tests": [
+    {
+     "expected": "1",
+     "hidden": false,
+     "name": "one clean press",
+     "stdin": "1\n1\n1"
+    },
+    {
+     "expected": "1",
+     "hidden": true,
+     "name": "bounce before the press",
+     "stdin": "1\n0\n1\n1\n1"
+    },
+    {
+     "expected": "2",
+     "hidden": true,
+     "name": "two presses with a release",
+     "stdin": "1\n1\n1\n0\n0\n0\n1\n1\n1"
+    }
+   ],
+   "title": "Debounce the Button",
+   "xpReward": 650
   }
   ]
 }
