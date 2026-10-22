@@ -262,8 +262,13 @@ TEST_CASE("the shipped curriculum loads and validates") {
   CHECK(c.areas().size() == 23);
   CHECK(c.topics().size() == 71);
   // Validate against the real mission ids, so unknown references fail here.
+  // NOTE: keep the parsed JSON in a named variable — ranging over a member
+  // of a temporary (parseJson(...).at(...).arr) dangles and spins or reads
+  // garbage (seen 2026-10-22: filtered runs spun at 80% CPU, full run failed
+  // spuriously while the fixed form passes instantly with 0 errors).
+  JVal missionsJson = parseJson(missionsText);
   std::set<std::string> knownMissions;
-  for (const auto& m : parseJson(missionsText).at("missions").arr)
+  for (const auto& m : missionsJson.at("missions").arr)
     knownMissions.insert(m.s("id"));
   auto errs = c.validate(knownMissions);
   for (const auto& e : errs) INFO(e);
