@@ -50,6 +50,20 @@ JVal loadContent(const std::string& name) {
   return parseJson(text);
 }
 
+JVal loadIdeLanguages() {
+  // Native runs read the IDE list from the repo; WASM runs read the copy
+  // preloaded into the virtual filesystem (see run_wasm_tests.sh).
+#ifdef __EMSCRIPTEN__
+  std::ifstream f("/ide-languages.json");
+#else
+  std::ifstream f("../game-ide/classic/languages.json");
+#endif
+  REQUIRE_MESSAGE(f, "missing IDE languages.json");
+  std::stringstream ss;
+  ss << f.rdbuf();
+  return parseJson(ss.str());
+}
+
 // Mirrors Game::loadMissions: content -> MissionDef. Keeping this local to the
 // tests means the test fails if the content shape and the loader drift apart.
 std::map<std::string, MissionDef> loadMissions() {
@@ -898,13 +912,9 @@ TEST_CASE("the shipped framework catalog resolves its references") {
   CHECK(fw.all().size() >= 12);
 
   // Languages come from the IDE's language list, not from a second copy.
-  std::ifstream langFile("../game-ide/classic/languages.json");
-  REQUIRE_MESSAGE(langFile, "missing ../game-ide/classic/languages.json");
-  std::stringstream langSs;
-  langSs << langFile.rdbuf();
+  JVal ideLangs = loadIdeLanguages();
   std::set<std::string> langIds;
-  for (const auto& l : parseJson(langSs.str()).arr)
-    langIds.insert(l.s("id"));
+  for (const auto& l : ideLangs.arr) langIds.insert(l.s("id"));
 
   for (const auto& f : fw.all()) {
     INFO("framework " << f.id);
@@ -925,13 +935,9 @@ TEST_CASE("the shipped language catalog matches the IDE list") {
   CHECK(ls.validate().empty());
   CHECK(ls.all().size() >= 22);
 
-  std::ifstream langFile("../game-ide/classic/languages.json");
-  REQUIRE_MESSAGE(langFile, "missing ../game-ide/classic/languages.json");
-  std::stringstream langSs;
-  langSs << langFile.rdbuf();
+  JVal ideLangs = loadIdeLanguages();
   std::map<std::string, std::string> runById;
-  for (const auto& l : parseJson(langSs.str()).arr)
-    runById[l.s("id")] = l.s("run");
+  for (const auto& l : ideLangs.arr) runById[l.s("id")] = l.s("run");
   // The IDE run field maps to the catalog tier; a drift fails here.
   std::map<std::string, std::string> tierByRun = {
       {"wasm", "runs-now"},

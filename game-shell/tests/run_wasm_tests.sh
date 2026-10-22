@@ -43,6 +43,7 @@ em++ -std=c++17 -O1 -fexceptions \
   src/curriculum.cpp src/mastery.cpp src/capability.cpp src/unlocks.cpp \
   src/achievements.cpp src/rewards.cpp src/careers.cpp src/frameworks.cpp src/languages.cpp \
   --preload-file content \
+  --preload-file ../game-ide/classic/languages.json@/ide-languages.json \
   -sENVIRONMENT=node -sEXIT_RUNTIME=1 -sALLOW_MEMORY_GROWTH=1 \
   -o "$OUT/tests.js"
 
