@@ -8,6 +8,7 @@
 #include "achievements.h"
 #include "careers.h"
 #include "curriculum.h"
+#include "frameworks.h"
 #include "json.h"
 #include "progression.h"
 #include "regions.h"
@@ -882,5 +883,34 @@ TEST_CASE("the shipped careers are sound and every path has an entry requirement
     CHECK(d.ladder.size() == ladderRungKinds().size());
     for (size_t i = 0; i < d.ladder.size() && i < ladderRungKinds().size(); i++)
       CHECK(d.ladder[i].kind == ladderRungKinds()[i]);
+  }
+}
+
+TEST_CASE("the shipped framework catalog resolves its references") {
+  Curriculum c;
+  c.load(loadContent("curriculum.json"));
+  Frameworks fw;
+  fw.load(loadContent("frameworks.json"));
+  for (const auto& e : fw.validate()) INFO(e);
+  CHECK(fw.validate().empty());
+  CHECK(fw.disciplines().size() == 14);
+  CHECK(fw.all().size() >= 12);
+
+  // Languages come from the IDE's language list, not from a second copy.
+  std::ifstream langFile("../game-ide/classic/languages.json");
+  REQUIRE_MESSAGE(langFile, "missing ../game-ide/classic/languages.json");
+  std::stringstream langSs;
+  langSs << langFile.rdbuf();
+  std::set<std::string> langIds;
+  for (const auto& l : parseJson(langSs.str()).arr)
+    langIds.insert(l.s("id"));
+
+  for (const auto& f : fw.all()) {
+    INFO("framework " << f.id);
+    if (!f.language.empty()) CHECK(langIds.count(f.language) == 1);
+    for (const auto& s : f.skills) {
+      INFO("skill " << s);
+      CHECK(c.topic(s) != nullptr);
+    }
   }
 }

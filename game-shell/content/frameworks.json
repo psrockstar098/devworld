@@ -1,0 +1,194 @@
+{
+  "disciplines": [
+    {
+      "id": "full_stack",
+      "name": "Frontend, backend and full-stack engineering"
+    },
+    {
+      "id": "mobile_desktop",
+      "name": "Mobile and desktop application development"
+    },
+    {
+      "id": "data",
+      "name": "Database and data engineering"
+    },
+    {
+      "id": "game",
+      "name": "Game development and game engine programming"
+    },
+    {
+      "id": "ai_ml",
+      "name": "AI and machine learning"
+    },
+    {
+      "id": "cybersecurity",
+      "name": "Cybersecurity and defensive security engineering"
+    },
+    {
+      "id": "embedded",
+      "name": "Embedded systems and firmware"
+    },
+    {
+      "id": "networking",
+      "name": "Networking and telecommunications"
+    },
+    {
+      "id": "media",
+      "name": "Audio, video and graphics software"
+    },
+    {
+      "id": "cloud_devops",
+      "name": "Cloud infrastructure and DevOps"
+    },
+    {
+      "id": "compilers",
+      "name": "Compiler construction and programming language design"
+    },
+    {
+      "id": "os_distributed",
+      "name": "Operating systems and distributed systems"
+    },
+    {
+      "id": "robotics",
+      "name": "Robotics, electronics and automation"
+    },
+    {
+      "id": "general",
+      "name": "Cross-cutting tooling"
+    }
+  ],
+  "frameworks": [
+    {
+      "blurb": "Component interfaces for the web.",
+      "discipline": "full_stack",
+      "id": "react",
+      "language": "javascript",
+      "name": "React",
+      "skills": [
+        "functions.decomposition",
+        "data.mapping_keys"
+      ]
+    },
+    {
+      "blurb": "JavaScript services and command-line tools.",
+      "discipline": "full_stack",
+      "id": "node",
+      "language": "javascript",
+      "name": "Node.js",
+      "skills": [
+        "functions.defining",
+        "tooling.command_line"
+      ]
+    },
+    {
+      "blurb": "Batteries-included Python web services.",
+      "discipline": "full_stack",
+      "id": "django",
+      "language": "python",
+      "name": "Django",
+      "skills": [
+        "functions.decomposition",
+        "data.mapping_keys"
+      ]
+    },
+    {
+      "blurb": "Typed Python APIs, built fast.",
+      "discipline": "full_stack",
+      "id": "fastapi",
+      "language": "python",
+      "name": "FastAPI",
+      "skills": [
+        "functions.parameters_return",
+        "data.mapping_keys"
+      ]
+    },
+    {
+      "blurb": "Services and desktop apps on .NET.",
+      "discipline": "full_stack",
+      "id": "dotnet",
+      "language": "csharp",
+      "name": ".NET",
+      "skills": [
+        "functions.decomposition",
+        "data.lists"
+      ]
+    },
+    {
+      "blurb": "Java services at production scale.",
+      "discipline": "full_stack",
+      "id": "spring",
+      "language": "java",
+      "name": "Spring",
+      "skills": [
+        "functions.decomposition",
+        "data.mapping_keys"
+      ]
+    },
+    {
+      "blurb": "Open-source 2D and 3D games.",
+      "discipline": "game",
+      "id": "godot",
+      "language": "gdscript",
+      "name": "Godot",
+      "skills": [
+        "functions.defining",
+        "loops.for_iteration"
+      ]
+    },
+    {
+      "blurb": "High-end 3D games and real-time worlds.",
+      "discipline": "game",
+      "id": "unreal",
+      "language": "cpp",
+      "name": "Unreal Engine",
+      "skills": [
+        "functions.decomposition",
+        "data.lists"
+      ]
+    },
+    {
+      "blurb": "Native Android apps in Kotlin.",
+      "discipline": "mobile_desktop",
+      "id": "android",
+      "language": "kotlin",
+      "name": "Android toolchain",
+      "skills": [
+        "functions.defining",
+        "data.lists"
+      ]
+    },
+    {
+      "blurb": "Native iOS apps in Swift.",
+      "discipline": "mobile_desktop",
+      "id": "ios",
+      "language": "swift",
+      "name": "iOS toolchain",
+      "skills": [
+        "functions.defining",
+        "data.lists"
+      ]
+    },
+    {
+      "blurb": "Packages and scripts for the JavaScript world.",
+      "discipline": "general",
+      "id": "npm",
+      "language": "javascript",
+      "name": "npm",
+      "skills": [
+        "tooling.command_line",
+        "tooling.git_history"
+      ]
+    },
+    {
+      "blurb": "Ship the same container everywhere.",
+      "discipline": "cloud_devops",
+      "id": "docker",
+      "language": "",
+      "name": "Docker",
+      "skills": [
+        "tooling.command_line",
+        "systems.data_center"
+      ]
+    }
+  ]
+}
