@@ -108,7 +108,7 @@ players who independently understand and apply the underlying concept.
 algorithms (`game-shell/src/curriculum.*`), the evidence + mastery model
 (`game-shell/src/mastery.*`), the shipped graph
 (`game-shell/content/curriculum.json`: 23 areas, 71 topics, mapped to
-`m01`–`m56`), the in-game skill panel, misconception coaching, and practice
+`m01`–`m59`), the in-game skill panel, misconception coaching, and practice
 re-runs emitting delayed-recall evidence.
 
 **New in Stage 4:**

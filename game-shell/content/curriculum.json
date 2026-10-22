@@ -255,7 +255,7 @@
       "prerequisites": ["control_flow.conditionals"],
       "objectives": ["Define a function", "Call it from the main flow"],
       "misconceptions": [],
-      "missions": ["m11"],
+      "missions": ["m11", "m58"],
       "projects": []
     },
     {
@@ -529,7 +529,7 @@
           "probes": ["m02"]
         }
       ],
-      "missions": ["m02"],
+      "missions": ["m02", "m57"],
       "projects": []
     },
     {
@@ -541,7 +541,7 @@
       "prerequisites": ["debugging.trace_logic", "testing.public_tests"],
       "objectives": ["Produce a minimal failing input", "Bisect a large program to the offending path"],
       "misconceptions": [],
-      "missions": ["m21"],
+      "missions": ["m21", "m59"],
       "projects": []
     },
     {
