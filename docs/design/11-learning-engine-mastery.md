@@ -117,7 +117,7 @@ re-runs emitting delayed-recall evidence.
 |---|---|
 | Mastery model on the C++ server (Phase 2 authority) | Ported from the shell model; server computes, client displays. Evidence endpoints (`GET /skills/me`, `/skills/trees`) still to come. |
 | Curriculum reorganization into the 12 areas above | Spec only. The shipped 71 topics still sit in 08's areas. Migrating them is a content decision, not done by this doc. |
-| 12 mission formats (§4.2) | Only "write code from specifications" ships today. The rest need mission-type support in the catalog, the IDE, and grading. |
+| 12 mission formats (§4.2) | Four ship today: "write code from specifications" (m01-m56) plus "predict" (m57), "complete" (m58), and "debug" (m59), all graded by the existing stdout harness. The other eight (refactor, explain-failure, optimize, modify-unfamiliar, design-first, incomplete-requirements, review-peer, transfer-skill) still need mission-type support in the IDE and grading beyond content. |
 | Authoring system / content editor (§4.5) | Not built. |
 | Skill analytics | Not built. |
 | AI tutor service (§4.4) | Modes specified in 08 §5; no service yet. |
