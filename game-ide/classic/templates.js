@@ -18,7 +18,7 @@ const TEMPLATES = [
     files: {
       'index.html': '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<title>My page</title>\n<link rel="stylesheet" href="styles.css">\n</head>\n<body>\n<h1 id="title">Hello, DevWorld!</h1>\n<button id="btn">Click me</button>\n<script src="app.js"></script>\n</body>\n</html>\n',
       'styles.css': 'body {\n  font-family: sans-serif;\n  background: #0d1117;\n  color: #e6edf3;\n  text-align: center;\n  padding-top: 60px;\n}\nbutton {\n  padding: 10px 20px;\n  font-size: 16px;\n  cursor: pointer;\n}\n',
-      'app.js': 'let clicks = 0;\ndocument.getElementById("btn").addEventListener("click", () => {\n  clicks++;\n  document.getElementById("title").textContent =\n    `Clicked ${clicks} time${clicks === 1 ? "" : "s"}!`;\n});\n',
+      'app.js': 'console.log("Hello, DevWorld!");\nlet clicks = 0;\nconst btn = (typeof document !== "undefined") ? document.getElementById("btn") : null;\nif (btn) {\n  btn.addEventListener("click", () => {\n    clicks++;\n    document.getElementById("title").textContent =\n      `Clicked ${clicks} time${clicks === 1 ? "" : "s"}!`;\n  });\n}\n',
     },
     open: 'index.html',
   },
@@ -38,7 +38,7 @@ const TEMPLATES = [
     desc: 'A command-line tool in JavaScript. Runs locally in the IDE today.',
     files: {
       'package.json': '{\n  "name": "my-cli",\n  "version": "1.0.0",\n  "type": "module",\n  "bin": { "my-cli": "./index.js" }\n}\n',
-      'index.js': '#!/usr/bin/env node\nconst [,, ...args] = process.argv;\n\nif (args.length === 0) {\n  console.log("usage: my-cli <name>");\n  process.exit(1);\n}\nconsole.log(`Hello, ${args[0]}!`);\n',
+      'index.js': '// Node CLI — runs in the IDE runner and on real Node.\n// In the IDE there is no process.argv, so a default name is used.\nconst args = (typeof process !== "undefined" && process.argv)\n  ? process.argv.slice(2)\n  : ["World"];\n\nif (args.length === 0) {\n  console.log("usage: my-cli <name>");\n} else {\n  console.log(`Hello, ${args[0]}!`);\n}\n',
       'README.md': '# Node CLI\n\nRun with: `node index.js World`\n',
     },
     open: 'index.js',

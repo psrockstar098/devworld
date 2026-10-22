@@ -191,7 +191,11 @@ async function runPython(code) {
 function runJavaScript(code) {
   const logs = [];
   const fakeConsole = { log: (...a) => logs.push(a.map(String).join(' ')) };
-  const fn = new Function('console', `"use strict";\n${code}`);
+  // A leading #! line is valid at the top of a script but a syntax error
+  // inside a Function body, so strip it: CLI files (and their authors) often
+  // carry a shebang, and the runner must not choke on it.
+  const clean = code.replace(/^#!.*(?:\r?\n|$)/, '');
+  const fn = new Function('console', `"use strict";\n${clean}`);
   fn(fakeConsole);
   logs.forEach((l) => print(l));
   if (!logs.length) print('(no output)', 'ok');
