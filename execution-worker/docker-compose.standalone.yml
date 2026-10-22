@@ -1,0 +1,26 @@
+# DEVWORLD execution worker — standalone deploy.
+#
+# Just the worker, no game-server data tier. The worker runs fine without
+# Kvrocks/ClickHouse (in-memory submissions, no-op event sink — verified).
+# It DOES need a Docker daemon: execution runs in sibling containers
+# through the host socket, which is the whole sandbox.
+#
+# Same rule as the full-stack compose: SUBMISSIONS_DIR must resolve to the
+# SAME absolute path on the host and inside this container. Create
+# /submissions on the host first, or point SUBMISSIONS_DIR at a path you own.
+
+services:
+  worker:
+    build: .
+    image: devworld/execution-worker:latest
+    container_name: devworld-execution-worker
+    ports:
+      - "8090:8090"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${SUBMISSIONS_DIR:-/submissions}:${SUBMISSIONS_DIR:-/submissions}
+    environment:
+      EXEC_API_KEY: ${EXEC_API_KEY:?set EXEC_API_KEY before starting}
+      PORT: 8090
+      SUBMISSIONS_DIR: ${SUBMISSIONS_DIR:-/submissions}
+    restart: unless-stopped
