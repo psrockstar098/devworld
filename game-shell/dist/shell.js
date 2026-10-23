@@ -859,7 +859,6 @@ DW.ui = (() => {
         return `<h2>Cloud Account</h2>
           <p class="dim">Sign in to the DEVWORLD platform server. Your level, XP, credits and completed missions live on the server, not in this browser.</p>
           ${oauthButtons ? `<div class="oauth-grid">${oauthButtons}</div><div class="cloud-or"><span>or use a password</span></div>` : ''}
-          <label>Server <input id="cloud-base" value="${esc(d.base)}" spellcheck="false" /></label>
           <label>Username <input id="cloud-user" autocomplete="username" maxlength="32" spellcheck="false" /></label>
           <label>Password <input id="cloud-pass" type="password" autocomplete="current-password" /></label>
           <label>Display name <input id="cloud-display" maxlength="32" placeholder="optional" /></label>
@@ -867,7 +866,6 @@ DW.ui = (() => {
           <div class="cloud-actions">
             <button class="primary" id="cloud-login">Sign in</button>
             <button id="cloud-register">Create account</button>
-            <button id="cloud-save">Save server</button>
           </div>
           ${providers.length ? '' : '<p class="dim oauth-hint">Social sign-in is not configured on this server. Set the OAUTH_* credentials to enable it.</p>'}
           <p class="dim">${d.connected ? 'Live socket connected.' : 'Not connected to the platform server.'}</p>`;
@@ -899,7 +897,7 @@ DW.ui = (() => {
           <button class="primary" id="cloud-refresh">Refresh</button>
           <button id="cloud-logout">Sign out</button>
         </div>
-        <p class="dim">Server: ${esc(d.base)}</p>`;
+`;
     },
     idebar(d) {
       return `<div class="idebar-inner">
@@ -1412,13 +1410,19 @@ DW.onIdeTestsDone = (r) => {
 // live progression events. The token is opaque and stored locally; the server
 // owns the password hash, XP and ledger.
 DW.cloud = (() => {
-  const LS_BASE = 'devworld.backend';
+  // The server is hidden: v1 stored a host:8091 default that no longer
+  // applies, so the key is versioned and old values are ignored.
+  const LS_BASE = 'devworld.backend.v2';
   const LS_TOKEN = 'devworld.token';
-  const DEFAULT_BASE = location.protocol === 'file:'
+  // Deployed frontends reach the server same-origin (the host proxies API
+  // paths to it); local shells keep the :8091 platform server.
+  const isLocalHost = location.hostname === 'localhost' ||
+    location.hostname === '127.0.0.1';
+  const DEFAULT_BASE = location.protocol === 'file:' || !location.hostname
     ? 'http://127.0.0.1:8091'
-    : (location.hostname
+    : (isLocalHost
       ? location.protocol + '//' + location.hostname + ':8091'
-      : 'http://127.0.0.1:8091');
+      : location.origin);
 
   let base = localStorage.getItem(LS_BASE) || DEFAULT_BASE;
   let token = localStorage.getItem(LS_TOKEN) || '';

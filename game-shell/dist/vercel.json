@@ -1,5 +1,22 @@
 {
   "rewrites": [
-    { "source": "/ide/:path*", "destination": "https://psrockstar098.github.io/devworld/:path*" }
+    { "source": "/ide/:path*", "destination": "https://psrockstar098.github.io/devworld/:path*" },
+    { "source": "/health", "destination": "https://eb80a61abb1f0e.lhr.life/health" },
+    { "source": "/auth/:path*", "destination": "https://eb80a61abb1f0e.lhr.life/auth/:path*" },
+    { "source": "/me", "destination": "https://eb80a61abb1f0e.lhr.life/me" },
+    { "source": "/me/:path*", "destination": "https://eb80a61abb1f0e.lhr.life/me/:path*" },
+    { "source": "/progression/:path*", "destination": "https://eb80a61abb1f0e.lhr.life/progression/:path*" },
+    { "source": "/missions", "destination": "https://eb80a61abb1f0e.lhr.life/missions" },
+    { "source": "/stats/:path*", "destination": "https://eb80a61abb1f0e.lhr.life/stats/:path*" },
+    { "source": "/skills/:path*", "destination": "https://eb80a61abb1f0e.lhr.life/skills/:path*" },
+    { "source": "/ledger/:path*", "destination": "https://eb80a61abb1f0e.lhr.life/ledger/:path*" },
+    { "source": "/admin/:path*", "destination": "https://eb80a61abb1f0e.lhr.life/admin/:path*" },
+    { "source": "/events", "destination": "https://eb80a61abb1f0e.lhr.life/events" },
+    { "source": "/market", "destination": "https://eb80a61abb1f0e.lhr.life/market" },
+    { "source": "/market/:path*", "destination": "https://eb80a61abb1f0e.lhr.life/market/:path*" },
+    { "source": "/world/:path*", "destination": "https://eb80a61abb1f0e.lhr.life/world/:path*" },
+    { "source": "/friends", "destination": "https://eb80a61abb1f0e.lhr.life/friends" },
+    { "source": "/friends/:path*", "destination": "https://eb80a61abb1f0e.lhr.life/friends/:path*" },
+    { "source": "/ws", "destination": "https://eb80a61abb1f0e.lhr.life/ws" }
   ]
 }
