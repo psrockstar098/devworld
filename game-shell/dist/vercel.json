@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/ide/:path*", "destination": "https://psrockstar098.github.io/devworld/:path*" }
+  ]
+}
