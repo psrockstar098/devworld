@@ -399,7 +399,7 @@ void Game::updateCritterSim(float dt) {
     crittersMap_ = curMap_;
   }
   if (player_.a11y.reducedMotion) return;  // critters rest
-  updateCritters(critters_, dt, dayT_, [&](float x, float y) {
+  updateCritters(critters_, dt, [&](float x, float y) {
     return !m.solid((int)(x / m.tile), (int)(y / m.tile));
   });
 }

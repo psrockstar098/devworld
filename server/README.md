@@ -151,6 +151,44 @@ export OAUTH_GOOGLE_CLIENT_ID=...
 export OAUTH_GOOGLE_CLIENT_SECRET=...
 ```
 
+### Production: GitHub
+
+The GitHub OAuth app for the public test hosting already exists. Everything
+that does not need a secret is wired here; the one remaining step (the client
+secret) is owned by the deploy owner and is deliberately not in this repo.
+
+```bash
+export OAUTH_BASE_URL=https://devworld-shell.vercel.app
+export OAUTH_ALLOWED_ORIGINS=https://devworld-shell.vercel.app
+export OAUTH_GITHUB_CLIENT_ID=Ov23lixU1W86ZSzpMHta
+# OAUTH_GITHUB_CLIENT_SECRET: set by the deploy owner only, never committed.
+```
+
+What this produces (all of it already coded in `src/oauth.cpp`, no code
+change needed):
+
+- Callback (redirect URI registered on the app):
+  `https://devworld-shell.vercel.app/auth/oauth/github/callback`
+  (`OAUTH_BASE_URL` + `/auth/oauth/github/callback`).
+- Scope: `read:user user:email` (hardcoded default; overridable with
+  `OAUTH_GITHUB_SCOPE`).
+- Endpoints (hardcoded): authorize `https://github.com/login/oauth/authorize`,
+  token `https://github.com/login/oauth/access_token`, userinfo
+  `https://api.github.com/user`. GitHub does not use PKCE on this flow.
+- `OAUTH_ALLOWED_ORIGINS` must include the shell origin, or starting a login
+  with that origin as `returnTo` fails with `400 returnTo is not an allowed
+  origin`.
+
+Activation rule: a provider appears in `GET /auth/providers` only when its
+client id **and** secret are both set (`OAuthProvider::configured()`). Until
+the secret is set, `GET /auth/oauth/github/start` answers `404 unknown or
+unconfigured sign-in provider` — that is expected, not a bug.
+
+**Blocked:** the client secret was never generated; generating it needs the
+account owner's GitHub sudo-mode tap. Until it is generated and set as
+`OAUTH_GITHUB_CLIENT_SECRET` on the server host, GitHub sign-in stays
+inactive. Never commit a secret value to this repo.
+
 Then open **Cloud account** in the game shell and press **Continue with
 Google** (or another configured provider).
 

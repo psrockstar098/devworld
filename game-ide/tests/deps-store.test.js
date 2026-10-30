@@ -1,5 +1,7 @@
 /* Unit tests for the IDE dependency/submission store.
-   Run: node --test game-ide/tests/   (Node 18+; no dependencies) */
+   Run: node --test "game-ide/tests/*.test.js"   (Node 18+; no dependencies)
+   (A bare directory argument does not work: node tries to load the
+   directory itself as a module instead of scanning it.) */
 const test = require("node:test");
 const assert = require("node:assert");
 const path = require("node:path");

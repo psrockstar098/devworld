@@ -50,7 +50,7 @@ std::vector<Critter> spawnCritters(
 
 // Advance one frame. `walkable(px, py)` must be false for water/walls/trees —
 // critters never enter them. With dt == 0 nothing changes (tests rely on it).
-void updateCritters(std::vector<Critter>& critters, float dt, float dayT,
+void updateCritters(std::vector<Critter>& critters, float dt,
                     const std::function<bool(float, float)>& walkable);
 
 }  // namespace dw

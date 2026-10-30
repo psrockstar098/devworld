@@ -359,3 +359,29 @@ TEST_CASE("verified email links a second provider to the same player") {
   REQUIRE(third.status == 200);
   CHECK(parseJson(third.body).at("player").s("id") == playerId);
 }
+
+TEST_CASE("github production wiring: callback URL and activation rule") {
+  // The registered GitHub OAuth app (see server README, "Production: GitHub").
+  // The callback is base URL + /auth/oauth/github/callback; a trailing slash
+  // on the base URL is trimmed, so both spellings produce the same callback.
+  OAuthProvider github;
+  github.id = "github";
+  CHECK(github.redirectUri("https://devworld-shell.vercel.app") ==
+        "https://devworld-shell.vercel.app/auth/oauth/github/callback");
+  CHECK(github.redirectUri("https://devworld-shell.vercel.app/") ==
+        "https://devworld-shell.vercel.app/auth/oauth/github/callback");
+
+  // Activation rule (OAuthConfig::fromEnv only lists configured providers):
+  // a client id alone does NOT activate the provider — the secret must be
+  // set too. Until then /auth/oauth/github/start answers 404, by design.
+  OAuthProvider half;
+  half.id = "github";
+  half.clientId = "Ov23lixU1W86ZSzpMHta";
+  half.authorizeUrl = "https://github.com/login/oauth/authorize";
+  half.tokenUrl = "https://github.com/login/oauth/access_token";
+  half.userInfoUrl = "https://api.github.com/user";
+  half.scope = "read:user user:email";
+  CHECK_FALSE(half.configured());
+  half.clientSecret = "dummy";
+  CHECK(half.configured());
+}

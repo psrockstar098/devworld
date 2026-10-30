@@ -93,7 +93,7 @@ std::vector<Critter> spawnCritters(
   return out;
 }
 
-void updateCritters(std::vector<Critter>& critters, float dt, float dayT,
+void updateCritters(std::vector<Critter>& critters, float dt,
                     const std::function<bool(float, float)>& walkable) {
   if (dt <= 0) return;
   for (Critter& c : critters) {

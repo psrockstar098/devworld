@@ -1,8 +1,8 @@
 #pragma once
 // Shared types for the DEVWORLD game shell.
-// Phase 1: Starter Town only. All multiplayer/server hooks are stubs marked
-// [PHASE2] — the design (ARCH §5) makes the server authoritative for valuable
-// state; the client never trusts itself for economy in the real design.
+// Four cities are playable; the client keeps local copies of the economy,
+// social graph and progression, and [PHASE2] markers sit where the server
+// takes over as authoritative for valuable state (ARCH §5).
 
 #include <string>
 #include <vector>

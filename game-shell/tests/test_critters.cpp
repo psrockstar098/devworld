@@ -67,7 +67,7 @@ TEST_CASE("critters wander near home and never settle on blocked ground") {
   auto critters = spawnCritters("town", 40 * 32, 30 * 32, 0.5f, 7u, walk);
   // Simulate ten minutes: plenty of target picks.
   for (int step = 0; step < 6000; step++)
-    updateCritters(critters, 1.0f / 60.0f, 0.5f, walk);
+    updateCritters(critters, 1.0f / 60.0f, walk);
   for (const Critter& c : critters) {
     CHECK_FALSE(walk.block(c.pos.x, c.pos.y));
     float dx = c.pos.x - c.home.x, dy = c.pos.y - c.home.y;
@@ -80,7 +80,7 @@ TEST_CASE("critters wander near home and never settle on blocked ground") {
 TEST_CASE("update with dt == 0 changes nothing") {
   auto critters = spawnCritters("town", 40 * 32, 30 * 32, 0.5f, 7u, walk);
   auto before = critters;
-  updateCritters(critters, 0.0f, 0.5f, walk);
+  updateCritters(critters, 0.0f, walk);
   REQUIRE(critters.size() == before.size());
   for (size_t i = 0; i < critters.size(); i++)
     CHECK(critters[i].pos.x == before[i].pos.x);
@@ -90,7 +90,7 @@ TEST_CASE("critters actually move: distance grows after a frame") {
   auto critters = spawnCritters("town", 40 * 32, 30 * 32, 0.5f, 7u, walk);
   // Force everyone walking by simulating a while.
   for (int step = 0; step < 600; step++)
-    updateCritters(critters, 1.0f / 60.0f, 0.5f, walk);
+    updateCritters(critters, 1.0f / 60.0f, walk);
   int moved = 0;
   for (const Critter& c : critters) {
     if (c.pos.x != c.home.x) moved++;
@@ -103,5 +103,5 @@ TEST_CASE("fully blocked maps are safe: no crash, no stuck movers") {
   auto critters = spawnCritters("pond", 20 * 32, 20 * 32, 0.5f, 3u, never);
   // With no walkable ground there is nowhere to live: the map stays empty.
   CHECK(critters.empty());
-  updateCritters(critters, 1.0f, 0.5f, never);  // must not crash
+  updateCritters(critters, 1.0f, never);  // must not crash
 }
